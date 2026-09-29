@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(ls:*)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/sample_architect/.venv/bin/python -m pip install \"librosa>=0.10\")"
+    ]
+  }
+}

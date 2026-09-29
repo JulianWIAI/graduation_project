@@ -1,0 +1,94 @@
+# ============================================================
+# Graduation Project — Root .gitignore
+# ============================================================
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ─── Virtual Environments ────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Large Seed Corpus ───────────────────────────────────────
+# master_seeds.json is ~961 MB — distribute separately (see README)
+music_architect_v7/seeds/master_seeds.json
+
+# ─── SoundFont Files (.sf2 / .sf3) ───────────────────────────
+# Large binary assets — download instructions in
+# daw_light_version/soundfonts/README.txt
+*.sf2
+*.sf3
+
+# ─── C++ Build Artifacts ─────────────────────────────────────
+cpp_processors/build/
+daw_light_version/cpp_processors/build/
+*.so
+*.dll
+*.dylib
+*.pyd
+
+# ─── Generated Outputs ───────────────────────────────────────
+music_architect_v7/commercial_run/
+music_architect_v7/production_run/
+music_architect_v7/Watermarked_Catalog/
+Music_catalogue_manager_v.2/sample_exports/
+Music_catalogue_manager_v.2/static/audio/
+Music_catalogue_manager_v.2/static/uploads/
+
+# ─── Runtime Databases & Sessions ────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+Music_catalogue_manager_v.2/instance/
+Music_catalogue_manager_v.2/flask_session/
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Environment & Secrets ───────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── macOS ───────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ─── Windows ─────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ─── IDE & Editors ───────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── Test & Coverage Artifacts ───────────────────────────────
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.tox/
+
+# ─── Temporary & Cache ───────────────────────────────────────
+*.tmp
+*.temp
+.cache/

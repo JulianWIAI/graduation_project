@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /Users/student-2526/PycharmProjects/graduation_project/*/.venv)",
+      "Bash(npm --version)",
+      "Bash(brew list:*)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/daw_light_version/.venv/bin/python --version)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/daw_light_version/.venv/bin/pip list:*)",
+      "Bash(rm -rf /Users/student-2526/PycharmProjects/graduation_project/daw_light_version/.venv)",
+      "Bash(rm -rf /Users/student-2526/PycharmProjects/graduation_project/music_architect_v7/.venv)",
+      "Bash(rm -rf /Users/student-2526/PycharmProjects/graduation_project/music_architect_v7/venv)",
+      "Bash(rm -rf \"/Users/student-2526/PycharmProjects/graduation_project/Music_catalogue_manager_v.2/.venv\")",
+      "Bash(rm -rf \"/Users/student-2526/PycharmProjects/graduation_project/Music_catalogue_manager_v.2/venv\")",
+      "Bash(LOG=/tmp/daw_install.log /Users/student-2526/PycharmProjects/graduation_project/daw_light_version/.venv/bin/pip install --upgrade pip -q)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/daw_light_version/.venv/bin/pip install:*)",
+      "Bash(tee $LOG)",
+      "Bash(LOG=/tmp/architect_install.log /Users/student-2526/PycharmProjects/graduation_project/music_architect_v7/.venv/bin/pip install --upgrade pip -q)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/music_architect_v7/.venv/bin/pip install:*)",
+      "Bash(LOG=/tmp/catalogue_install.log \"/Users/student-2526/PycharmProjects/graduation_project/Music_catalogue_manager_v.2/.venv/bin/pip\" install --upgrade pip -q)",
+      "Bash(\"/Users/student-2526/PycharmProjects/graduation_project/Music_catalogue_manager_v.2/.venv/bin/pip\" install:*)",
+      "Bash(LOG=/tmp/sample_install.log /Users/student-2526/PycharmProjects/graduation_project/sample_architect/.venv/bin/pip install --upgrade pip -q)",
+      "Bash(/Users/student-2526/PycharmProjects/graduation_project/sample_architect/.venv/bin/pip install:*)",
+      "Bash(ls /Users/student-2526/PycharmProjects/graduation_project/music_architect_v7/*.py)",
+      "Bash(chmod +x /Users/student-2526/PycharmProjects/graduation_project/launch_daw.sh /Users/student-2526/PycharmProjects/graduation_project/launch_architect.sh /Users/student-2526/PycharmProjects/graduation_project/launch_catalogue.sh /Users/student-2526/PycharmProjects/graduation_project/launch_sample_architect.sh /Users/student-2526/PycharmProjects/graduation_project/setup.sh /Users/student-2526/PycharmProjects/graduation_project/start.sh)",
+      "Bash(for proj:*)",
+      "Bash(do PY=/Users/student-2526/PycharmProjects/graduation_project/$proj/.venv/bin/python echo -n '$proj: ' $PY --version 2)",
+      "Bash(1 echo:*)",
+      "Bash(ls -la /Users/student-2526/PycharmProjects/graduation_project/*.sh)",
+      "Bash(xargs ls:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

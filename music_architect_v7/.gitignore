@@ -1,0 +1,66 @@
+# ── MIDI output (never commit generated beats) ────────────────────────────────
+*.mid
+*.midi
+
+# ── Large binary assets ───────────────────────────────────────────────────────
+*.sf2
+*.sf3
+*.zip
+*.exe
+*.dll
+
+# ── Generated catalogs & batch output ────────────────────────────────────────
+commercial_run/
+production_run/
+Final commercial batch/
+Watermarked_Catalog/
+generation_archive/
+production_seeds/
+output/
+temp_output/
+batch_output/
+cinematic_batch/
+benchmarks_dir/
+
+# ── Runtime logs ──────────────────────────────────────────────────────────────
+*.log
+*.log.*
+watchdog_log.json
+
+# ── Generated snapshots & reports ─────────────────────────────────────────────
+system_snapshot*.json
+math_fitness_report.json
+batch_manifest.json
+evolutionary_pool.json
+commercial_chain_manifest.json
+
+# ── Seed corpus (large — distribute separately, matrix files are kept) ────────
+seeds/seeds_*.json
+seeds/master_seeds.json
+seeds/seeds_source_PDMX.json
+
+# ── Old version archive ───────────────────────────────────────────────────────
+music_architect_v5/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# ── IDE & tooling ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.spec
+.claude/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
