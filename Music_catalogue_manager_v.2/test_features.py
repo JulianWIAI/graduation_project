@@ -16,6 +16,8 @@ from datetime import date, timedelta
 import config
 
 config.DB_PATH = os.path.join(tempfile.mkdtemp(), "test.db")   # VOR dem App-Import!
+ADMIN_PASSWORD = "nur-fuer-den-test"
+os.environ["SBS_ADMIN_PASSWORD"] = ADMIN_PASSWORD               # ebenfalls vor dem Import
 
 import main                                   # noqa: E402
 from commerce import billing, quota, tokens   # noqa: E402
@@ -152,51 +154,58 @@ def test_login_reminds_about_expiring_subscription():
     assert login().endswith("/generate")
 
 
-def test_token_is_consumed_when_quota_is_exhausted():
-    client = main.app.test_client()
-    uid, _ = _register(client)
-    _use_quota(uid, 3)                               # Monatskontingent aufgebraucht
+def _fake_beat(client, name):
+    """Legt in der Sitzung einen 'generierten' Beat ab, ohne den Motor zu starten."""
+    tmp = os.path.join(tempfile.mkdtemp(), "beat.wav")
+    with wave.open(tmp, "wb") as w:
+        w.setnchannels(1), w.setsampwidth(2), w.setframerate(8000), w.writeframes(b"\0\0")
+    with client.session_transaction() as sess:
+        sess[f"temp_{name}"] = tmp
 
-    def save():
-        tmp = os.path.join(tempfile.mkdtemp(), "beat.wav")
-        with wave.open(tmp, "wb") as w:
-            w.setnchannels(1), w.setsampwidth(2), w.setframerate(8000), w.writeframes(b"\0\0")
-        with client.session_transaction() as sess:
-            sess["temp_abc"] = tmp
-        return client.post("/save", json={"uuid": "abc", "name": "Test"})
 
-    resp = save()
-    assert resp.status_code == 429 and resp.get_json()["error"] == "quota_exceeded"
-
-    tokens.admin_adjust(uid, 1)
-    resp = save()
-    data = resp.get_json()
-    assert resp.status_code == 200 and data["used_token"] is True and data["token_balance"] == 0
-    assert tokens.balance(uid) == 0
-    assert save().status_code == 429                 # Token ist wirklich weg
-
-    for row in db.get_conn().execute(                # erzeugte Testdateien aufraeumen
-            "SELECT file_path FROM exports e JOIN tracks t ON t.id = e.track_id WHERE t.user_id = ?", (uid,)):
+def _remove_exports(user_id):
+    """Raeumt die beim Export angelegten Audiodateien wieder weg."""
+    conn = db.get_conn()
+    rows = conn.execute("SELECT file_path FROM exports e JOIN tracks t ON t.id = e.track_id "
+                        "WHERE t.user_id = ?", (user_id,)).fetchall()
+    conn.close()
+    for row in rows:
         path = os.path.join(config.BASE_DIR, row["file_path"])
         os.remove(path)
         if not os.listdir(os.path.dirname(path)):
             os.rmdir(os.path.dirname(path))
 
 
+def test_token_is_consumed_when_quota_is_exhausted():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    _use_quota(uid, 3)                               # Monatskontingent aufgebraucht
+
+    def export(name):
+        _fake_beat(client, name)
+        return client.get(f"/export_audio/{name}?format=wav_cd")
+
+    resp = export("a")
+    assert resp.status_code == 429 and resp.get_json()["error"] == "quota_exceeded"
+
+    tokens.admin_adjust(uid, 1)
+    assert export("b").status_code == 200            # kostet den einen Token
+    assert tokens.balance(uid) == 0
+    assert export("b").status_code == 200            # derselbe Beat noch einmal: frei
+    assert export("c").status_code == 429            # neuer Beat: Token ist wirklich weg
+    _remove_exports(uid)
+
+
 def test_exported_beat_keeps_its_seed_and_locks_it():
     client = main.app.test_client()
     uid, _ = _register(client)
-    tmp = os.path.join(tempfile.mkdtemp(), "beat.wav")
-    with wave.open(tmp, "wb") as w:
-        w.setnchannels(1), w.setsampwidth(2), w.setframerate(8000), w.writeframes(b"\0\0")
-    with client.session_transaction() as sess:           # Zustand wie nach /generate
-        sess["temp_beat1"] = tmp
+    _fake_beat(client, "beat1")                          # Zustand wie nach /generate
+    with client.session_transaction() as sess:
         sess["temp_seed_beat1"] = 424242
 
     assert client.get("/export_audio/beat1?format=wav_cd").status_code == 200
     conn = db.get_conn()
-    row = conn.execute("SELECT t.watermark_tag, e.file_path FROM tracks t "
-                       "JOIN exports e ON e.track_id = t.id WHERE t.user_id = ?", (uid,)).fetchone()
+    row = conn.execute("SELECT watermark_tag FROM tracks WHERE user_id = ?", (uid,)).fetchone()
     conn.close()
     assert row["watermark_tag"] == "seed:424242"
 
@@ -204,11 +213,35 @@ def test_exported_beat_keeps_its_seed_and_locks_it():
     resp = client.post("/generate", json={"genre": "trap", "seed": "424242"})
     assert resp.status_code == 409 and resp.get_json()["error"] == "seed_locked"
     assert client.post("/generate", json={"seed": "abc"}).status_code == 400
+    _remove_exports(uid)
 
-    path = os.path.join(config.BASE_DIR, row["file_path"])
-    os.remove(path)
-    if not os.listdir(os.path.dirname(path)):
-        os.rmdir(os.path.dirname(path))
+
+def test_watermark_checksum_is_really_verified():
+    import hashlib
+    import mido
+    from catalog import watermark_reader
+
+    folder = tempfile.mkdtemp()
+
+    def write(name, text):
+        path = os.path.join(folder, name)
+        track = mido.MidiTrack([mido.MetaMessage("copyright", text="(C) Test", time=0),
+                                mido.MetaMessage("text", text=text, time=0)])
+        midi = mido.MidiFile()
+        midi.tracks.append(track)
+        midi.save(path)
+        return path
+
+    full = hashlib.sha256(b"song.mid").hexdigest()
+    engine = write("song.mid", f"TAG | SHA256_FNAME={full[:16].upper()}")     # Format des Motors
+    demo = write("demo.mid", "WM_HASH:" + hashlib.sha256(b"demo.mid").hexdigest())
+    for path in (engine, demo):
+        assert watermark_reader.hash_matches(path, watermark_reader.read_watermark(path)["hash"])
+
+    renamed = os.path.join(folder, "kopie.mid")                               # umbenannte Datei
+    os.rename(engine, renamed)
+    stored = watermark_reader.read_watermark(renamed)["hash"]
+    assert stored and not watermark_reader.hash_matches(renamed, stored)
 
 
 def test_language_switch():
@@ -229,7 +262,7 @@ def test_language_switch():
 
 def test_all_pages_render_in_every_language():
     client = main.app.test_client()
-    client.post("/login", data={"email": "admin@admin.com", "password": "admin123"})
+    client.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
     pages = ["/generate", "/stats", "/tokens", "/plan", "/dashboard", "/catalog",
              "/licenses", "/users", "/economics", "/audit", "/settings"]
     for code in ("de", "en", "fr"):

@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # Pfad zum MA V7 Production-Guide-Verzeichnis
 _GUIDE_DIR = (
     pathlib.Path(__file__).parent.parent.parent
-    / "MUSIC_ARCHITECT_V7"
+    / "music_architect_v7"
     / "data"
     / "production_guide"
     / "json"

@@ -5,7 +5,7 @@ Der Music-Architect-Motor liegt ein Verzeichnis hoeher. Beide Pfade (Root und sr
 werden zu sys.path hinzugefuegt, damit die internen 'from src.*'-Imports des Motors
 ohne Aenderung aufgeloest werden koennen.
 
-Das Monatskontingent wird NUR bei /save bzw. beim ersten Export verbraucht, niemals bei
+Das Monatskontingent wird NUR beim ersten Export eines Beats verbraucht, niemals bei
 /generate. Zuhoeren ist immer frei. Ist das Kontingent erschoepft, wird statt-
 dessen 1 gekaufter Token abgebucht (siehe _gate_quota / commerce/tokens.py).
 """
@@ -88,7 +88,7 @@ def _set_volume(cfg, track: str, value):
 # Music-Architect-Pfad — relativ zu dieser Datei aufgeloest, damit die App
 # unabhaengig vom Startverzeichnis funktioniert.
 # ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "MUSIC_ARCHITECT_V7"
+_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "music_architect_v7"
 _MA_SRC  = _MA_ROOT / "src"
 
 
@@ -115,7 +115,7 @@ def _quota_status():
 
 def _gate_quota(reference: str):
     """
-    Gemeinsames Kontingent-Gate fuer /save, /export_audio und /export_midi.
+    Gemeinsames Kontingent-Gate fuer /export_audio und /export_midi.
 
     * Monatskontingent frei    -> (None, False)
     * Kontingent erschoepft,
@@ -283,7 +283,7 @@ def generate_page():
 def generate_track():
     """
     Beat aus dem Music-Architect-Motor erzeugen und temporaere Audio-URL zurueckgeben.
-    Kein Kontingent wird hier verbraucht — nur /save dekrementiert den Zaehler.
+    Kein Kontingent wird hier verbraucht — erst der erste Export zaehlt.
     """
     data = request.get_json(silent=True) or request.form
 
@@ -685,112 +685,6 @@ def temp_audio(audio_uuid: str):
         return jsonify({"error": "expired"}), 404
 
     return send_file(str(wav_path), mimetype="audio/wav")
-
-
-@generate_bp.route("/save", methods=["POST"])
-@login_required
-def save_track():
-    """
-    Beat dauerhaft speichern:
-      1. Kontingent pruefen.
-      2. WAV in static/audio/<user_id>/ kopieren.
-      3. INSERT in tracks + exports + audit_log.
-      4. Kontingent-Zaehler erhoehen.
-    """
-    data       = request.get_json(silent=True) or request.form
-    name       = (data.get("name") or "").strip() or "Untitled"
-    audio_uuid = (data.get("uuid") or "").strip()
-
-    if not audio_uuid:
-        return jsonify({"error": "missing_uuid"}), 400
-
-    wav_str = session.get(f"temp_{audio_uuid}")
-    if not wav_str:
-        return jsonify({"error": "not_found",
-                        "message": _("Kein generiertes Audio gefunden. Bitte zuerst generieren.")}), 400
-
-    genre = session.get(f"temp_genre_{audio_uuid}", "unknown")
-
-    # --- Kontingent-Pruefung (ggf. Token-Abbuchung) --------------------------
-    today = date.today().isoformat()
-    blocked, used_token = _gate_quota(reference=f"save:{audio_uuid}")
-    if blocked:
-        return blocked
-
-    # --- In dauerhaften Speicher kopieren -----------------------------------
-    wav_src = pathlib.Path(wav_str)
-    if not wav_src.exists():
-        if used_token:
-            _tokens.refund(current_user.id, 1, reference=f"save:{audio_uuid}")
-        return jsonify({"error": "not_found",
-                        "message": _("Temporaere Datei fehlt. Bitte neu generieren.")}), 400
-
-    audio_dir = (pathlib.Path(__file__).parent.parent / "static" / "audio"
-                 / str(current_user.id))
-    audio_dir.mkdir(parents=True, exist_ok=True)
-
-    dest_name = f"{uuid.uuid4().hex}.wav"
-    dest_path = audio_dir / dest_name
-    shutil.copy2(str(wav_src), str(dest_path))
-
-    # --- Datenbankeintraege -------------------------------------------------
-    now  = __import__("datetime").datetime.now().isoformat(timespec="seconds")
-    conn = db.get_conn()
-    try:
-        cur = conn.execute(
-            "INSERT INTO tracks (title, genre, user_id, status, created_at) "
-            "VALUES (?, ?, ?, 'exclusive_sold', ?)",
-            (name, genre, current_user.id, now),
-        )
-        track_id = cur.lastrowid
-
-        rel_path = str(dest_path.relative_to(pathlib.Path(__file__).parent.parent))
-        conn.execute(
-            "INSERT INTO exports (track_id, tier, file_path, file_format, found_at) "
-            "VALUES (?, 'wav', ?, 'wav', ?)",
-            (track_id, rel_path, now),
-        )
-        conn.commit()
-    except Exception as exc:
-        conn.rollback()
-        conn.close()
-        dest_path.unlink(missing_ok=True)
-        if used_token:
-            _tokens.refund(current_user.id, 1, reference=f"save:{audio_uuid}")
-        return jsonify({"error": str(exc)}), 500
-
-    conn.close()
-
-    db.log_event("SAVE", "track", track_id, {
-        "user_id":    current_user.id,
-        "name":       name,
-        "genre":      genre,
-        "file":       str(dest_path),
-        "used_token": used_token,
-    })
-
-    # --- Kontingent erhoehen -----------------------------------------------
-    db.increment_quota(current_user.id, today)
-
-    # Verbleibenden Stand nach Erhoehung neu auslesen.
-    status = _quota_status()
-
-    # Temporaere Dateien aufraumen.
-    try:
-        wav_src.unlink(missing_ok=True)
-        wav_src.parent.rmdir()
-    except OSError:
-        pass
-    session.pop(f"temp_{audio_uuid}",       None)
-    session.pop(f"temp_genre_{audio_uuid}", None)
-
-    return jsonify({
-        "success":           True,
-        "track_id":          track_id,
-        "monthly_remaining": status["remaining"],
-        "used_token":        used_token,
-        "token_balance":     status["tokens"],
-    })
 
 
 @generate_bp.route("/groove_preset/<genre>")

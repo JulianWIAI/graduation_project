@@ -12,6 +12,8 @@ Layer 2 (Velocity-LSB-Steganographie) wird hier NICHT dekodiert -- dafuer ist
 die Original-Engine zustaendig (`python main.py watermark --extract ...`).
 """
 
+import hashlib
+import os
 import re
 
 try:
@@ -20,7 +22,10 @@ except ImportError:  # pragma: no cover
     mido = None
 
 # 64 Hex-Zeichen = SHA-256
-_SHA256_RE = re.compile(r"\b[0-9a-fA-F]{64}\b")
+# Zwei Schreibweisen der Dateinamen-Pruefsumme:
+#   * Music Architect V7:  "... | SHA256_FNAME=<erste 16 Hex-Zeichen>"
+#   * Demo-/Gateway-Daten: "WM_HASH:<volle 64 Hex-Zeichen>"
+_SHA256_RE = re.compile(r"\b[0-9a-fA-F]{64}\b|(?<=SHA256_FNAME=)[0-9a-fA-F]{16}\b")
 
 
 def read_watermark(midi_path):
@@ -68,6 +73,18 @@ def read_watermark(midi_path):
                 break
 
     return result
+
+
+def hash_matches(midi_path, stored_hash):
+    """
+    Echte Pruefung des Wasserzeichens: Die gespeicherte Pruefsumme muss zum
+    SHA-256 des Dateinamens passen (voll oder als 16-Zeichen-Anfang). Wurde die
+    Datei umbenannt oder die Pruefsumme veraendert, schlaegt der Vergleich fehl.
+    """
+    if not midi_path or not stored_hash or len(stored_hash) not in (16, 64):
+        return False
+    expected = hashlib.sha256(os.path.basename(midi_path).encode("utf-8")).hexdigest()
+    return expected.startswith(stored_hash.lower())
 
 
 def has_watermark(midi_path):

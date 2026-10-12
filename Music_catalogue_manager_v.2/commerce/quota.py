@@ -53,16 +53,6 @@ def add_user(name, email=None, is_subscriber=False):
     return uid
 
 
-def set_subscriber(user_id, is_subscriber):
-    conn = db.get_conn()
-    conn.execute("UPDATE users SET is_subscriber = ? WHERE id = ?",
-                 (1 if is_subscriber else 0, user_id))
-    conn.commit()
-    conn.close()
-    db.log_event("SUBSCRIPTION_CHANGED", "user", user_id,
-                 {"is_subscriber": bool(is_subscriber)})
-
-
 # --- Limits & Nutzung -------------------------------------------------------
 
 def is_active_subscriber(user, on_day=None):
@@ -73,22 +63,9 @@ def is_active_subscriber(user, on_day=None):
     return (not end) or (end >= (on_day or date.today()).isoformat())
 
 
-def has_subscription(user, on_day=None):
-    """
-    Einheitliche Abo-Pruefung fuer Limits und Token-Preise.
-    Beruecksichtigt beide Abo-Kennzeichen der Anwendung:
-      * Admin-/Billing-Abo: is_subscriber = 1 mit gueltiger Laufzeit (sub_end)
-      * Web-Tarif:          users.tier = 'pro'
-    """
-    if not user:
-        return False
-    tier = user["tier"] if "tier" in user.keys() else None
-    return tier == "pro" or is_active_subscriber(user, on_day)
-
-
 def monthly_limit(user, on_day=None):
     """Liefert das Monatslimit fuer einen Nutzer (aktives Abo vs. Basis)."""
-    if has_subscription(user, on_day):
+    if is_active_subscriber(user, on_day):
         return int(db.get_setting("limit_subscriber", "10"))
     return int(db.get_setting("limit_free", "3"))
 

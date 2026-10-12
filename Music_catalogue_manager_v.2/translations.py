@@ -272,6 +272,7 @@ _T = {
     "Wasserzeichen": ("Watermark", "Filigrane"),
     "✓ verifiziert": ("✓ verified", "✓ vérifié"),
     "Tag ohne Hash": ("Tag without hash", "Tag sans hash"),
+    "Prüfsumme passt nicht": ("Checksum mismatch", "Somme de contrôle incorrecte"),
     "Seed gespeichert": ("Seed stored", "Seed enregistré"),
     "kein WM": ("no WM", "pas de filigrane"),
     "Details →": ("Details →", "Détails →"),
@@ -460,9 +461,6 @@ _T = {
     "Nutzer '%(name)s' angelegt (Abo).": (
         "User '%(name)s' created (subscriber).", "Utilisateur « %(name)s » créé (abonné)."),
     "Nutzer '%(name)s' angelegt.": ("User '%(name)s' created.", "Utilisateur « %(name)s » créé."),
-    "'%(name)s' ist jetzt Abonnent.": ("'%(name)s' is now a subscriber.", "« %(name)s » est maintenant abonné."),
-    "'%(name)s' ist jetzt Basis-Nutzer.": (
-        "'%(name)s' is now a basic user.", "« %(name)s » est maintenant utilisateur de base."),
 
     # --- Einstellungen, Scan, Audit -----------------------------------------
     "Einstellungen · SBS Catalog": ("Settings · SBS Catalog", "Paramètres · SBS Catalog"),

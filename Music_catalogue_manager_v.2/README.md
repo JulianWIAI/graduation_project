@@ -54,7 +54,7 @@ Browser öffnen: <http://127.0.0.1:5000>
 
 Standardmäßig wird die Anwendung auf `127.0.0.1:5000` gestartet.  
 Der Music Architect V7 muss sich im übergeordneten Verzeichnis befinden:
-`../MUSIC_ARCHITECT_V7/`.
+`../music_architect_v7/`.
 
 ### Voraussetzungen für den Beat-Generator
 
@@ -63,7 +63,7 @@ Der Music Architect V7 muss sich im übergeordneten Verzeichnis befinden:
 | FluidSynth (`brew install fluid-synth`) | SoundFont-Rendering, schnelles Generieren | langsamer eingebauter Synthesizer |
 | ffmpeg (`brew install ffmpeg`) | Export als MP3 / FLAC / OGG | nur WAV-Export |
 | SoundFonts in `~/soundfonts/` | Klang je Genre: `FluidR3_GM.sf2`, `GeneralUser_GS.sf2`, `Arachno SoundFont - Version 1.0.sf2` | Ausweich-SoundFont von FluidSynth |
-| `../MUSIC_ARCHITECT_V7/seeds/master_seeds.json` | gelernte Rhythmus-, Lead- und Übergangsmuster | Komposition nur aus den Genre-Matrizen |
+| `../music_architect_v7/seeds/master_seeds.json` | gelernte Rhythmus-, Lead- und Übergangsmuster | Komposition nur aus den Genre-Matrizen |
 
 Die C++-Erweiterung `synth_core` des Motors ist optional; ohne sie nutzt der
 Generator automatisch den reinen Python-Synthesizer (`beatgen/synth_core_fix.py`).
@@ -219,7 +219,8 @@ Nach dem Generieren oder Re-Rendern stehen folgende Exportformate zur Verfügung
 | FLAC | verlustfrei komprimiert |
 | MIDI | rohe Notendaten für die DAW |
 
-Das Kontingent wird **nur beim Speichern / Download** verbraucht, nicht beim Vorhören.
+Das Kontingent wird **nur beim ersten Export eines Beats** verbraucht, nicht beim Vorhören.
+Weitere Exporte desselben Beats (anderes Format, Re-Render, MIDI) sind frei.
 Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Abo-/Freemium-Modell*).
 
 ---
@@ -229,6 +230,14 @@ Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Abo-/Freemiu
 ### Katalog
 - Zeigt alle erzeugten Tracks mit Genre, Titel, Status und Exportverknüpfungen.
 - Filter nach Genre und Status (verfügbar / verkauft / exklusiv gesperrt).
+- Spalte **Wasserzeichen**:
+  - *✓ verifiziert* — die Prüfsumme in der MIDI-Datei passt zum Dateinamen
+    (Format von Music Architect V7 und der Demo-Daten).
+  - *Prüfsumme passt nicht* — Datei wurde umbenannt oder die Markierung verändert.
+  - *Tag ohne Hash* — Copyright-Vermerk vorhanden, Prüfsumme fehlt.
+  - *Seed gespeichert* — Kunden-Beat aus dem Web-Generator; statt eines
+    Wasserzeichens ist der Seed hinterlegt (exklusiv, nicht erneut generierbar).
+  - *kein WM* — keine markierte MIDI-Datei zu diesem Eintrag.
 - **Read-only-Kopplung**: das Modul verändert weder Music Architect noch die DAW.
 
 ### Lizenzstufen
@@ -309,7 +318,12 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 - Flask-Login mit server-seitigen Sessions (kein Cookie-Limit).
 - Rollen: **Admin** (voller Zugriff) und **User** (Beat-Generierung, Statistik,
   Token-Shop, Tarifwahl).
-- Ein Admin-Account wird beim ersten Start automatisch angelegt (`db/database.py`).
+- Ein Admin-Account (`admin@admin.com`) wird beim ersten Start automatisch angelegt.
+  Das Passwort kommt aus der Umgebungsvariable `SBS_ADMIN_PASSWORD`; fehlt sie, wird
+  eines erzeugt und **einmalig in der Konsole angezeigt**. Bestehende Datenbanken
+  behalten ihr bisheriges Admin-Passwort.
+- Der Schlüssel zum Signieren der Sitzungen kommt aus `SBS_SECRET_KEY`; fehlt sie,
+  wird er einmalig erzeugt und in `instance/secret_key` abgelegt (nicht in Git).
 - Neue Nutzer registrieren sich selbst und wählen danach ihren Tarif (`/plan`).
 
 ---
@@ -405,3 +419,17 @@ Danach **Scannen** — alle vorhandenen Tracks werden in den Katalog übernommen
   dafür ist die Original-Engine zuständig (`python main.py watermark --extract`).
 - **Plattformkompatibilität**: alle Pfad-Operationen via `pathlib`, kein
   OS-spezifischer Code.
+
+## Bekannte Einschränkungen
+
+- **Vorschau in voller Qualität**: Zum Vorhören liefert der Generator die fertige
+  WAV-Datei an den Browser. Ein angemeldeter Nutzer kann sie dort abgreifen, ohne
+  zu exportieren — also ohne Kontingent oder Token zu verbrauchen. Abhilfe wäre
+  eine Vorschau in reduzierter Qualität; das ist bewusst nicht umgesetzt.
+- **Kein Wasserzeichen in Kunden-Exporten**: Exportierte Audio- und MIDI-Dateien
+  werden nicht markiert. Nachvollziehbar ist nur über den Katalog, welcher Nutzer
+  welchen Seed bezogen hat.
+- **Seed-Sperre prüft nur den Seed**: Ein exklusiv vergebener Seed ist für alle
+  Genres und Einstellungen gesperrt, auch für den Käufer selbst.
+- **Zahlungen sind simuliert**: Abo, Tokens und Lizenzen werden per Knopfdruck
+  „bezahlt"; ein Zahlungsdienstleister ist nicht angebunden.

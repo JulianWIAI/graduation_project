@@ -45,8 +45,10 @@
         <td><a class="tracklink" href="{{ url_for('track_detail', track_id=t.id) }}">{{ t.title }}</a></td>
         <td>{{ t.genre }}</td>
         <td>
-          {% if t.watermark_hash %}
+          {% if t.id in verified %}
             <span class="badge badge-available">{{ _('✓ verifiziert') }}</span>
+          {% elif t.watermark_hash %}
+            <span class="badge badge-exclusive_sold">{{ _('Prüfsumme passt nicht') }}</span>
           {% elif t.watermark_tag and t.watermark_tag.startswith('seed:') %}
             {# Kunden-Beat aus dem Web-Generator: kein MIDI-Wasserzeichen, aber Seed hinterlegt #}
             <span class="badge badge-leased">{{ _('Seed gespeichert') }}</span>

@@ -79,7 +79,7 @@ def price_for(user_id):
     """
     user = quota.get_user(user_id)
     prices = get_prices()
-    if quota.has_subscription(user):
+    if quota.is_active_subscriber(user):
         # min() als Sicherheitsnetz, falls die DB manuell falsch befuellt wurde.
         unit = min(prices["subscriber"], prices["basic"])
         return {"group": "subscriber", "unit_price": unit,

@@ -8,6 +8,7 @@ nachvollziehbar und erklaerbar ist.
 
 import json
 import os
+import secrets
 import sqlite3
 from datetime import datetime
 
@@ -94,7 +95,6 @@ CREATE TABLE IF NOT EXISTS quota_ledger (
     user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date           TEXT    NOT NULL,
     daily_saves    INTEGER NOT NULL DEFAULT 0,
-    monthly_saves  INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, date)
 );
 
@@ -204,20 +204,9 @@ def init_db():
     # Auth-Spalten fuer Web-Login — nullable, damit Demo-Nutzer unveraendert bleiben.
     if "password_hash" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
-    if "tier" not in user_cols:
-        conn.execute("ALTER TABLE users ADD COLUMN tier TEXT NOT NULL DEFAULT 'free'")
-    if "stripe_customer_id" not in user_cols:
-        conn.execute("ALTER TABLE users ADD COLUMN stripe_customer_id TEXT")
     # is_admin: 1 = Zugang zu allen Admin-Routen, 0 = nur /generate und /stats.
     if "is_admin" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
-
-    sub_cols = {row["name"] for row in
-                conn.execute("PRAGMA table_info(subscriptions)").fetchall()}
-    if "stripe_sub_id" not in sub_cols:
-        conn.execute("ALTER TABLE subscriptions ADD COLUMN stripe_sub_id TEXT")
-    if "period_end" not in sub_cols:
-        conn.execute("ALTER TABLE subscriptions ADD COLUMN period_end TEXT")
 
     track_cols = {row["name"] for row in
                   conn.execute("PRAGMA table_info(tracks)").fetchall()}
@@ -233,15 +222,22 @@ def init_db():
         conn.execute("INSERT INTO users (name, email, is_subscriber, created_at) "
                      "VALUES (?, ?, 0, ?)", ("Basis-Kunde (Demo)", "basis@example.com", now))
 
-    # --- Fest eingetragener Admin-Account (wird immer sichergestellt) --------
+    # --- Admin-Account (wird beim ersten Start angelegt) ---------------------
+    # Das Passwort steht bewusst NICHT im Quelltext: Es kommt aus der Umgebungs-
+    # variable SBS_ADMIN_PASSWORD. Fehlt sie, wird eines erzeugt und einmalig in
+    # der Konsole angezeigt.
     admin = conn.execute("SELECT id FROM users WHERE email = 'admin@admin.com'").fetchone()
     if not admin:
+        password = os.environ.get("SBS_ADMIN_PASSWORD") or secrets.token_urlsafe(9)
         now = datetime.now().isoformat(timespec="seconds")
         conn.execute(
             "INSERT INTO users (name, email, password_hash, is_subscriber, is_admin, created_at) "
             "VALUES (?, ?, ?, 0, 1, ?)",
-            ("Admin", "admin@admin.com", generate_password_hash("admin123"), now),
+            ("Admin", "admin@admin.com", generate_password_hash(password), now),
         )
+        if not os.environ.get("SBS_ADMIN_PASSWORD"):
+            print(f"\n*** Admin-Konto angelegt: admin@admin.com  Passwort: {password}\n"
+                  "*** Bitte notieren -- es wird nicht noch einmal angezeigt.\n", flush=True)
 
     conn.commit()
     conn.close()
@@ -312,14 +308,14 @@ def get_user_by_email(email: str):
     return row
 
 
-def create_user(email: str, password_hash: str, tier: str = "free"):
+def create_user(email: str, password_hash: str):
     """Legt einen neuen Web-Auth-Nutzer an; gibt die neue Nutzer-ID zurueck."""
     conn = get_conn()
     now = datetime.now().isoformat(timespec="seconds")
     cur = conn.execute(
-        "INSERT INTO users (name, email, password_hash, tier, is_subscriber, created_at) "
-        "VALUES (?, ?, ?, ?, 0, ?)",
-        (email.split("@")[0], email, password_hash, tier, now),
+        "INSERT INTO users (name, email, password_hash, is_subscriber, created_at) "
+        "VALUES (?, ?, ?, 0, ?)",
+        (email.split("@")[0], email, password_hash, now),
     )
     uid = cur.lastrowid
     conn.commit()
@@ -330,32 +326,12 @@ def create_user(email: str, password_hash: str, tier: str = "free"):
 # --- Quota helpers -----------------------------------------------------------
 
 def increment_quota(user_id: int, date: str):
-    """Upsert quota_ledger fuer heute, erhoehe daily und monthly saves um 1."""
-    # monthly_saves zaehlt Saves im gleichen YYYY-MM-Monatspraefix.
-    month_prefix = date[:7]  # z.B. "2026-08"
+    """Zaehlt einen bezogenen Sound fuer (user_id, date) -- eine Zeile je Nutzer und Tag."""
     conn = get_conn()
-    # Sicherstellen, dass die Zeile fuer heute existiert.
     conn.execute(
-        "INSERT OR IGNORE INTO quota_ledger (user_id, date, daily_saves, monthly_saves) "
-        "VALUES (?, ?, 0, 0)",
+        "INSERT INTO quota_ledger (user_id, date, daily_saves) VALUES (?, ?, 1) "
+        "ON CONFLICT(user_id, date) DO UPDATE SET daily_saves = daily_saves + 1",
         (user_id, date),
-    )
-    conn.execute(
-        "UPDATE quota_ledger SET daily_saves = daily_saves + 1 "
-        "WHERE user_id = ? AND date = ?",
-        (user_id, date),
-    )
-    # Monatssumme ueber alle Tage im selben Monat berechnen.
-    monthly = conn.execute(
-        "SELECT COALESCE(SUM(daily_saves), 0) AS s FROM quota_ledger "
-        "WHERE user_id = ? AND substr(date, 1, 7) = ?",
-        (user_id, month_prefix),
-    ).fetchone()["s"]
-    # Monatssumme in alle Zeilen dieses Monats zurueckschreiben.
-    conn.execute(
-        "UPDATE quota_ledger SET monthly_saves = ? "
-        "WHERE user_id = ? AND substr(date, 1, 7) = ?",
-        (monthly, user_id, month_prefix),
     )
     conn.commit()
     conn.close()

@@ -11,7 +11,9 @@ Start:  python main.py     ->  http://127.0.0.1:5000
 
 import csv
 import io
+import os
 import pathlib
+import secrets
 from datetime import timedelta
 
 from flask import (Flask, abort, flash, redirect, render_template, request,
@@ -31,6 +33,7 @@ from commerce import quota
 from commerce import tokens
 from commerce.token_shop import tokens_bp
 from catalog import scanner
+from catalog import watermark_reader
 from db.demo_data import generate as generate_demo
 from auth.auth import auth_bp, User
 from beatgen.generate import generate_bp
@@ -38,8 +41,26 @@ from auth.rbac import require_admin
 from catalog.sample_upload import sample_upload_bp
 from catalog.stats import stats_bp
 
+
+
+def _secret_key():
+    """
+    Schluessel zum Signieren der Sitzungs-Cookies. Er steht bewusst NICHT im
+    Quelltext: Er kommt aus der Umgebungsvariable SBS_SECRET_KEY; fehlt sie, wird
+    einmalig einer erzeugt und in instance/secret_key abgelegt (nicht in Git).
+    """
+    if os.environ.get("SBS_SECRET_KEY"):
+        return os.environ["SBS_SECRET_KEY"]
+    path = pathlib.Path(config.DB_PATH).parent / "secret_key"
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(secrets.token_hex(32))
+        path.chmod(0o600)
+    return path.read_text().strip()
+
+
 app = Flask(__name__)
-app.secret_key = "change-me-in-production"
+app.secret_key = _secret_key()
 
 # --- Serverseitige Session-Konfiguration ------------------------------------
 # Cookie-basierte Sessions sind auf ~4 KB begrenzt — zu klein fuer Audio-Pfade.
@@ -123,7 +144,10 @@ def catalog():
     genres = [r["genre"] for r in conn.execute(
         "SELECT DISTINCT genre FROM tracks ORDER BY genre").fetchall()]
     conn.close()
-    return render_template("catalog.html", tracks=tracks, genres=genres,
+    # Wasserzeichen wirklich pruefen: Pruefsumme muss zum Dateinamen passen.
+    verified = {t["id"] for t in tracks
+                if watermark_reader.hash_matches(t["source_midi"], t["watermark_hash"])}
+    return render_template("catalog.html", tracks=tracks, genres=genres, verified=verified,
                            sel_genre=genre, sel_status=status)
 
 
@@ -377,7 +401,7 @@ def plan():
               "sub": db.get_setting("limit_subscriber"),
               "discount": db.get_setting("discount_pct")}
     return render_template("plan.html", user=user, terms=terms, limits=limits,
-                           active=quota.has_subscription(user),
+                           active=quota.is_active_subscriber(user),
                            notice=quota.subscription_notice(user),
                            status=quota.quota_status(user),
                            token_prices=tokens.get_prices())
@@ -436,19 +460,6 @@ def users_add():
         quota.add_user(name, email, is_sub)
         flash(_("Nutzer '%(name)s' angelegt (Abo).", name=name) if is_sub
               else _("Nutzer '%(name)s' angelegt.", name=name), "success")
-    return redirect(url_for("users_view"))
-
-
-@app.route("/users/<int:user_id>/toggle", methods=["POST"])
-@login_required
-@require_admin
-def users_toggle(user_id):
-    user = quota.get_user(user_id)
-    if user:
-        new_state = not bool(user["is_subscriber"])
-        quota.set_subscriber(user_id, new_state)
-        flash(_("'%(name)s' ist jetzt Abonnent.", name=user["name"]) if new_state
-              else _("'%(name)s' ist jetzt Basis-Nutzer.", name=user["name"]), "success")
     return redirect(url_for("users_view"))
 
 

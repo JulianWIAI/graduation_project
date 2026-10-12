@@ -51,7 +51,7 @@ def _compute_stats(user_id: int) -> dict:
     ).fetchone()
     saves_week = row["s"]
 
-    # Monatssumme: monthly_saves des heutigen Eintrags spiegelt den Monatsstand.
+    # Monatssumme: alle Zeilen ab dem Monatsersten summieren.
     row = conn.execute(
         "SELECT COALESCE(SUM(daily_saves), 0) AS s FROM quota_ledger "
         "WHERE user_id = ? AND date >= ?",

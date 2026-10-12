@@ -26,7 +26,7 @@ class User(UserMixin):
         self.email         = row["email"]
         self.password_hash = row["password_hash"]
         # Effektiver Tarif: 'pro' bei aktivem (nicht abgelaufenem) Abo, sonst 'free'.
-        self.tier          = "pro" if quota.has_subscription(row) else "free"
+        self.tier          = "pro" if quota.is_active_subscriber(row) else "free"
         # is_admin: 1 = voller Admin-Zugang, 0 = nur /generate und /stats.
         self.is_admin      = bool(row["is_admin"]) if "is_admin" in row.keys() else False
 
@@ -62,7 +62,7 @@ def register():
             return render_template("register.html")
 
         hashed = generate_password_hash(password)
-        uid = db.create_user(email, hashed, tier="free")
+        uid = db.create_user(email, hashed)
         db.log_event("USER_REGISTERED", "user", uid, {"email": email})
 
         row = db.get_user_by_email(email)
