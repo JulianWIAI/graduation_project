@@ -13,6 +13,7 @@ dessen 1 gekaufter Token abgebucht (siehe _gate_quota / commerce/tokens.py).
 import io as _io
 import json
 import pathlib
+import secrets
 import shutil
 import sys
 import tempfile
@@ -146,27 +147,24 @@ def _gate_quota(reference: str):
 
 
 def _read_seed_from_session(audio_uuid: str) -> int | None:
-    """Liest den Kompositions-Seed aus der gespeicherten composition.json.
+    """Liefert den Seed, mit dem der Beat erzeugt wurde (oder None).
 
-    Gibt den Seed-Wert (int) zurueck oder None, falls nicht verfuegbar.
-    Wird beim ersten Export aufgerufen, um den Seed dauerhaft im Katalog zu sichern.
+    Der Seed wird bei /generate in der Session abgelegt. Re-Render und
+    Vocal-Version verweisen ueber origin_uuid auf den Ursprungs-Beat.
     """
-    tmp_dir_str = session.get(f"temp_dir_{audio_uuid}")
-    if not tmp_dir_str:
-        return None
-    comp_path = pathlib.Path(tmp_dir_str) / "composition.json"
-    if not comp_path.exists():
-        return None
-    try:
-        comp_data = json.loads(comp_path.read_text(encoding="utf-8"))
-        # Seed liegt unter composition.config.seed_value (MA-V7-Struktur).
-        seed_val = (comp_data
-                    .get("composition", {})
-                    .get("config", {})
-                    .get("seed_value"))
-        return int(seed_val) if seed_val is not None else None
-    except Exception:
-        return None
+    origin_uuid = session.get(f"origin_uuid_{audio_uuid}", audio_uuid)
+    return session.get(f"temp_seed_{origin_uuid}")
+
+
+def _seed_locked(seed: int) -> bool:
+    """True, wenn ein Beat mit diesem Seed bereits exklusiv vergeben ist."""
+    conn = db.get_conn()
+    row = conn.execute(
+        "SELECT 1 FROM tracks WHERE watermark_tag = ? AND status = 'exclusive_sold' LIMIT 1",
+        (f"seed:{seed}",),
+    ).fetchone()
+    conn.close()
+    return row is not None
 
 
 def _persist_track(audio_uuid: str, user_id: int) -> int | None:
@@ -368,26 +366,29 @@ def generate_track():
     # Ob ein stummes Beat-Rendering ohne Lead-/Pad-/Arp-Stimmen gewuenscht ist.
     vocal_mask = gen_mode in ("vocal_ready", "both")
 
-    # --- Seed-Sperre: exklusiv verkaufte Seeds koennen nicht erneut generiert werden ---
-    # Nur pruefen wenn der Nutzer einen expliziten Seed eingegeben hat (kein Zufalls-Seed).
+    # --- Seed festlegen -------------------------------------------------------
+    # Jeder Beat bekommt einen Seed. Ohne Eingabe wird einer gewuerfelt, denn der
+    # Motor merkt sich selbst keinen -- nur mit Seed ist der Beat reproduzierbar
+    # und im Katalog rueckverfolgbar.
+    # Seed-Sperre: exklusiv vergebene Seeds koennen nicht erneut generiert werden.
     if seed:
         try:
             seed_int = int(seed)
-            _conn = db.get_conn()
-            _row  = _conn.execute(
-                "SELECT id FROM tracks "
-                "WHERE watermark_tag = ? AND status = 'exclusive_sold' LIMIT 1",
-                (f"seed:{seed_int}",),
-            ).fetchone()
-            _conn.close()
-            if _row:
-                return jsonify({
-                    "error":   "seed_locked",
-                    "message": _("Seed %(seed)s wurde bereits exklusiv verkauft "
-                                 "und kann nicht erneut generiert werden.", seed=seed_int),
-                }), 409
         except ValueError:
-            pass  # Kein gueltiger Integer-Seed — wird spaeter in CompositionConfig behandelt.
+            return jsonify({"error": "invalid_seed",
+                            "message": _("Der Seed muss eine ganze Zahl sein.")}), 400
+        if _seed_locked(seed_int):
+            return jsonify({
+                "error":   "seed_locked",
+                "message": _("Seed %(seed)s wurde bereits exklusiv verkauft "
+                             "und kann nicht erneut generiert werden.", seed=seed_int),
+            }), 409
+    else:
+        # secrets statt random: Der Motor setzt random.seed() bei jeder Komposition,
+        # die Wuerfe waeren sonst ab dem zweiten Beat vorhersagbar.
+        seed_int = secrets.randbelow(999_999) + 1
+        while _seed_locked(seed_int):
+            seed_int = secrets.randbelow(999_999) + 1
 
     try:
         _ensure_ma_path()
@@ -399,7 +400,7 @@ def generate_track():
             genre             = genre,
             bpm               = bpm,
             complexity        = comp,
-            seed_value        = int(seed) if seed else None,
+            seed_value        = seed_int,
             key               = key,
             duration_bars     = int(duration) if duration else 0,
             mutation          = float(mutation),
@@ -566,6 +567,7 @@ def generate_track():
     session[f"temp_{audio_uuid}"]        = str(wav_path)
     session[f"temp_genre_{audio_uuid}"]  = genre
     session[f"temp_dir_{audio_uuid}"]    = str(tmp_dir)
+    session[f"temp_seed_{audio_uuid}"]   = seed_int
     # Urspruengliche (unbearbeitete) Komposition fuer Groove-Stacking-Schutz speichern.
     # In /rerender wird immer diese Version als Ausgangspunkt geladen — niemals ueberschrieben.
     session[f"original_composition_{audio_uuid}"] = json.dumps(_comp_dict, ensure_ascii=False)
@@ -651,6 +653,7 @@ def generate_track():
         "vocal_url":       f"/temp_audio/{vocal_uuid}" if vocal_uuid else None,
         "duration":        audio_duration,
         "uuid":            audio_uuid,
+        "seed":            seed_int,
         "vocal_uuid":      vocal_uuid,
         "piano_roll":      roll_data,
         "prompt_decoded":  decoded_prompt,

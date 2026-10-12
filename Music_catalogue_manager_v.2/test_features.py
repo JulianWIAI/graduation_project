@@ -183,6 +183,34 @@ def test_token_is_consumed_when_quota_is_exhausted():
             os.rmdir(os.path.dirname(path))
 
 
+def test_exported_beat_keeps_its_seed_and_locks_it():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    tmp = os.path.join(tempfile.mkdtemp(), "beat.wav")
+    with wave.open(tmp, "wb") as w:
+        w.setnchannels(1), w.setsampwidth(2), w.setframerate(8000), w.writeframes(b"\0\0")
+    with client.session_transaction() as sess:           # Zustand wie nach /generate
+        sess["temp_beat1"] = tmp
+        sess["temp_seed_beat1"] = 424242
+
+    assert client.get("/export_audio/beat1?format=wav_cd").status_code == 200
+    conn = db.get_conn()
+    row = conn.execute("SELECT t.watermark_tag, e.file_path FROM tracks t "
+                       "JOIN exports e ON e.track_id = t.id WHERE t.user_id = ?", (uid,)).fetchone()
+    conn.close()
+    assert row["watermark_tag"] == "seed:424242"
+
+    # Der exklusiv vergebene Seed laesst sich nicht noch einmal generieren.
+    resp = client.post("/generate", json={"genre": "trap", "seed": "424242"})
+    assert resp.status_code == 409 and resp.get_json()["error"] == "seed_locked"
+    assert client.post("/generate", json={"seed": "abc"}).status_code == 400
+
+    path = os.path.join(config.BASE_DIR, row["file_path"])
+    os.remove(path)
+    if not os.listdir(os.path.dirname(path)):
+        os.rmdir(os.path.dirname(path))
+
+
 def test_language_switch():
     client = main.app.test_client()
     assert "Anmelden" in client.get("/login").get_data(as_text=True)          # Standard: Deutsch

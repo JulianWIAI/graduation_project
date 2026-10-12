@@ -47,6 +47,9 @@
         <td>
           {% if t.watermark_hash %}
             <span class="badge badge-available">{{ _('✓ verifiziert') }}</span>
+          {% elif t.watermark_tag and t.watermark_tag.startswith('seed:') %}
+            {# Kunden-Beat aus dem Web-Generator: kein MIDI-Wasserzeichen, aber Seed hinterlegt #}
+            <span class="badge badge-leased">{{ _('Seed gespeichert') }}</span>
           {% elif t.watermark_tag %}
             <span class="badge badge-leased">{{ _('Tag ohne Hash') }}</span>
           {% else %}

@@ -272,6 +272,7 @@ _T = {
     "Wasserzeichen": ("Watermark", "Filigrane"),
     "✓ verifiziert": ("✓ verified", "✓ vérifié"),
     "Tag ohne Hash": ("Tag without hash", "Tag sans hash"),
+    "Seed gespeichert": ("Seed stored", "Seed enregistré"),
     "kein WM": ("no WM", "pas de filigrane"),
     "Details →": ("Details →", "Détails →"),
     "Keine Tracks gefunden. Erzeuge Demo-Daten oder scanne eure Ausgabeordner.": (
@@ -542,6 +543,8 @@ _T = {
     "Seed %(seed)s wurde bereits exklusiv verkauft und kann nicht erneut generiert werden.": (
         "Seed %(seed)s has already been sold exclusively and cannot be generated again.",
         "Le seed %(seed)s a déjà été vendu en exclusivité et ne peut pas être généré à nouveau."),
+    "Der Seed muss eine ganze Zahl sein.": (
+        "The seed must be a whole number.", "Le seed doit être un nombre entier."),
     "Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. Bitte Server-Log pruefen.": (
         "Rendering failed: WAV file is missing or empty. Please check the server log.",
         "Échec du rendu : le fichier WAV est absent ou vide. Veuillez consulter le journal du serveur."),

@@ -1876,6 +1876,7 @@ function buildAdvisor(data) {
     [t('Tonart'),       meta.key     || '—'],
     ['BPM',          meta.bpm    != null ? meta.bpm.toFixed(1)+' BPM' : '—'],
     [t('Takte'),        meta.total_bars || '—'],
+    ['Seed',         data.seed ?? '—'],
     [t('PLR-Ziel'),     adv.plr_target || '—'],
     [t('LRA-Ziel'),     adv.lra_target || '—'],
     [t('Tonleitern'),   (adv.valid_scales||[]).join(', ') || '—'],
