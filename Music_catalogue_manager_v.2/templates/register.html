@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registrieren — SBS Catalog</title>
+  <title>{{ _('Registrieren — SBS Catalog') }}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -50,15 +50,20 @@
     .link-row { text-align: center; margin-top: 1.2rem; font-size: .85rem; color: #888; }
     .link-row a { color: #7c6dea; text-decoration: none; }
     .link-row a:hover { text-decoration: underline; }
+    .lang-switch { text-align: center; margin-bottom: 1.2rem; }
+    .lang-link { font-size: .75rem; padding: .15rem .45rem; border-radius: 6px;
+                 color: #888; text-decoration: none; }
+    .lang-link.active { color: #7c6dea; background: rgba(124,109,234,0.12); }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="lang-switch">{% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" title="{{ languages[code] }}" class="lang-link{{ ' active' if code == lang }}">{{ code|upper }}</a>{% endfor %}</div>
     <div class="brand">
       <span class="brand-mark">◈</span>
       <span class="brand-name">SBS CATALOG</span>
     </div>
-    <h1>Konto erstellen</h1>
+    <h1>{{ _('Konto erstellen') }}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
@@ -67,22 +72,22 @@
     {% endwith %}
 
     <form method="post" action="{{ url_for('auth.register') }}">
-      <label for="email">E-Mail</label>
+      <label for="email">{{ _('E-Mail') }}</label>
       <input type="email" id="email" name="email" required autocomplete="email">
 
-      <label for="password">Passwort</label>
+      <label for="password">{{ _('Passwort') }}</label>
       <input type="password" id="password" name="password" required
              autocomplete="new-password">
 
-      <label for="confirm">Passwort bestaetigen</label>
+      <label for="confirm">{{ _('Passwort bestätigen') }}</label>
       <input type="password" id="confirm" name="confirm" required
              autocomplete="new-password">
 
-      <button type="submit" class="btn">Registrieren</button>
+      <button type="submit" class="btn">{{ _('Registrieren') }}</button>
     </form>
 
     <p class="link-row">
-      Bereits ein Konto? <a href="{{ url_for('auth.login') }}">Anmelden</a>
+      {{ _('Bereits ein Konto?') }} <a href="{{ url_for('auth.login') }}">{{ _('Anmelden') }}</a>
     </p>
   </div>
 </body>

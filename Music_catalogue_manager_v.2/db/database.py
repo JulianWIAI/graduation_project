@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     paid_at      TEXT
 );
 
--- Nutzungsprotokoll der Track-Generierung -> Grundlage fuer das Tageslimit.
+-- Nutzungsprotokoll der Gateway-Generierung -> zaehlt ins Monatslimit (commerce/quota.py).
 CREATE TABLE IF NOT EXISTS generations (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS generations (
 );
 
 -- Quota ledger: one row per user per calendar day, tracks saves (not generations).
+-- Die Summe der daily_saves eines Kalendermonats zaehlt ins Monatslimit.
 CREATE TABLE IF NOT EXISTS quota_ledger (
     user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date           TEXT    NOT NULL,
@@ -327,17 +328,6 @@ def create_user(email: str, password_hash: str, tier: str = "free"):
 
 
 # --- Quota helpers -----------------------------------------------------------
-
-def get_quota(user_id: int, date: str):
-    """Gibt die quota_ledger-Zeile fuer (user_id, date) zurueck, oder None."""
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM quota_ledger WHERE user_id = ? AND date = ?",
-        (user_id, date),
-    ).fetchone()
-    conn.close()
-    return row
-
 
 def increment_quota(user_id: int, date: str):
     """Upsert quota_ledger fuer heute, erhoehe daily und monthly saves um 1."""

@@ -75,10 +75,11 @@ EXPORT_SUFFIX_MAP = {
 # ---------------------------------------------------------------------------
 # Abo-/Freemium-Modell (Subscription)
 # ---------------------------------------------------------------------------
-# Tageslimit fuer die Track-Generierung: einfache Nutzer vs. Abonnenten.
+# Monatslimit fuer die Sound-Generierung: Basis-Nutzer vs. Abonnenten.
+# Basis: je Kalendermonat. Abo: je Abo-Monat ab Abschlussdatum (commerce/quota.py).
 DEFAULT_SUBSCRIPTION = {
-    "limit_free":       "3",     # Tracks/Tag ohne Abo
-    "limit_subscriber": "10",    # Tracks/Tag mit Abo
+    "limit_free":       "3",     # Sounds/Monat ohne Abo
+    "limit_subscriber": "10",    # Sounds/Monat mit Abo
     "discount_pct":     "5",     # Rabatt in % fuer Abonnenten beim Lizenzkauf
 }
 
@@ -102,11 +103,16 @@ DEFAULT_BILLING = {
 # Waehlbare Abo-Laufzeiten (Monate) fuer den Checkout.
 SUBSCRIPTION_TERMS = [1, 3, 12]
 
+# Abo-Hinweis nach dem Login: so viele Tage VOR dem Ablauf wird ans Verlaengern
+# erinnert, und so viele Tage NACH dem Ablauf ans Erneuern.
+SUB_REMINDER_DAYS_BEFORE = 7
+SUB_REMINDER_DAYS_AFTER = 30
+
 
 # ---------------------------------------------------------------------------
 # Token-Nachkauf (Generierung ueber das Kontingent hinaus)
 # ---------------------------------------------------------------------------
-# Ist das Tages-/Monatskontingent aufgebraucht, verbraucht jede weitere
+# Ist das Monatskontingent aufgebraucht, verbraucht jede weitere
 # Generierung (bzw. jeder weitere Speichervorgang) genau 1 Token.
 # Abonnenten zahlen pro Token weniger als Basis-Nutzer. Die Preise sind
 # Nettopreise in EUR und in den Einstellungen editierbar; dort wird auch

@@ -1,7 +1,7 @@
 """
 Token-Nachkauf: Generierung ueber das Kontingent hinaus.
 
-Ist das Tages- bzw. Monatskontingent eines Nutzers aufgebraucht, kann er
+Ist das Monatskontingent eines Nutzers aufgebraucht, kann er
 Tokens kaufen. Jede weitere Generierung/Speicherung verbraucht dann 1 Token.
 
 Datenmodell (siehe db/database.py):
@@ -23,6 +23,7 @@ from datetime import datetime
 import config
 from db import database as db
 from commerce import quota
+from i18n import _
 
 
 class TokenError(Exception):
@@ -61,12 +62,13 @@ def validate_prices(basic, subscriber):
         basic = float(basic)
         subscriber = float(subscriber)
     except (TypeError, ValueError):
-        return "Token-Preise muessen Zahlen sein."
+        return _("Token-Preise muessen Zahlen sein.")
     if basic <= 0 or subscriber <= 0:
-        return "Token-Preise muessen groesser als 0 sein."
+        return _("Token-Preise muessen groesser als 0 sein.")
     if subscriber >= basic:
-        return ("Der Token-Preis fuer Abonnenten muss unter dem Basis-Preis liegen "
-                f"(aktuell {fmt_eur(subscriber)} ≥ {fmt_eur(basic)}).")
+        return _("Der Token-Preis fuer Abonnenten muss unter dem Basis-Preis liegen "
+                 "(aktuell %(sub)s ≥ %(basic)s).",
+                 sub=fmt_eur(subscriber), basic=fmt_eur(basic))
     return None
 
 
@@ -159,9 +161,9 @@ def admin_adjust(user_id, amount, admin_id=None):
     """Manuelle Gut-/Lastschrift durch einen Admin (z.B. Kulanz)."""
     amount = int(amount)
     if amount == 0:
-        raise TokenError("Betrag darf nicht 0 sein.")
+        raise TokenError(_("Betrag darf nicht 0 sein."))
     if amount < 0 and balance(user_id) + amount < 0:
-        raise TokenError("Das Guthaben darf nicht negativ werden.")
+        raise TokenError(_("Das Guthaben darf nicht negativ werden."))
     conn = db.get_conn()
     conn.execute(
         "INSERT INTO token_ledger (user_id, delta, reason, reference, created_at) "
@@ -184,11 +186,11 @@ def create_purchase(user_id, quantity):
     try:
         quantity = int(quantity)
     except (TypeError, ValueError):
-        return None, "Ungueltige Anzahl."
+        return None, _("Ungueltige Anzahl.")
     if not 1 <= quantity <= MAX_QUANTITY:
-        return None, f"Bitte zwischen 1 und {MAX_QUANTITY} Tokens waehlen."
+        return None, _("Bitte zwischen 1 und %(max)s Tokens waehlen.", max=MAX_QUANTITY)
     if not quota.get_user(user_id):
-        return None, "Nutzer nicht gefunden."
+        return None, _("Nutzer nicht gefunden.")
 
     offer = price_for(user_id)
     total = round(offer["unit_price"] * quantity, 2)
@@ -249,11 +251,11 @@ def pay_purchase(purchase_id):
                          (purchase_id,)).fetchone()
         if not p:
             conn.rollback()
-            return False, "Bestellung nicht gefunden."
+            return False, _("Bestellung nicht gefunden.")
         if p["status"] != "open":
             conn.rollback()
-            return False, ("Diese Bestellung ist bereits bezahlt."
-                           if p["status"] == "paid" else "Diese Bestellung wurde storniert.")
+            return False, (_("Diese Bestellung ist bereits bezahlt.")
+                           if p["status"] == "paid" else _("Diese Bestellung wurde storniert."))
         now = _now()
         conn.execute(
             "UPDATE token_purchases SET status = 'paid', paid_at = ? "
@@ -286,6 +288,6 @@ def cancel_purchase(purchase_id):
     conn.commit()
     conn.close()
     if cur.rowcount != 1:
-        return False, "Nur offene Bestellungen koennen storniert werden."
+        return False, _("Nur offene Bestellungen koennen storniert werden.")
     db.log_event("TOKENS_CANCELLED", "token_purchase", purchase_id, None)
     return True, None

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Beat generieren — SBS CATALOG{% endblock %}
+{% block title %}{{ _('Beat generieren — SBS CATALOG') }}{% endblock %}
 
 {% block content %}
 <div class="gen-layout">
@@ -9,15 +9,11 @@
 
     <!-- Kontingent-Anzeige -->
     <div class="quota-bar">
-      <span class="quota-label">Kontingent</span>
+      <span class="quota-label">{{ _('Kontingent') }}</span>
       <span class="quota-counts">
-        <span id="quotaDaily">{{ daily_remaining }}</span> heute
-        {% if monthly_remaining is not none %}
-          · <span id="quotaMonthly">{{ monthly_remaining }}</span> diesen Monat
-        {% endif %}
-        · <span id="quotaTokens">{{ token_balance }}</span> Tokens
+        <span id="quotaMonthly">{{ monthly_remaining }}</span>/{{ monthly_limit }} {{ _('diesen Monat frei ·') }} <span id="quotaTokens">{{ token_balance }}</span> {{ _('Tokens') }}
         <a href="{{ url_for('tokens.shop') }}" class="quota-buy"
-           data-tooltip="Kontingent aufgebraucht? Mit Tokens kannst du weitere Beats speichern und exportieren.">+ kaufen</a>
+           data-tooltip="{{ _('Kontingent aufgebraucht? Mit Tokens kannst du weitere Beats speichern und exportieren.') }}">{{ _('+ kaufen') }}</a>
       </span>
       <span class="tier-badge tier-{{ tier }}">{{ tier|upper }}</span>
     </div>
@@ -27,48 +23,48 @@
 
     <!-- 0 · PROMPT -->
     <details class="param-section" open>
-      <summary>Prompt-Eingabe</summary>
+      <summary>{{ _('Prompt-Eingabe') }}</summary>
       <div class="section-body">
-        <textarea id="promptText" rows="2" placeholder="z. B. &quot;Bright POP Song&quot; oder &quot;fast dark trap beat&quot;" class="gen-textarea"
-                  data-tooltip="Beschreibe deinen Beat auf Englisch oder Deutsch.&#10;Beispiel: &quot;dark trap beat 140 BPM&quot;&#10;Das System erkennt Genre, BPM und Stimmung automatisch."></textarea>
+        <textarea id="promptText" rows="2" placeholder="{{ _('z. B. &quot;Bright POP Song&quot; oder &quot;fast dark trap beat&quot;') }}" class="gen-textarea"
+                  data-tooltip="{{ _('Beschreibe deinen Beat auf Englisch oder Deutsch.&#10;Beispiel: &quot;dark trap beat 140 BPM&quot;&#10;Das System erkennt Genre, BPM und Stimmung automatisch.') }}"></textarea>
         <button type="button" class="btn btn-ghost btn-sm" id="btnDecode"
-                data-tooltip="Analysiert den Prompt und fuellt Genre, BPM und andere Parameter automatisch aus.">&#9675; Erkennen</button>
+                data-tooltip="{{ _('Analysiert den Prompt und fuellt Genre, BPM und andere Parameter automatisch aus.') }}">{{ _('&#9675; Erkennen') }}</button>
         <div id="promptResult" class="prompt-result" hidden></div>
       </div>
     </details>
 
     <!-- 1 · BASIS-PARAMETER -->
     <details class="param-section" open>
-      <summary>Basis-Parameter</summary>
+      <summary>{{ _('Basis-Parameter') }}</summary>
       <div class="section-body">
-        <label class="field-label" data-tooltip="Waehle das musikalische Genre.&#10;Bestimmt Rhythmus-Pattern, Instrumente und Klangcharakter.">Genre
+        <label class="field-label" data-tooltip="{{ _('Waehle das musikalische Genre.&#10;Bestimmt Rhythmus-Pattern, Instrumente und Klangcharakter.') }}">Genre
           <select id="genre" class="gen-select" onchange="onGrooveGenreChange(this.value)">
             {% for g in ["trap","phonk","hiphop","techno","house","edm","pop","cinematic","classical","jpop"] %}
               <option value="{{ g }}">{{ g|capitalize }}</option>
             {% endfor %}
           </select>
         </label>
-        <label class="field-label" data-tooltip="Beats pro Minute — Tempo des Beats.&#10;Leer lassen = automatisch aus dem Genre bestimmt.&#10;Typisch: Trap 130-160, House 120-130, Techno 130-150.">BPM
+        <label class="field-label" data-tooltip="{{ _('Beats pro Minute — Tempo des Beats.&#10;Leer lassen = automatisch aus dem Genre bestimmt.&#10;Typisch: Trap 130-160, House 120-130, Techno 130-150.') }}">BPM
           <input type="number" id="bpm" min="40" max="220" step="1" placeholder="auto" class="gen-input">
         </label>
-        <label class="field-label" data-tooltip="Wie komplex soll der Beat sein?&#10;1 = minimalistisch (wenige Noten, einfache Pattern)&#10;10 = sehr dicht (viele Noten, komplexe Strukturen)&#10;Empfehlung fuer Einsteiger: 4-6">Komplexitaet (1-10)
+        <label class="field-label" data-tooltip="{{ _('Wie komplex soll der Beat sein?&#10;1 = minimalistisch (wenige Noten, einfache Pattern)&#10;10 = sehr dicht (viele Noten, komplexe Strukturen)&#10;Empfehlung fuer Einsteiger: 4-6') }}">{{ _('Komplexitaet (1-10)') }}
           <div class="slider-row">
             <input type="range" id="complexity" min="1" max="10" value="5">
             <span class="slider-val" id="complexityVal">5</span>
           </div>
         </label>
-        <label class="field-label" data-tooltip="Zufallszahl fuer reproduzierbare Ergebnisse.&#10;Gleicher Seed + gleiche Parameter = gleicher Beat.&#10;Leer lassen fuer einen zufaelligen Seed.">Seed (optional)
-          <input type="number" id="seed" placeholder="zufaellig" class="gen-input">
+        <label class="field-label" data-tooltip="{{ _('Zufallszahl fuer reproduzierbare Ergebnisse.&#10;Gleicher Seed + gleiche Parameter = gleicher Beat.&#10;Leer lassen fuer einen zufaelligen Seed.') }}">{{ _('Seed (optional)') }}
+          <input type="number" id="seed" placeholder="{{ _('zufaellig') }}" class="gen-input">
         </label>
       </div>
     </details>
 
     <!-- 2 · TONART & STRUKTUR -->
     <details class="param-section">
-      <summary>Tonart &amp; Struktur</summary>
+      <summary>{{ _('Tonart &amp; Struktur') }}</summary>
       <div class="section-body">
         <div class="two-col">
-          <label class="field-label" data-tooltip="Grundton der Melodie und Akkorde.&#10;C = hell und neutral, A-Moll = melancholisch.&#10;&quot;auto&quot; = vom System bestimmt.">Ton
+          <label class="field-label" data-tooltip="{{ _('Grundton der Melodie und Akkorde.&#10;C = hell und neutral, A-Moll = melancholisch.&#10;&quot;auto&quot; = vom System bestimmt.') }}">{{ _('Ton') }}
             <select id="keyNote" class="gen-select">
               <option value="">auto</option>
               {% for n in ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"] %}
@@ -76,7 +72,7 @@
               {% endfor %}
             </select>
           </label>
-          <label class="field-label" data-tooltip="Tonleiter bestimmt den emotionalen Charakter.&#10;Major = froehlich · Minor = melancholisch&#10;Dorian = jazzig · Phrygian = spanisch/dunkel&#10;Pentatonik = eingaengige Melodien.">Tonleiter
+          <label class="field-label" data-tooltip="{{ _('Tonleiter bestimmt den emotionalen Charakter.&#10;Major = froehlich · Minor = melancholisch&#10;Dorian = jazzig · Phrygian = spanisch/dunkel&#10;Pentatonik = eingaengige Melodien.') }}">{{ _('Tonleiter') }}
             <select id="keyScale" class="gen-select">
               <option value="">auto</option>
               {% for s in ["major","minor","dorian","mixolydian","phrygian","lydian",
@@ -87,7 +83,7 @@
             </select>
           </label>
         </div>
-        <label class="field-label" data-tooltip="Laenge des Beats in Takten (Bars).&#10;0 = automatisch (Genre-abhaengig, meist 8-16 Takte).&#10;1 Takt = 4 Viertelschlaege bei 4/4-Takt.">Dauer (Takte, 0 = auto)
+        <label class="field-label" data-tooltip="{{ _('Laenge des Beats in Takten (Bars).&#10;0 = automatisch (Genre-abhaengig, meist 8-16 Takte).&#10;1 Takt = 4 Viertelschlaege bei 4/4-Takt.') }}">{{ _('Dauer (Takte, 0 = auto)') }}
           <input type="number" id="durationBars" min="0" max="128" value="0" class="gen-input">
         </label>
       </div>
@@ -95,18 +91,18 @@
 
     <!-- 3 · KLANG & AUSDRUCK -->
     <details class="param-section">
-      <summary>Klang &amp; Ausdruck</summary>
+      <summary>{{ _('Klang &amp; Ausdruck') }}</summary>
       <div class="section-body">
-        <label class="field-label" data-tooltip="Macht Noten lebendig durch zufaellige Timing- und Lautstaerkeschwankungen.&#10;0 = Maschinen-perfekt (quantisiert)&#10;0.6 = natuerlich gespielt&#10;1 = stark unpraeziese (Jazz/Live-Feeling)">Humanisierung
+        <label class="field-label" data-tooltip="{{ _('Macht Noten lebendig durch zufaellige Timing- und Lautstaerkeschwankungen.&#10;0 = Maschinen-perfekt (quantisiert)&#10;0.6 = natuerlich gespielt&#10;1 = stark unpraeziese (Jazz/Live-Feeling)') }}">{{ _('Humanisierung') }}
           <div class="slider-row"><input type="range" id="humanize" min="0" max="1" step="0.05" value="0.6"><span class="slider-val" id="humanizeVal">0.60</span></div>
         </label>
-        <label class="field-label" data-tooltip="Zufaellige Abweichungen in der Akkord-Progression und Melodie.&#10;0 = vorhersehbar und strukturiert&#10;0.5 = gelegentliche Variationen&#10;1 = stark variierendes Arrangement">Mutation
+        <label class="field-label" data-tooltip="{{ _('Zufaellige Abweichungen in der Akkord-Progression und Melodie.&#10;0 = vorhersehbar und strukturiert&#10;0.5 = gelegentliche Variationen&#10;1 = stark variierendes Arrangement') }}">Mutation
           <div class="slider-row"><input type="range" id="mutation" min="0" max="1" step="0.05" value="0"><span class="slider-val" id="mutationVal">0.00</span></div>
         </label>
-        <label class="field-label" data-tooltip="Emotionale Spannung durch dissonante Akkorde und Noten.&#10;0 = harmonisch und entspannt&#10;0.7 = dramatisch&#10;1.5 = sehr dissonant / experimentell">Spannung
+        <label class="field-label" data-tooltip="{{ _('Emotionale Spannung durch dissonante Akkorde und Noten.&#10;0 = harmonisch und entspannt&#10;0.7 = dramatisch&#10;1.5 = sehr dissonant / experimentell') }}">{{ _('Spannung') }}
           <div class="slider-row"><input type="range" id="tension" min="0" max="1.5" step="0.05" value="0"><span class="slider-val" id="tensionVal">0.00</span></div>
         </label>
-        <label class="field-label" data-tooltip="Klangfaerbung durch Effektketten.&#10;Bright = klar, knackig, hochfrequent betont&#10;Neutral = ausgewogen, ohne Faerbung&#10;Dark = dumpf, druckig, tieffrequent betont">FX-Kette
+        <label class="field-label" data-tooltip="{{ _('Klangfaerbung durch Effektketten.&#10;Bright = klar, knackig, hochfrequent betont&#10;Neutral = ausgewogen, ohne Faerbung&#10;Dark = dumpf, druckig, tieffrequent betont') }}">{{ _('FX-Kette') }}
           <div class="fx-chips" id="fxVariant" data-value="neutral">
             <button type="button" class="chip" data-v="bright">Bright</button>
             <button type="button" class="chip chip-active" data-v="neutral">Neutral</button>
@@ -118,25 +114,25 @@
 
     <!-- 4 · GENERIERUNGSMODUS -->
     <details class="param-section">
-      <summary>Generierungsmodus</summary>
+      <summary>{{ _('Generierungsmodus') }}</summary>
       <div class="section-body">
         <div class="mode-chips" id="genMode" data-value="full"
-             data-tooltip="Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = ohne Lead/Pad/Arp — Platz fuer Gesang&#10;Beide = zwei separate Dateien werden generiert">
+             data-tooltip="{{ _('Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = ohne Lead/Pad/Arp — Platz fuer Gesang&#10;Beide = zwei separate Dateien werden generiert') }}">
           <button type="button" class="chip chip-active" data-v="full">Full Beat</button>
           <button type="button" class="chip" data-v="vocal_ready">Vocal-Ready</button>
-          <button type="button" class="chip" data-v="both">Beide</button>
+          <button type="button" class="chip" data-v="both">{{ _('Beide') }}</button>
         </div>
-        <p class="hint"><strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = ohne Lead/Pad/Arp · <strong>Beide</strong> = zwei Dateien</p>
+        <p class="hint">{{ _('<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = ohne Lead/Pad/Arp · <strong>Beide</strong> = zwei Dateien') }}</p>
       </div>
     </details>
 
     <!-- 5 · FUSION-MODUS -->
     <details class="param-section">
-      <summary>Fusion-Modus</summary>
+      <summary>{{ _('Fusion-Modus') }}</summary>
       <div class="section-body">
         <div class="fusion-mode-chips" id="fusionMode" data-value="off"
-             data-tooltip="Fusion kombiniert zwei Genres zu einem hybriden Beat.&#10;Aus = normales Genre-Modus&#10;Preset = vordefinierte Genre-Kombination&#10;Custom-Mix = freie Auswahl und Verhaeltnis zweier Genres">
-          <button type="button" class="chip chip-active" data-v="off">Aus</button>
+             data-tooltip="{{ _('Fusion kombiniert zwei Genres zu einem hybriden Beat.&#10;Aus = normales Genre-Modus&#10;Preset = vordefinierte Genre-Kombination&#10;Custom-Mix = freie Auswahl und Verhaeltnis zweier Genres') }}">
+          <button type="button" class="chip chip-active" data-v="off">{{ _('Aus') }}</button>
           <button type="button" class="chip" data-v="preset">Preset</button>
           <button type="button" class="chip" data-v="custom">Custom-Mix</button>
         </div>
@@ -145,7 +141,7 @@
             <select id="fusionPreset" class="gen-select">
               {% for p in _fusion_presets %}
                 <option value="{{ p.key }}" title="{{ p.description }}">{{ p.label }} ({{ p.genres[0] }} + {{ p.genres[1] }})</option>
-              {% else %}<option value="">Keine Presets verfuegbar</option>{% endfor %}
+              {% else %}<option value="">{{ _('Keine Presets verfuegbar') }}</option>{% endfor %}
             </select>
           </label>
           <p id="fusionPresetDesc" class="hint"></p>
@@ -172,7 +168,7 @@
 
     <!-- 6 · INSTRUMENTE & MIXER -->
     <details class="param-section">
-      <summary>Instrumente &amp; Mixer</summary>
+      <summary>{{ _('Instrumente &amp; Mixer') }}</summary>
       <div class="section-body mixer-grid">
         {% set tracks_def = [
           ("drums",      "Drums",     _instruments.drums),
@@ -210,18 +206,18 @@
 
     <!-- Soundfont-Auswahl (immer sichtbar, beeinflusst Render-Geschwindigkeit) -->
     <div class="gen-sf2-bar">
-      <span class="gen-sf2-lbl" data-tooltip="Soundfont (SF2) bestimmt den Grundklang aller Instrumente.&#10;Genre-Standard = automatisch passende Bibliothek.&#10;Wird auf den Advisor-Mixer-SF2 synchronisiert.">SOUNDFONT</span>
+      <span class="gen-sf2-lbl" data-tooltip="{{ _('Soundfont (SF2) bestimmt den Grundklang aller Instrumente.&#10;Genre-Standard = automatisch passende Bibliothek.&#10;Wird auf den Advisor-Mixer-SF2 synchronisiert.') }}">SOUNDFONT</span>
       <select id="genSf2Select" class="gen-select gen-select-sm"
               onchange="G.sf2Key=this.value||null; G.sf2Uuid=null;
                         $('sf2FileName').textContent='';
                         const pa=$('sf2PresetSelect'); if(pa) pa.value=this.value;">
-        <option value="">— Genre-Standard (SF2) —</option>
+        <option value="">{{ _('— Genre-Standard (SF2) —') }}</option>
       </select>
     </div>
 
     <!-- Generieren-Button (ausserhalb des Scroll-Bereichs, immer sichtbar) -->
     <button id="btnGenerate" class="gen-generate-btn"
-            data-tooltip="Startet die Beat-Generierung mit den aktuellen Parametern.&#10;Das dauert ca. 10-30 Sekunden — bitte warten.">&#9654; Beat generieren</button>
+            data-tooltip="{{ _('Startet die Beat-Generierung mit den aktuellen Parametern.&#10;Das dauert ca. 10-30 Sekunden — bitte warten.') }}">{{ _('&#9654; Beat generieren') }}</button>
 
   </aside>
 
@@ -230,15 +226,15 @@
 
     <div id="genSpinner" class="spinner-wrap" style="display:none">
       <div class="spinner"></div>
-      <span>Generierung laeuft&#8230;</span>
+      <span>{{ _('Generierung laeuft&#8230;') }}</span>
     </div>
     <div id="genError" class="gen-error" style="display:none"></div>
 
     <!-- Tab-Leiste -->
     <div class="tab-bar">
-      <button class="tab-btn tab-active" data-tab="preview">Vorschau &amp; Speichern</button>
-      <button class="tab-btn" data-tab="output">Ausgabe</button>
-      <button class="tab-btn" data-tab="waveform">Wellenform</button>
+      <button class="tab-btn tab-active" data-tab="preview">{{ _('Vorschau &amp; Speichern') }}</button>
+      <button class="tab-btn" data-tab="output">{{ _('Ausgabe') }}</button>
+      <button class="tab-btn" data-tab="waveform">{{ _('Wellenform') }}</button>
       <button class="tab-btn" data-tab="pianoroll">Piano Roll</button>
       <button class="tab-btn" data-tab="advisor">Production Advisor</button>
     </div>
@@ -253,7 +249,7 @@
           <div class="wave-player">
             <canvas id="playerWaveCanvas" class="wave-player-canvas"></canvas>
             <div class="wave-player-controls">
-              <button class="wave-player-btn" id="btnPlayerPlay" title="Abspielen / Anhalten" onclick="playerTogglePlay()">&#9654;</button>
+              <button class="wave-player-btn" id="btnPlayerPlay" title="{{ _('Abspielen / Anhalten') }}" onclick="playerTogglePlay()">&#9654;</button>
               <span class="wave-player-time" id="playerTimeDisplay">0:00 / 0:00</span>
             </div>
           </div>
@@ -265,13 +261,13 @@
           <div class="wave-player">
             <canvas id="rerenderWaveCanvas" class="wave-player-canvas"></canvas>
             <div class="wave-player-controls">
-              <button class="wave-player-btn" id="btnRerenderPlay" title="Abspielen / Anhalten" onclick="playerToggleRerender()">&#9654;</button>
+              <button class="wave-player-btn" id="btnRerenderPlay" title="{{ _('Abspielen / Anhalten') }}" onclick="playerToggleRerender()">&#9654;</button>
               <span class="wave-player-time" id="rerenderTimeDisplay">0:00 / 0:00</span>
             </div>
           </div>
           <div class="rerender-player-actions">
-            <button class="btn btn-ghost btn-sm" onclick="openExportModalForRerender()">&#8659; Diesen Re-Render exportieren</button>
-            <button class="btn btn-ghost btn-sm" onclick="useRerenderedAsMain()">&#8617; Als Hauptversion verwenden</button>
+            <button class="btn btn-ghost btn-sm" onclick="openExportModalForRerender()">{{ _('&#8659; Diesen Re-Render exportieren') }}</button>
+            <button class="btn btn-ghost btn-sm" onclick="useRerenderedAsMain()">{{ _('&#8617; Als Hauptversion verwenden') }}</button>
           </div>
         </div>
         <!-- Vocal-Beat-Spieler — nur bei Generierungsmodus 'vocal_ready' oder 'both' sichtbar -->
@@ -281,18 +277,18 @@
           <div class="wave-player">
             <canvas id="playerWaveCanvasVocal" class="wave-player-canvas"></canvas>
             <div class="wave-player-controls">
-              <button class="wave-player-btn" id="btnPlayerPlayVocal" title="Abspielen / Anhalten" onclick="playerTogglePlayVocal()">&#9654;</button>
+              <button class="wave-player-btn" id="btnPlayerPlayVocal" title="{{ _('Abspielen / Anhalten') }}" onclick="playerTogglePlayVocal()">&#9654;</button>
               <span class="wave-player-time" id="playerTimeDisplayVocal">0:00 / 0:00</span>
             </div>
           </div>
         </div>
         <div class="save-form">
-          <button id="btnOpenExport" class="btn btn-primary btn-full">&#8659; Exportieren</button>
+          <button id="btnOpenExport" class="btn btn-primary btn-full">{{ _('&#8659; Exportieren') }}</button>
         </div>
       </div>
       <div id="previewEmpty" class="empty-state">
         <span class="empty-icon">&#9835;</span>
-        <p>Noch kein Beat generiert. Parameter links auswaehlen und auf <strong>Beat generieren</strong> klicken.</p>
+        <p>{{ _('Noch kein Beat generiert. Parameter links auswaehlen und auf <strong>Beat generieren</strong> klicken.') }}</p>
       </div>
     </div>
 
@@ -310,29 +306,29 @@
           <div class="out-meta-row"><span class="out-meta-k">Artist</span><span id="outArtist" class="out-meta-v">Seed Composer AI</span></div>
           <div class="out-meta-row"><span class="out-meta-k">Album</span><span id="outAlbum" class="out-meta-v"></span></div>
           <div class="out-meta-row"><span class="out-meta-k">Genre</span><span id="outGenre" class="out-meta-v"></span></div>
-          <div class="out-meta-row"><span class="out-meta-k">Jahr</span><span id="outYear" class="out-meta-v"></span></div>
-          <div class="out-meta-row"><span class="out-meta-k">Dauer</span><span id="outDuration" class="out-meta-v"></span></div>
+          <div class="out-meta-row"><span class="out-meta-k">{{ _('Jahr') }}</span><span id="outYear" class="out-meta-v"></span></div>
+          <div class="out-meta-row"><span class="out-meta-k">{{ _('Dauer') }}</span><span id="outDuration" class="out-meta-v"></span></div>
           <div class="out-meta-row"><span class="out-meta-k">Bitrate</span><span id="outBitrate" class="out-meta-v"></span></div>
           <div class="out-meta-row"><span class="out-meta-k">Sample Rate</span><span id="outSampleRate" class="out-meta-v"></span></div>
-          <div class="out-meta-row"><span class="out-meta-k">Takte</span><span id="outBars" class="out-meta-v"></span></div>
+          <div class="out-meta-row"><span class="out-meta-k">{{ _('Takte') }}</span><span id="outBars" class="out-meta-v"></span></div>
         </div>
 
         <!-- Akkord-Progression -->
         <div class="out-section">
-          <div class="out-section-hdr">AKKORDE</div>
+          <div class="out-section-hdr">{{ _('AKKORDE') }}</div>
           <div id="outChords" class="out-chords"></div>
         </div>
 
         <!-- Spurstatistik -->
         <div class="out-section">
-          <div class="out-section-hdr">SPUREN</div>
+          <div class="out-section-hdr">{{ _('SPUREN') }}</div>
           <div id="outTracks" class="out-tracks-table"></div>
         </div>
 
       </div>
       <div id="outputEmpty" class="empty-state">
         <span class="empty-icon">&#9835;</span>
-        <p>Nach der Generierung werden hier Song-Metadaten, Akkorde und Spur-Statistiken angezeigt.</p>
+        <p>{{ _('Nach der Generierung werden hier Song-Metadaten, Akkorde und Spur-Statistiken angezeigt.') }}</p>
       </div>
     </div>
 
@@ -345,12 +341,12 @@
         <div class="waveform-controls">
           <button class="btn btn-ghost btn-sm" id="btnWaveZoomIn">+ Zoom</button>
           <button class="btn btn-ghost btn-sm" id="btnWaveZoomOut">- Zoom</button>
-          <button class="btn btn-ghost btn-sm" id="btnWaveReset">Reset</button>
+          <button class="btn btn-ghost btn-sm" id="btnWaveReset">{{ _('Reset') }}</button>
         </div>
       </div>
       <div id="waveformEmpty" class="empty-state">
         <span class="empty-icon">&#12316;</span>
-        <p>Nach der Generierung wird hier die Wellenform angezeigt.</p>
+        <p>{{ _('Nach der Generierung wird hier die Wellenform angezeigt.') }}</p>
       </div>
     </div>
 
@@ -371,7 +367,7 @@
       </div>
       <div id="rollEmpty" class="empty-state">
         <span class="empty-icon">&#127929;</span>
-        <p>Die Piano Roll wird nach der Generierung angezeigt.</p>
+        <p>{{ _('Die Piano Roll wird nach der Generierung angezeigt.') }}</p>
       </div>
     </div>
 
@@ -381,7 +377,7 @@
 
         <!-- Palette & Prompt-Analyse -->
         <details class="adv-section">
-          <summary>Palette &amp; Prompt-Analyse</summary>
+          <summary>{{ _('Palette &amp; Prompt-Analyse') }}</summary>
           <div class="adv-body">
             <div id="advPromptTable" class="adv-kv-table"></div>
           </div>
@@ -389,10 +385,10 @@
 
         <!-- Instrument-Info -->
         <details class="adv-section">
-          <summary>Instrumente</summary>
+          <summary>{{ _('Instrumente') }}</summary>
           <div class="adv-body">
             <table class="adv-table" id="advInstTable">
-              <thead><tr><th>Spur</th><th>GM</th><th>Beschreibung</th></tr></thead>
+              <thead><tr><th>{{ _('Spur') }}</th><th>GM</th><th>{{ _('Beschreibung') }}</th></tr></thead>
               <tbody id="advInstBody"></tbody>
             </table>
           </div>
@@ -400,10 +396,10 @@
 
         <!-- Gain Staging -->
         <details class="adv-section">
-          <summary>Gain Staging &amp; Ziele</summary>
+          <summary>{{ _('Gain Staging &amp; Ziele') }}</summary>
           <div class="adv-body">
             <table class="adv-table" id="advGainTable">
-              <thead><tr><th>Spur</th><th>RMS</th><th>Peak</th><th>LUFS-S</th><th>Fader</th></tr></thead>
+              <thead><tr><th>{{ _('Spur') }}</th><th>RMS</th><th>Peak</th><th>LUFS-S</th><th>Fader</th></tr></thead>
               <tbody id="advGainBody"></tbody>
             </table>
           </div>
@@ -411,16 +407,16 @@
 
         <!-- Effektketten -->
         <details class="adv-section">
-          <summary>Effektketten</summary>
+          <summary>{{ _('Effektketten') }}</summary>
           <div class="adv-body" id="advFxBody"></div>
         </details>
 
         <!-- Frequenzallokation -->
         <details class="adv-section">
-          <summary>Frequenzallokation</summary>
+          <summary>{{ _('Frequenzallokation') }}</summary>
           <div class="adv-body">
             <table class="adv-table" id="advFreqTable">
-              <thead><tr><th>Spur</th><th>HPF</th><th>LPF</th><th>Zone</th></tr></thead>
+              <thead><tr><th>{{ _('Spur') }}</th><th>HPF</th><th>LPF</th><th>Zone</th></tr></thead>
               <tbody id="advFreqBody"></tbody>
             </table>
           </div>
@@ -428,7 +424,7 @@
 
         <!-- BPM-Zeiten -->
         <details class="adv-section">
-          <summary>BPM-Zeitwerte</summary>
+          <summary>{{ _('BPM-Zeitwerte') }}</summary>
           <div class="adv-body">
             <div id="advBpmTable" class="adv-kv-table"></div>
           </div>
@@ -436,7 +432,7 @@
 
         <!-- Export-Ziele -->
         <details class="adv-section">
-          <summary>Export-Ziele</summary>
+          <summary>{{ _('Export-Ziele') }}</summary>
           <div class="adv-body" id="advExportBody"></div>
         </details>
 
@@ -451,9 +447,9 @@
             <!-- Solo-Rendering -->
             <div class="groove-solo-bar">
               <button class="groove-all-btn" id="btnRenderAllSolos"
-                      data-tooltip="Rendert jede Spur einzeln als separates Audio.&#10;So kannst du jedes Instrument isoliert abhoeren.&#10;Dauert etwas laenger als ein normales Rendering.">&#9654; ALLE SOLOS RENDERN</button>
+                      data-tooltip="{{ _('Rendert jede Spur einzeln als separates Audio.&#10;So kannst du jedes Instrument isoliert abhoeren.&#10;Dauert etwas laenger als ein normales Rendering.') }}">{{ _('&#9654; ALLE SOLOS RENDERN') }}</button>
               <button class="groove-reset-btn" id="btnResetSolos"
-                      data-tooltip="Loescht alle Solo-Vorschaufiles und setzt die Solo-Ansicht zurueck.">&#10005; SOLOS ZURUECKSETZEN</button>
+                      data-tooltip="{{ _('Loescht alle Solo-Vorschaufiles und setzt die Solo-Ansicht zurueck.') }}">{{ _('&#10005; SOLOS ZURUECKSETZEN') }}</button>
             </div>
             <div id="grooveSoloRows" class="groove-solo-rows"></div>
 
@@ -461,81 +457,81 @@
             <div id="grooveParamPanel" class="groove-param-panel" hidden>
               <div class="groove-section-hdr" id="grooveParamLabel" style="margin-bottom:.3rem;">—</div>
               <div class="groove-param-grid">
-                <label class="groove-param-lbl" data-tooltip="Swing verschiebt jeden zweiten 16tel-Schlag nach hinten.&#10;50% = gerades Timing (kein Swing)&#10;60-65% = typischer Trap/Hip-Hop Swing&#10;75% = stark geshuffelt (Jazz-Feeling)">Swing
+                <label class="groove-param-lbl" data-tooltip="{{ _('Swing verschiebt jeden zweiten 16tel-Schlag nach hinten.&#10;50% = gerades Timing (kein Swing)&#10;60-65% = typischer Trap/Hip-Hop Swing&#10;75% = stark geshuffelt (Jazz-Feeling)') }}">Swing
                   <div class="slider-row">
                     <input type="range" id="gp_swing" min="25" max="75" step="0.5" value="50">
                     <span class="slider-val" id="gp_swingVal">50.0 %</span>
                   </div>
                 </label>
-                <label class="groove-param-lbl" data-tooltip="Verschiebt alle Noten dieser Spur zeitlich.&#10;Negative Werte = Spur spielt frueh (aggressiver)&#10;Positive Werte = Spur spielt spaet (entspannter)&#10;Bereich: -100 bis +100 Millisekunden">Nudge
+                <label class="groove-param-lbl" data-tooltip="{{ _('Verschiebt alle Noten dieser Spur zeitlich.&#10;Negative Werte = Spur spielt frueh (aggressiver)&#10;Positive Werte = Spur spielt spaet (entspannter)&#10;Bereich: -100 bis +100 Millisekunden') }}">Nudge
                   <div style="display:flex;align-items:center;gap:.3rem;">
                     <input type="number" id="gp_nudge" min="-100" max="100" step="0.5" value="0" class="gen-input" style="width:70px;">
                     <span style="color:#666;font-size:.72rem;">ms</span>
                   </div>
                 </label>
-                <label class="groove-param-lbl" data-tooltip="Lautstaerke-Untergrenze fuer diese Spur (MIDI-Velocity).&#10;1 = sehr leise, 64 = mittel, 127 = volle Lautstaerke.&#10;Zusammen mit Vel max ergibt sich der Dynamikbereich.">Vel min
+                <label class="groove-param-lbl" data-tooltip="{{ _('Lautstaerke-Untergrenze fuer diese Spur (MIDI-Velocity).&#10;1 = sehr leise, 64 = mittel, 127 = volle Lautstaerke.&#10;Zusammen mit Vel max ergibt sich der Dynamikbereich.') }}">Vel min
                   <input type="number" id="gp_velMin" min="1" max="127" value="1" class="gen-input" style="width:58px;">
                 </label>
-                <label class="groove-param-lbl" data-tooltip="Lautstaerke-Obergrenze fuer diese Spur (MIDI-Velocity).&#10;Muss groesser als Vel min sein.&#10;Kleiner Abstand = wenig Dynamik, grosser = viel.">max
+                <label class="groove-param-lbl" data-tooltip="{{ _('Lautstaerke-Obergrenze fuer diese Spur (MIDI-Velocity).&#10;Muss groesser als Vel min sein.&#10;Kleiner Abstand = wenig Dynamik, grosser = viel.') }}">max
                   <input type="number" id="gp_velMax" min="1" max="127" value="127" class="gen-input" style="width:58px;">
                 </label>
-                <label class="groove-param-lbl" data-tooltip="Lautstaerke-Kurve ueber den Takt.&#10;Gleichmaessig = alle Noten gleich laut&#10;Betont = Zaehler 1 und 3 betonter&#10;Crescendo = wird lauter&#10;Diminuendo = wird leiser">Kurve
+                <label class="groove-param-lbl" data-tooltip="{{ _('Lautstaerke-Kurve ueber den Takt.&#10;Gleichmaessig = alle Noten gleich laut&#10;Betont = Zaehler 1 und 3 betonter&#10;Crescendo = wird lauter&#10;Diminuendo = wird leiser') }}">{{ _('Kurve') }}
                   <select id="gp_curve" class="gen-select" style="width:auto;">
-                    <option value="flat">Gleichmaessig</option>
-                    <option value="accent">Betont</option>
+                    <option value="flat">{{ _('Gleichmaessig') }}</option>
+                    <option value="accent">{{ _('Betont') }}</option>
                     <option value="crescendo">Crescendo</option>
                     <option value="diminuendo">Diminuendo</option>
                   </select>
                 </label>
               </div>
               <button class="groove-btn groove-save-param-btn" id="btnSaveGrooveParam" onclick="saveGrooveParam()"
-                      data-tooltip="Speichert diese Groove-Parameter fuer die ausgewaehlte Spur.&#10;Erst nach &quot;GROOVE ANWENDEN&quot; werden die Aenderungen gerendert.">&#10003; Uebernehmen</button>
+                      data-tooltip="{{ _('Speichert diese Groove-Parameter fuer die ausgewaehlte Spur.&#10;Erst nach &quot;GROOVE ANWENDEN&quot; werden die Aenderungen gerendert.') }}">{{ _('&#10003; Uebernehmen') }}</button>
             </div>
 
             <!-- Humanize -->
             <div class="groove-humanize-block">
-              <div class="groove-section-hdr">HUMANISIERUNG</div>
+              <div class="groove-section-hdr">{{ _('HUMANISIERUNG') }}</div>
               <div class="groove-param-grid">
-                <label class="groove-param-lbl" data-tooltip="Zufaellige Lautstaerkeschwankung pro Note (alle Spuren).&#10;0 = alle Noten exakt gleich laut&#10;±15 = natuerlich, lebendig&#10;±30 = stark variierend (Handgespielt-Feeling)">Vel-Jitter
+                <label class="groove-param-lbl" data-tooltip="{{ _('Zufaellige Lautstaerkeschwankung pro Note (alle Spuren).&#10;0 = alle Noten exakt gleich laut&#10;±15 = natuerlich, lebendig&#10;±30 = stark variierend (Handgespielt-Feeling)') }}">Vel-Jitter
                   <div class="slider-row">
                     <input type="range" id="gp_velJitter" min="0" max="30" step="1" value="0">
                     <span class="slider-val" id="gp_velJitterVal">&#177;0</span>
                   </div>
                 </label>
-                <label class="groove-param-lbl" data-tooltip="Zufaellige Timing-Abweichung pro Note (alle Spuren).&#10;0 = perfekt quantisiert&#10;±10 ms = leicht menschlich&#10;±50 ms = stark unpraeziese (Vintage-Feeling)">Time-Jitter
+                <label class="groove-param-lbl" data-tooltip="{{ _('Zufaellige Timing-Abweichung pro Note (alle Spuren).&#10;0 = perfekt quantisiert&#10;±10 ms = leicht menschlich&#10;±50 ms = stark unpraeziese (Vintage-Feeling)') }}">Time-Jitter
                   <div class="slider-row">
                     <input type="range" id="gp_timeJitter" min="0" max="50" step="1" value="0">
                     <span class="slider-val" id="gp_timeJitterVal">&#177;0 ms</span>
                   </div>
                 </label>
                 <div style="display:flex;align-items:flex-end;gap:.4rem;">
-                  <label class="groove-param-lbl" data-tooltip="Zufallszahl fuer reproduzierbare Humanisierung.&#10;Gleicher Seed = gleiche zufaellige Abweichungen.&#10;Leer = bei jedem Rendern neu berechnet.">Seed (leer = neu)
-                    <input type="number" id="gp_humanSeed" placeholder="zufaellig" class="gen-input" style="width:90px;">
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Zufallszahl fuer reproduzierbare Humanisierung.&#10;Gleicher Seed = gleiche zufaellige Abweichungen.&#10;Leer = bei jedem Rendern neu berechnet.') }}">{{ _('Seed (leer = neu)') }}
+                    <input type="number" id="gp_humanSeed" placeholder="{{ _('zufaellig') }}" class="gen-input" style="width:90px;">
                   </label>
                   <button class="groove-btn" id="btnGrooveRoll" onclick="grooveRoll()"
-                          data-tooltip="Generiert einen neuen zufaelligen Seed und rendert sofort neu.">W&#252;rfeln</button>
+                          data-tooltip="{{ _('Generiert einen neuen zufaelligen Seed und rendert sofort neu.') }}">{{ _('W&#252;rfeln') }}</button>
                   <button class="groove-btn" id="btnGrooveClear" onclick="grooveClear()"
-                          data-tooltip="Setzt alle Groove-Parameter auf die Standardwerte zurueck.">Leeren</button>
+                          data-tooltip="{{ _('Setzt alle Groove-Parameter auf die Standardwerte zurueck.') }}">{{ _('Leeren') }}</button>
                 </div>
               </div>
             </div>
 
             <!-- Palette & FX-Kette -->
-            <div class="groove-section-hdr" style="margin-top:.25rem;">PALETTE &amp; FX-KETTE</div>
+            <div class="groove-section-hdr" style="margin-top:.25rem;">{{ _('PALETTE &amp; FX-KETTE') }}</div>
             <div class="palette-panel">
-              <span class="tt-wrap" data-tooltip="Instrument-Palette: vordefiniertes Set von GM-Instrumenten passend zum Genre.&#10;Jede Palette klingt anders — experimentiere!&#10;Erst Beat generieren, dann Palette wechseln und neu rendern.">
+              <span class="tt-wrap" data-tooltip="{{ _('Instrument-Palette: vordefiniertes Set von GM-Instrumenten passend zum Genre.&#10;Jede Palette klingt anders — experimentiere!&#10;Erst Beat generieren, dann Palette wechseln und neu rendern.') }}">
                 <select id="paletteSelect" class="gen-select gen-select-sm" onchange="onPaletteChange(this.value)">
-                  <option value="">— zuerst Beat generieren —</option>
+                  <option value="">{{ _('— zuerst Beat generieren —') }}</option>
                 </select>
               </span>
               <div id="paletteDesc" class="palette-desc"></div>
               <div class="palette-fx-row">
                 <button class="palette-fx-btn palette-fx-active" id="pfxbtn_neutral" onclick="setPaletteVariant('neutral')"
-                        data-tooltip="NATURAL: Kein zusaetzlicher EQ oder Kompressor.&#10;Klingt wie direkt aus dem Synthesizer.">NATURAL</button>
+                        data-tooltip="{{ _('NATURAL: Kein zusaetzlicher EQ oder Kompressor.&#10;Klingt wie direkt aus dem Synthesizer.') }}">NATURAL</button>
                 <button class="palette-fx-btn" id="pfxbtn_bright" onclick="setPaletteVariant('bright')"
-                        data-tooltip="POLISHED: Mehr Hoehen, sanfte Kompression.&#10;Professioneller, kommerzieller Sound.">POLISHED</button>
+                        data-tooltip="{{ _('POLISHED: Mehr Hoehen, sanfte Kompression.&#10;Professioneller, kommerzieller Sound.') }}">POLISHED</button>
                 <button class="palette-fx-btn" id="pfxbtn_dark" onclick="setPaletteVariant('dark')"
-                        data-tooltip="UNDERGROUND: Tiefpass-Filter, Saettigung.&#10;Rawer, dreckiger, analog-klingender Sound.">UNDERGROUND</button>
+                        data-tooltip="{{ _('UNDERGROUND: Tiefpass-Filter, Saettigung.&#10;Rawer, dreckiger, analog-klingender Sound.') }}">UNDERGROUND</button>
               </div>
               <div id="paletteVariantDesc" class="palette-desc"></div>
             </div>
@@ -543,9 +539,9 @@
             <!-- Theorie-Pruefer -->
             <div class="theory-panel">
               <div class="theory-header">
-                <span class="groove-section-hdr" data-tooltip="BDRA-Theoriepruefer: analysiert 5 Klangprinzipien.&#10;P1 Sub-Bass · P2 Register · P3 Attack&#10;P4 Dichte · P5 Helligkeit&#10;Score 80+ = professionell ausgewogen.">THEORIE</span>
+                <span class="groove-section-hdr" data-tooltip="{{ _('BDRA-Theoriepruefer: analysiert 5 Klangprinzipien.&#10;P1 Sub-Bass · P2 Register · P3 Attack&#10;P4 Dichte · P5 Helligkeit&#10;Score 80+ = professionell ausgewogen.') }}">{{ _('THEORIE') }}</span>
                 <button class="groove-btn" onclick="checkTheory()"
-                        data-tooltip="Analysiert das aktuelle Beat-Arrangement nach psychoakustischen Regeln.">&#10003; Pruefen</button>
+                        data-tooltip="{{ _('Analysiert das aktuelle Beat-Arrangement nach psychoakustischen Regeln.') }}">{{ _('&#10003; Pruefen') }}</button>
               </div>
               <div class="theory-score-row">
                 <span class="theory-score-lbl">SCORE</span>
@@ -556,30 +552,30 @@
                 <span class="theory-grade-badge" id="theoryGrade"></span>
               </div>
               <div class="theory-checks">
-                <div class="theory-check"><span class="tc-dot" id="tcdot_p1">●</span><span class="tc-lbl">P1 Sub-Bass</span><span class="tc-det" id="tcd_p1">—</span></div>
-                <div class="theory-check"><span class="tc-dot" id="tcdot_p2">●</span><span class="tc-lbl">P2 Register</span><span class="tc-det" id="tcd_p2">—</span></div>
-                <div class="theory-check"><span class="tc-dot" id="tcdot_p3">●</span><span class="tc-lbl">P3 Attack</span><span class="tc-det" id="tcd_p3">—</span></div>
-                <div class="theory-check"><span class="tc-dot" id="tcdot_p4">●</span><span class="tc-lbl">P4 Dichte</span><span class="tc-det" id="tcd_p4">—</span></div>
-                <div class="theory-check"><span class="tc-dot" id="tcdot_p5">●</span><span class="tc-lbl">P5 Helligkeit</span><span class="tc-det" id="tcd_p5">—</span></div>
+                <div class="theory-check"><span class="tc-dot" id="tcdot_p1">●</span><span class="tc-lbl">{{ _('P1 Sub-Bass') }}</span><span class="tc-det" id="tcd_p1">—</span></div>
+                <div class="theory-check"><span class="tc-dot" id="tcdot_p2">●</span><span class="tc-lbl">{{ _('P2 Register') }}</span><span class="tc-det" id="tcd_p2">—</span></div>
+                <div class="theory-check"><span class="tc-dot" id="tcdot_p3">●</span><span class="tc-lbl">{{ _('P3 Attack') }}</span><span class="tc-det" id="tcd_p3">—</span></div>
+                <div class="theory-check"><span class="tc-dot" id="tcdot_p4">●</span><span class="tc-lbl">{{ _('P4 Dichte') }}</span><span class="tc-det" id="tcd_p4">—</span></div>
+                <div class="theory-check"><span class="tc-dot" id="tcdot_p5">●</span><span class="tc-lbl">{{ _('P5 Helligkeit') }}</span><span class="tc-det" id="tcd_p5">—</span></div>
               </div>
               <div id="theoryFeedback" class="theory-feedback" hidden></div>
             </div>
 
             <!-- Instrument-Builder -->
             <details class="groove-sub-section">
-              <summary>Instrumente (vor Re-Rendering &#228;ndern)</summary>
+              <summary>{{ _('Instrumente (vor Re-Rendering &#228;ndern)') }}</summary>
               <div id="grooveInstrRows" class="groove-instr-rows"></div>
             </details>
 
             <!-- Sample-Zuweisung pro Track -->
             <details class="groove-sub-section" id="samplePanel">
-              <summary data-tooltip="Weise jeder Spur eine eigene Audio-Datei zu.&#10;Die Datei ersetzt den eingebauten Synthesizer fuer diese Spur.&#10;Unterstuetzte Formate: WAV, MP3, OGG, FLAC.">Samples (eigene Audio-Dateien pro Track)</summary>
+              <summary data-tooltip="{{ _('Weise jeder Spur eine eigene Audio-Datei zu.&#10;Die Datei ersetzt den eingebauten Synthesizer fuer diese Spur.&#10;Unterstuetzte Formate: WAV, MP3, OGG, FLAC.') }}">{{ _('Samples (eigene Audio-Dateien pro Track)') }}</summary>
               <div class="sample-rows" id="sampleRows"></div>
             </details>
 
             <!-- Timbre-Editor: Per-Instrument-Klangsynthese -->
             <details class="groove-sub-section" id="timbrePanel">
-              <summary data-tooltip="Klangsynthese-Editor fuer einzelne Instrumente.&#10;Preset laden = Startwerte fuer das Instrument&#10;Dann mit den Reglern feinabstimmen.&#10;Wirkung erst nach &quot;GROOVE ANWENDEN&quot; sichtbar.">&#9835; TIMBRE &#8212; Klangsynthese</summary>
+              <summary data-tooltip="{{ _('Klangsynthese-Editor fuer einzelne Instrumente.&#10;Preset laden = Startwerte fuer das Instrument&#10;Dann mit den Reglern feinabstimmen.&#10;Wirkung erst nach &quot;GROOVE ANWENDEN&quot; sichtbar.') }}">{{ _('&#9835; TIMBRE &#8212; Klangsynthese') }}</summary>
               <div class="timbre-content">
 
                 <!-- KICK -->
@@ -587,14 +583,14 @@
                   <div class="timbre-role-hdr timbre-kick-hdr">KICK</div>
                   <div class="timbre-preset-row">
                     <span class="timbre-preset-lbl">Preset</span>
-                    <span class="tt-wrap" data-tooltip="Synthesizer-Preset fuer KICK laden.&#10;(none) = eingebaute Standardsynthese.&#10;Nach Auswahl werden die Regler mit Preset-Werten befuellt.">
+                    <span class="tt-wrap" data-tooltip="{{ _('Synthesizer-Preset fuer KICK laden.&#10;(none) = eingebaute Standardsynthese.&#10;Nach Auswahl werden die Regler mit Preset-Werten befuellt.') }}">
                       <select id="timbre_kick_preset" class="gen-select gen-select-sm"
                               onchange="onTimbrePresetChange('kick')">
                         <option value="(none)">(none)</option>
                       </select>
                     </span>
                   </div>
-                  <label class="groove-param-lbl" data-tooltip="Ziel-Frequenz des Kick-Pitchglides (Sinus-Schwanz).&#10;Tief = dunkler 808-Sub-Kick (20-45 Hz)&#10;Hoch = knackiger, melodischer Kick.">Pitch Ende (Hz)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Ziel-Frequenz des Kick-Pitchglides (Sinus-Schwanz).&#10;Tief = dunkler 808-Sub-Kick (20-45 Hz)&#10;Hoch = knackiger, melodischer Kick.') }}">{{ _('Pitch Ende (Hz)') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_kick_pitch_end_hz"
                              min="20" max="200" step="1" value="45"
@@ -602,7 +598,7 @@
                       <span class="slider-val" id="timbre_kick_pitch_end_hz_val">45</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Transienten-Rauschanteil des Kick-Anschlags.&#10;0 = reiner Sinus / 808-Ton&#10;Hoeher = punchigerer, knackigerer Anschlag.">Rauschanteil
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Transienten-Rauschanteil des Kick-Anschlags.&#10;0 = reiner Sinus / 808-Ton&#10;Hoeher = punchigerer, knackigerer Anschlag.') }}">{{ _('Rauschanteil') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_kick_noise_amount"
                              min="0" max="1" step="0.01" value="0.05"
@@ -610,7 +606,7 @@
                       <span class="slider-val" id="timbre_kick_noise_amount_val">0.05</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Abklingzeit der Kick-Huelle.&#10;50 ms = kurz, trocken, punchig&#10;280 ms = ausgewogen&#10;800 ms = langer Sub-Schwanz (808-Style)">Ausklingen (ms)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Abklingzeit der Kick-Huelle.&#10;50 ms = kurz, trocken, punchig&#10;280 ms = ausgewogen&#10;800 ms = langer Sub-Schwanz (808-Style)') }}">{{ _('Ausklingen (ms)') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_kick_decay_ms"
                              min="50" max="1000" step="10" value="280"
@@ -625,14 +621,14 @@
                   <div class="timbre-role-hdr timbre-snare-hdr">SNARE</div>
                   <div class="timbre-preset-row">
                     <span class="timbre-preset-lbl">Preset</span>
-                    <span class="tt-wrap" data-tooltip="Synthesizer-Preset fuer SNARE laden.&#10;(none) = eingebaute Standardsynthese.">
+                    <span class="tt-wrap" data-tooltip="{{ _('Synthesizer-Preset fuer SNARE laden.&#10;(none) = eingebaute Standardsynthese.') }}">
                       <select id="timbre_snare_preset" class="gen-select gen-select-sm"
                               onchange="onTimbrePresetChange('snare')">
                         <option value="(none)">(none)</option>
                       </select>
                     </span>
                   </div>
-                  <label class="groove-param-lbl" data-tooltip="Koerper-Pitch der Snare.&#10;80 Hz = tiefer, dumpfer Tom-Charakter&#10;140 Hz = klassische Snare&#10;400 Hz = heller, duenner Klang">Pitch (Hz)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Koerper-Pitch der Snare.&#10;80 Hz = tiefer, dumpfer Tom-Charakter&#10;140 Hz = klassische Snare&#10;400 Hz = heller, duenner Klang') }}">Pitch (Hz)
                     <div class="slider-row">
                       <input type="range" id="timbre_snare_pitch_end_hz"
                              min="80" max="400" step="1" value="140"
@@ -640,7 +636,7 @@
                       <span class="slider-val" id="timbre_snare_pitch_end_hz_val">140</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Verhaeltnis Rauschen zu Ton.&#10;0 = reiner Ton (klingt wie Tom)&#10;0.6 = klassische Snare-Mischung&#10;1 = nur Rauschen (Buerstensnare)">Rauschanteil
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Verhaeltnis Rauschen zu Ton.&#10;0 = reiner Ton (klingt wie Tom)&#10;0.6 = klassische Snare-Mischung&#10;1 = nur Rauschen (Buerstensnare)') }}">{{ _('Rauschanteil') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_snare_noise_amount"
                              min="0" max="1" step="0.01" value="0.6"
@@ -648,7 +644,7 @@
                       <span class="slider-val" id="timbre_snare_noise_amount_val">0.60</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Abklingzeit der Snare-Huelle.&#10;30 ms = sehr kurz, trocken&#10;150 ms = natuerlich&#10;400 ms = langer Nachhall">Ausklingen (ms)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Abklingzeit der Snare-Huelle.&#10;30 ms = sehr kurz, trocken&#10;150 ms = natuerlich&#10;400 ms = langer Nachhall') }}">{{ _('Ausklingen (ms)') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_snare_decay_ms"
                              min="30" max="400" step="5" value="150"
@@ -663,14 +659,14 @@
                   <div class="timbre-role-hdr timbre-hihat-hdr">HI-HAT</div>
                   <div class="timbre-preset-row">
                     <span class="timbre-preset-lbl">Preset</span>
-                    <span class="tt-wrap" data-tooltip="Synthesizer-Preset fuer HI-HAT laden.&#10;(none) = eingebaute Standardsynthese.">
+                    <span class="tt-wrap" data-tooltip="{{ _('Synthesizer-Preset fuer HI-HAT laden.&#10;(none) = eingebaute Standardsynthese.') }}">
                       <select id="timbre_hihat_preset" class="gen-select gen-select-sm"
                               onchange="onTimbrePresetChange('hihat')">
                         <option value="(none)">(none)</option>
                       </select>
                     </span>
                   </div>
-                  <label class="groove-param-lbl" data-tooltip="Abklingzeit des Hi-Hats.&#10;10-30 ms = geschlossene Hi-Hat (kurz, trocken)&#10;100-400 ms = offene Hi-Hat (laenger, zischend)">Ausklingen (ms)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Abklingzeit des Hi-Hats.&#10;10-30 ms = geschlossene Hi-Hat (kurz, trocken)&#10;100-400 ms = offene Hi-Hat (laenger, zischend)') }}">{{ _('Ausklingen (ms)') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_hihat_decay_ms"
                              min="10" max="400" step="5" value="60"
@@ -678,7 +674,7 @@
                       <span class="slider-val" id="timbre_hihat_decay_ms_val">60</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Hochfrequenz-Anteil des Hi-Hats.&#10;0 = dunkle, geschlossene Hi-Hat&#10;1 = helle, schneidende offene Hi-Hat">Rauschanteil
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Hochfrequenz-Anteil des Hi-Hats.&#10;0 = dunkle, geschlossene Hi-Hat&#10;1 = helle, schneidende offene Hi-Hat') }}">{{ _('Rauschanteil') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_hihat_noise_amount"
                              min="0" max="1" step="0.01" value="0.95"
@@ -686,7 +682,7 @@
                       <span class="slider-val" id="timbre_hihat_noise_amount_val">0.95</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Soft-Clip-Saettigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung">S&#228;ttigung
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Soft-Clip-Saettigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung') }}">{{ _('S&#228;ttigung') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_hihat_drive"
                              min="0" max="1" step="0.01" value="0"
@@ -701,14 +697,14 @@
                   <div class="timbre-role-hdr timbre-melodic-hdr">MELODIC</div>
                   <div class="timbre-preset-row">
                     <span class="timbre-preset-lbl">Preset</span>
-                    <span class="tt-wrap" data-tooltip="Synthesizer-Preset fuer MELODIC-Stimmen laden.&#10;(none) = eingebaute Standardsynthese.&#10;Gilt fuer Bass, Akkorde, Lead, Pad, Arp, Stabs.">
+                    <span class="tt-wrap" data-tooltip="{{ _('Synthesizer-Preset fuer MELODIC-Stimmen laden.&#10;(none) = eingebaute Standardsynthese.&#10;Gilt fuer Bass, Akkorde, Lead, Pad, Arp, Stabs.') }}">
                       <select id="timbre_melodic_preset" class="gen-select gen-select-sm"
                               onchange="onTimbrePresetChange('melodic')">
                         <option value="(none)">(none)</option>
                       </select>
                     </span>
                   </div>
-                  <label class="groove-param-lbl" data-tooltip="Einschwingzeit melodischer Stimmen.&#10;1 ms = Pluck / Stab (sofort da)&#10;15 ms = natuerlicher Anschlag&#10;200 ms = langsames Pad-Anschwellen">Anschlag (ms)
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Einschwingzeit melodischer Stimmen.&#10;1 ms = Pluck / Stab (sofort da)&#10;15 ms = natuerlicher Anschlag&#10;200 ms = langsames Pad-Anschwellen') }}">{{ _('Anschlag (ms)') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_melodic_attack_ms"
                              min="1" max="500" step="1" value="15"
@@ -716,7 +712,7 @@
                       <span class="slider-val" id="timbre_melodic_attack_ms_val">15</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Tiefpass-Filter-Grenzfrequenz (Helligkeit).&#10;0 = dunkel / gedaempft (Lo-Fi, Vintage)&#10;0.5 = ausgewogen&#10;1 = hell / offen (klar, strahlend)">Helligkeit
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Tiefpass-Filter-Grenzfrequenz (Helligkeit).&#10;0 = dunkel / gedaempft (Lo-Fi, Vintage)&#10;0.5 = ausgewogen&#10;1 = hell / offen (klar, strahlend)') }}">{{ _('Helligkeit') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_melodic_brightness"
                              min="0" max="1" step="0.01" value="0.5"
@@ -724,7 +720,7 @@
                       <span class="slider-val" id="timbre_melodic_brightness_val">0.50</span>
                     </div>
                   </label>
-                  <label class="groove-param-lbl" data-tooltip="Soft-Clip-Saettigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung">S&#228;ttigung
+                  <label class="groove-param-lbl" data-tooltip="{{ _('Soft-Clip-Saettigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung') }}">{{ _('S&#228;ttigung') }}
                     <div class="slider-row">
                       <input type="range" id="timbre_melodic_drive"
                              min="0" max="1" step="0.01" value="0.05"
@@ -741,7 +737,7 @@
             <div class="groove-section-hdr">MIXER</div>
             <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;flex-wrap:wrap;">
               <!-- Genre-Auswahl: beeinflusst welche Feels angeboten werden -->
-              <span class="tt-wrap" data-tooltip="Genre fuer das Groove-Preset.&#10;Beeinflusst die verfuegbaren Feel-Presets.&#10;Wird automatisch auf das generierte Genre gesetzt.">
+              <span class="tt-wrap" data-tooltip="{{ _('Genre fuer das Groove-Preset.&#10;Beeinflusst die verfuegbaren Feel-Presets.&#10;Wird automatisch auf das generierte Genre gesetzt.') }}">
                 <select id="grooveGenreSelect" class="gen-select" style="width:auto;font-size:.72rem;"
                         onchange="onGrooveGenreChange(this.value)">
                   {% for g in ["trap","phonk","hiphop","techno","house","edm","pop","cinematic","classical","jpop"] %}
@@ -750,49 +746,49 @@
                 </select>
               </span>
               <!-- Feel-Auswahl: wird per JS aus GROOVE_NAMED_PRESETS befuellt -->
-              <span class="tt-wrap" data-tooltip="Benanntes Feel-Preset: laedt einen kuratieren Groove-Charakter.&#10;z.B. Boom Bap, Lo-Fi Chill, Modern Rap (bei Hip-Hop).&#10;Leer = Genre-Standardwerte laden.">
+              <span class="tt-wrap" data-tooltip="{{ _('Benanntes Feel-Preset: laedt einen kuratieren Groove-Charakter.&#10;z.B. Boom Bap, Lo-Fi Chill, Modern Rap (bei Hip-Hop).&#10;Leer = Genre-Standardwerte laden.') }}">
                 <select id="grooveFeelSelect" class="gen-select" style="width:auto;font-size:.72rem;">
                   <option value="">— Feel —</option>
                 </select>
               </span>
               <button type="button" class="groove-btn" id="btnLoadGroove"
-                      data-tooltip="Laedt das ausgewaehlte Genre- oder Feel-Preset in den Mixer.&#10;Ueberschreibt die aktuellen Mixer-Einstellungen.">Preset laden</button>
+                      data-tooltip="{{ _('Laedt das ausgewaehlte Genre- oder Feel-Preset in den Mixer.&#10;Ueberschreibt die aktuellen Mixer-Einstellungen.') }}">{{ _('Preset laden') }}</button>
               <button type="button" class="groove-btn" id="btnResetGroove"
-                      data-tooltip="Setzt alle Mixer-Spuren auf Standardwerte zurueck&#10;(Mute aus, Lautstaerke 0 dB, keine Swing/Nudge-Abweichung).">Zur&#252;cksetzen</button>
+                      data-tooltip="{{ _('Setzt alle Mixer-Spuren auf Standardwerte zurueck&#10;(Mute aus, Lautstaerke 0 dB, keine Swing/Nudge-Abweichung).') }}">{{ _('Zur&#252;cksetzen') }}</button>
             </div>
             <div id="grooveMixerRows" class="groove-rows"></div>
 
             <!-- Soundfont-Auswahl -->
-            <div class="groove-section-hdr" data-tooltip="Soundfont (SF2): die Klangbibliothek fuer die MIDI-Instrumente.&#10;Genre-Standard = automatisch passendes SF2&#10;Eigene SF2 hochladen fuer individuellen Klang.">SOUNDFONT</div>
+            <div class="groove-section-hdr" data-tooltip="{{ _('Soundfont (SF2): die Klangbibliothek fuer die MIDI-Instrumente.&#10;Genre-Standard = automatisch passendes SF2&#10;Eigene SF2 hochladen fuer individuellen Klang.') }}">SOUNDFONT</div>
             <div class="sf2-panel">
               <select id="sf2PresetSelect" class="gen-select gen-select-sm"
                       onchange="G.sf2Key=this.value||null; G.sf2Uuid=null;
                                 $('sf2FileName').textContent='';
                                 const gs=$('genSf2Select'); if(gs) gs.value=this.value;">
-                <option value="">— Genre-Standard (SF2) —</option>
+                <option value="">{{ _('— Genre-Standard (SF2) —') }}</option>
               </select>
               <div class="sf2-upload-row">
-                <span class="sf2-upload-lbl">Eigene SF2-Datei:</span>
+                <span class="sf2-upload-lbl">{{ _('Eigene SF2-Datei:') }}</span>
                 <input type="file" id="sf2FileInput" accept=".sf2" style="display:none"
                        onchange="uploadSf2File(this)">
                 <button class="groove-btn" onclick="$('sf2FileInput').click()"
-                        data-tooltip="Eigene SF2-Soundfont-Datei hochladen.&#10;Erlaubt individuelle Instrumentenklaenge jenseits der Genre-Standards.&#10;Dateigroesse: typisch 50 MB - 500 MB.">&#128190; Laden</button>
+                        data-tooltip="{{ _('Eigene SF2-Soundfont-Datei hochladen.&#10;Erlaubt individuelle Instrumentenklaenge jenseits der Genre-Standards.&#10;Dateigroesse: typisch 50 MB - 500 MB.') }}">{{ _('&#128190; Laden') }}</button>
                 <span id="sf2FileName" class="sf2-filename"></span>
               </div>
-              <div id="sf2UploadProgress" class="sf2-progress" hidden>Wird hochgeladen&#8230;</div>
+              <div id="sf2UploadProgress" class="sf2-progress" hidden>{{ _('Wird hochgeladen&#8230;') }}</div>
             </div>
 
             <!-- Groove anwenden & neu rendern -->
             <button class="groove-apply-btn" id="btnApplyGroove"
-                    data-tooltip="Rendert den Beat neu mit allen aktuellen Mixer-Einstellungen.&#10;Ergebnis erscheint als &quot;Groove Re-Render&quot; zum Vergleich.&#10;Dauert ca. 5-15 Sekunden.">&#9654; GROOVE ANWENDEN &amp; NEU RENDERN</button>
+                    data-tooltip="{{ _('Rendert den Beat neu mit allen aktuellen Mixer-Einstellungen.&#10;Ergebnis erscheint als &quot;Groove Re-Render&quot; zum Vergleich.&#10;Dauert ca. 5-15 Sekunden.') }}">{{ _('&#9654; GROOVE ANWENDEN &amp; NEU RENDERN') }}</button>
 
             <!-- Neu gerendertes Audio + Download -->
             <div id="grooveRerenderedWrap" class="groove-rerendered" hidden>
-              <p class="groove-section-hdr" style="margin-bottom:.3rem;">VORSCHAU — NEU GERENDERT</p>
+              <p class="groove-section-hdr" style="margin-bottom:.3rem;">{{ _('VORSCHAU — NEU GERENDERT') }}</p>
               <audio id="grooveAudioPlayer" controls class="audio-player"></audio>
               <div style="display:flex;gap:.5rem;margin-top:.4rem;">
-                <button class="btn btn-ghost btn-sm" id="btnGrooveExport" onclick="openExportModalForRerender()">&#8659; Exportieren</button>
-                <button class="btn btn-ghost btn-sm" id="btnGrooveSaveMain" onclick="useRerenderedAsMain()">&#8617; Als Hauptversion verwenden</button>
+                <button class="btn btn-ghost btn-sm" id="btnGrooveExport" onclick="openExportModalForRerender()">{{ _('&#8659; Exportieren') }}</button>
+                <button class="btn btn-ghost btn-sm" id="btnGrooveSaveMain" onclick="useRerenderedAsMain()">{{ _('&#8617; Als Hauptversion verwenden') }}</button>
               </div>
             </div>
 
@@ -802,7 +798,7 @@
       </div>
       <div id="advisorEmpty" class="empty-state">
         <span class="empty-icon">&#128203;</span>
-        <p>Der Production Advisor wird nach der Generierung befullt.</p>
+        <p>{{ _('Der Production Advisor wird nach der Generierung befullt.') }}</p>
       </div>
     </div>
 
@@ -814,8 +810,8 @@
   <div class="export-modal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
 
     <div class="export-modal-hdr">
-      <span id="exportModalTitle" class="export-modal-title">AUDIO EXPORTIEREN</span>
-      <button class="export-close" onclick="closeExportModal()" aria-label="Schliessen">&#10005;</button>
+      <span id="exportModalTitle" class="export-modal-title">{{ _('AUDIO EXPORTIEREN') }}</span>
+      <button class="export-close" onclick="closeExportModal()" aria-label="{{ _('Schliessen') }}">&#10005;</button>
     </div>
 
     <!-- Format-Auswahl -->
@@ -823,18 +819,18 @@
       <div class="export-section-lbl">FORMAT</div>
       <div class="export-format-grid" id="exportFormatGrid"></div>
       <div id="exportFfmpegHint" class="export-hint" hidden>
-        &#9888; Formate mit * erfordern <strong>ffmpeg</strong> im System-PATH.
+        {{ _('&#9888; Formate mit * erfordern <strong>ffmpeg</strong> im System-PATH.') }}
       </div>
     </div>
 
     <!-- Quelle -->
     <div class="export-section">
-      <div class="export-section-lbl">QUELLE</div>
+      <div class="export-section-lbl">{{ _('QUELLE') }}</div>
       <div class="export-src-chips">
         <button class="chip chip-active export-src-btn" data-v="main"
                 onclick="setExportSrc('main')">Full Beat</button>
         <button class="chip export-src-btn" data-v="rerender"
-                id="exportSrcRerender" onclick="setExportSrc('rerender')">Neu gerendert</button>
+                id="exportSrcRerender" onclick="setExportSrc('rerender')">{{ _('Neu gerendert') }}</button>
         <button class="chip export-src-btn" data-v="vocal"
                 id="exportSrcVocal" onclick="setExportSrc('vocal')">Vocal-Ready</button>
       </div>
@@ -842,20 +838,20 @@
 
     <!-- Haupt-Download-Button -->
     <button class="export-dl-btn" id="btnExportAudio" onclick="doExportAudio()">
-      &#8659; AUDIO HERUNTERLADEN
+      {{ _('&#8659; AUDIO HERUNTERLADEN') }}
     </button>
     <div id="exportAudioErr" class="export-err" hidden></div>
 
     <!-- Weitere Exporte -->
     <div class="export-section">
-      <div class="export-section-lbl">WEITERE EXPORTE</div>
+      <div class="export-section-lbl">{{ _('WEITERE EXPORTE') }}</div>
       <div class="export-other-row">
         <button class="export-other-btn" onclick="doExportMIDI()">&#8659; MIDI (.mid)</button>
-        <button class="export-other-btn" onclick="doExportJSON()">&#8659; Komposition (.json)</button>
-        <button class="export-other-btn" onclick="doExportPDF()">&#8659; Berater (.pdf)</button>
+        <button class="export-other-btn" onclick="doExportJSON()">{{ _('&#8659; Komposition (.json)') }}</button>
+        <button class="export-other-btn" onclick="doExportPDF()">{{ _('&#8659; Berater (.pdf)') }}</button>
       </div>
       <div id="exportOtherErr" class="export-err" hidden></div>
-      <p class="export-hint">MIDI und JSON exportieren die aktive Version (Re-Render wenn ausgewaehlt, sonst Original).</p>
+      <p class="export-hint">{{ _('MIDI und JSON exportieren die aktive Version (Re-Render wenn ausgewaehlt, sonst Original).') }}</p>
     </div>
 
   </div>
@@ -1465,7 +1461,7 @@ async function decodePrompt() {
 
 function applyDecodedPrompt(d) {
   const box=$('promptResult'); if(!box) return;
-  box.textContent = (d&&!d.is_empty)?(d.summary||''):'Keine Parameter erkannt.';
+  box.textContent = (d&&!d.is_empty)?(d.summary||''):t('Keine Parameter erkannt.');
   box.hidden=false;
   if(d.genre){const s=$('genre');if(s)s.value=d.genre;}
   if(d.bpm!=null){const i=$('bpm');if(i)i.value=Math.round(d.bpm);}
@@ -1512,9 +1508,9 @@ async function generateBeat() {
   try {
     const res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await res.json();
-    if(!res.ok||data.error){showError(data.error||'Generierung fehlgeschlagen.');return;}
+    if(!res.ok||data.error){showError(data.error||t('Generierung fehlgeschlagen.'));return;}
     onSuccess(data);
-  } catch(e){showError('Netzwerkfehler: '+e.message);}
+  } catch(e){showError(t('Netzwerkfehler: ')+e.message);}
   finally{setGenerating(false);}
 }
 
@@ -1783,7 +1779,7 @@ function renderPianoRoll(rollData) {
   });
 
   setText('rollBpm','BPM: '+(rollData.bpm||'?'));
-  setText('rollBars','Takte: '+(rollData.total_bars||'?'));
+  setText('rollBars',t('Takte: ')+(rollData.total_bars||'?'));
   drawPianoRoll(rollData);
 }
 
@@ -1877,13 +1873,13 @@ function buildAdvisor(data) {
   // Palette & Prompt
   const promptRows = [
     ['Genre',        meta.genre   || '—'],
-    ['Tonart',       meta.key     || '—'],
+    [t('Tonart'),       meta.key     || '—'],
     ['BPM',          meta.bpm    != null ? meta.bpm.toFixed(1)+' BPM' : '—'],
-    ['Takte',        meta.total_bars || '—'],
-    ['PLR-Ziel',     adv.plr_target || '—'],
-    ['LRA-Ziel',     adv.lra_target || '—'],
-    ['Tonleitern',   (adv.valid_scales||[]).join(', ') || '—'],
-    ['Prompt erkannt',(pd.summary&&!pd.is_empty)?pd.summary:'—'],
+    [t('Takte'),        meta.total_bars || '—'],
+    [t('PLR-Ziel'),     adv.plr_target || '—'],
+    [t('LRA-Ziel'),     adv.lra_target || '—'],
+    [t('Tonleitern'),   (adv.valid_scales||[]).join(', ') || '—'],
+    [t('Prompt erkannt'),(pd.summary&&!pd.is_empty)?pd.summary:'—'],
   ];
   renderKvTable('advPromptTable', promptRows);
 
@@ -1969,14 +1965,14 @@ function buildAdvisor(data) {
 
 const GROOVE_TRACKS = [
   {key:'drums',     label:'DRUMS'},
-  {key:'percussion',label:'PERKUSSION'},
+  {key:'percussion',label:t('PERKUSSION')},
   {key:'bass',      label:'BASS'},
-  {key:'chords',    label:'AKKORDE'},
+  {key:'chords',    label:t('AKKORDE')},
   {key:'lead',      label:'LEAD'},
   {key:'pad',       label:'PAD'},
   {key:'arp',       label:'ARP'},
   {key:'stabs',     label:'STABS'},
-  {key:'texture',   label:'TEXTUR'},
+  {key:'texture',   label:t('TEXTUR')},
   {key:'fx',        label:'FX'},
 ];
 
@@ -2037,22 +2033,22 @@ function buildGrooveSoloRows() {
     return `<div class="gsolo-row" id="gsolorow_${key}" onclick="selectGrooveTrack('${key}')">
       <button class="gsolo-play-btn" id="gsoloplay_${key}"
               onclick="event.stopPropagation();soloPlayOrRender('${key}')"
-              data-tooltip="${label} Solo rendern und abhoeren.&#10;Zeigt nur diese Spur isoliert.">&#9654;</button>
+              data-tooltip="${t('{label} Solo rendern und abhoeren.&#10;Zeigt nur diese Spur isoliert.', {label})}">&#9654;</button>
       <span class="gsolo-label">${label}</span>
       <div style="display:flex;align-items:center;gap:.3rem;flex:1;">
         <input type="range" class="vol-slider" min="-24" max="6" step="0.5" value="${st.gain_db||0}"
                id="gsvol_${key}" onclick="event.stopPropagation()"
                oninput="onGrooveVol('${key}',this.value)"
-               data-tooltip="Lautstaerke von ${label}.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter">
+               data-tooltip="${t('Lautstaerke von {label}.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter', {label})}">
         <span class="gsolo-db" id="gsdb_${key}">${db} dB</span>
       </div>
       <span class="gsolo-pan" id="gspan_${key}">C</span>
       <button class="groove-btn${st.muted?' active':''}" id="gmute_${key}"
               onclick="event.stopPropagation();toggleGrooveMute('${key}')"
-              data-tooltip="${label} stummschalten (Mute).&#10;Stumme Spuren werden nicht in den Mix gerendert.">M</button>
+              data-tooltip="${t('{label} stummschalten (Mute).&#10;Stumme Spuren werden nicht in den Mix gerendert.', {label})}">M</button>
       <button class="groove-btn${st.soloed?' active':''}" id="gsolobtn_${key}"
               onclick="event.stopPropagation();toggleGrooveSolo('${key}')"
-              data-tooltip="${label} solo schalten.&#10;Alle anderen Spuren werden gedaempft.">S</button>
+              data-tooltip="${t('{label} solo schalten.&#10;Alle anderen Spuren werden gedaempft.', {label})}">S</button>
       <canvas class="gsolo-wave" id="gswave_${key}" width="120" height="28"></canvas>
     </div>`;
   }).join('');
@@ -2068,17 +2064,17 @@ function buildGrooveMixerRows() {
       <span class="groove-db" id="gdb_${key}">${db} dB</span>
       <input type="range" min="-24" max="6" step="0.5" value="${st.gain_db||0}"
              class="vol-slider" id="gvol_${key}" oninput="onGrooveVol2('${key}',this.value)"
-             data-tooltip="Lautstaerke (Gain) von ${label} in Dezibel.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter">
+             data-tooltip="${t('Lautstaerke (Gain) von {label} in Dezibel.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter', {label})}">
       <span class="groove-pan-val" id="gpan_${key}">C</span>
       <input type="range" min="-64" max="63" step="1" value="${st.pan||0}"
              class="vol-slider" id="gpansl_${key}" oninput="onGroovePan('${key}',this.value)"
-             data-tooltip="Stereo-Pan von ${label}.&#10;L = links · C = Mitte · R = rechts">
+             data-tooltip="${t('Stereo-Pan von {label}.&#10;L = links · C = Mitte · R = rechts', {label})}">
       <button class="groove-btn${st.muted?' active':''}" id="gmute2_${key}"
               onclick="toggleGrooveMute('${key}')"
-              data-tooltip="${label} stummschalten. Stumme Spuren fehlen im Re-Render.">M</button>
+              data-tooltip="${t('{label} stummschalten. Stumme Spuren fehlen im Re-Render.', {label})}">M</button>
       <button class="groove-btn${st.soloed?' active':''}" id="gsolo2_${key}"
               onclick="toggleGrooveSolo('${key}')"
-              data-tooltip="${label} solo schalten. Alle anderen werden gedaempft.">S</button>
+              data-tooltip="${t('{label} solo schalten. Alle anderen werden gedaempft.', {label})}">S</button>
     </div>`;
   }).join('');
 }
@@ -2147,7 +2143,7 @@ function selectGrooveTrack(key) {
 
   // Param-Panel befoellen
   const st = G.grooveState[key]||{};
-  $('grooveParamLabel').textContent = key.toUpperCase() + ' — Groove-Parameter';
+  $('grooveParamLabel').textContent = key.toUpperCase() + t(' — Groove-Parameter');
   const sw = $('gp_swing'); if(sw){sw.value=st.swing_pct??50; sw.dispatchEvent(new Event('input'));}
   const nu = $('gp_nudge'); if(nu) nu.value = st.nudge_ms??0;
   const vm = $('gp_velMin'); if(vm) vm.value = st.vel_min??1;
@@ -2257,24 +2253,24 @@ async function soloPlayOrRender(trackKey) {
 
 // Solo rendern und URL cachen — kein automatisches Abspielen
 async function renderSolo(trackKey) {
-  if(!G.currentUuid){alert('Zuerst einen Beat generieren.'); return;}
+  if(!G.currentUuid){alert(t('Zuerst einen Beat generieren.')); return;}
   const btn=$('gsoloplay_'+trackKey);
   if(btn){btn.classList.add('gsolo-loading');btn.classList.remove('gsolo-ready');btn.textContent='⋯';}
   try {
     const res=await fetch(`/render_solo/${G.currentUuid}/${encodeURIComponent(trackKey)}`);
     const data=await res.json();
-    if(data.error){alert('Solo-Fehler: '+data.error);return;}
+    if(data.error){alert(t('Solo-Fehler: ')+data.error);return;}
     G.soloUrls[trackKey] = data.audio_url;
     await drawMiniWaveform(trackKey, data.audio_url);
     if(btn) btn.classList.add('gsolo-ready');
     // KEIN Auto-Play — User klickt explizit auf ▶
-  } catch(e){alert('Netzwerkfehler: '+e.message);}
+  } catch(e){alert(t('Netzwerkfehler: ')+e.message);}
   finally{if(btn){btn.classList.remove('gsolo-loading');btn.textContent='▶';}}
 }
 
 // Alle Solos neu rendern (Cache und Playback-State leeren)
 async function renderAllSolos() {
-  if(!G.currentUuid){alert('Zuerst einen Beat generieren.'); return;}
+  if(!G.currentUuid){alert(t('Zuerst einen Beat generieren.')); return;}
   const player = $('soloPreviewPlayer');
   if(player) player.pause();
   _setSoloPlayingState(null);
@@ -2347,8 +2343,8 @@ async function drawMiniWaveform(trackKey, url) {
 
 // Groove & Re-Render
 async function applyGrooveAndRerender() {
-  if(!G.currentUuid){alert('Zuerst einen Beat generieren.'); return;}
-  const btn=$('btnApplyGroove'); if(btn){btn.disabled=true;btn.textContent='Wird gerendert…';}
+  if(!G.currentUuid){alert(t('Zuerst einen Beat generieren.')); return;}
+  const btn=$('btnApplyGroove'); if(btn){btn.disabled=true;btn.textContent=t('Wird gerendert…');}
   // Param-Panel speichern, bevor gesendet wird
   if(G.selectedGrooveTrack) saveGrooveParam();
 
@@ -2384,7 +2380,7 @@ async function applyGrooveAndRerender() {
     }),
     });
     const data=await res.json();
-    if(data.error){alert('Re-Render-Fehler: '+data.error);return;}
+    if(data.error){alert(t('Re-Render-Fehler: ')+data.error);return;}
     const rrUrl = data.rerender_url;
     G.rerenderUuid = data.uuid;
     G.rerenderUrl  = rrUrl;
@@ -2394,8 +2390,8 @@ async function applyGrooveAndRerender() {
     // Vorschau-Tab: Re-Render-Spieler laden und einblenden
     WellenformSpieler.load('rerenderAudioPlayer','rerenderWaveCanvas',rrUrl,'rerenderTimeDisplay');
     const rrs=$('rerenderSection'); if(rrs) rrs.hidden=false;
-  } catch(e){alert('Netzwerkfehler: '+e.message);}
-  finally{if(btn){btn.disabled=false;btn.textContent='▶ GROOVE ANWENDEN & NEU RENDERN';}}
+  } catch(e){alert(t('Netzwerkfehler: ')+e.message);}
+  finally{if(btn){btn.disabled=false;btn.textContent=t('▶ GROOVE ANWENDEN & NEU RENDERN');}}
 }
 
 function useRerenderedAsMain() {
@@ -2521,13 +2517,13 @@ function buildSamplePanel() {
       <span class="sample-lbl">${label}</span>
       <span class="sample-badge" id="sbadge_${key}">—</span>
       <button class="sample-btn" onclick="triggerSampleUpload('${key}')"
-              data-tooltip="Audio-Datei fuer ${label} auswaehlen.&#10;Unterstuetzte Formate: WAV, AIFF, FLAC, OGG, MP3&#10;Maximale Dateigroesse: 20 MB.">&#128193;</button>
+              data-tooltip="${t('Audio-Datei fuer {label} auswaehlen.&#10;Unterstuetzte Formate: WAV, AIFF, FLAC, OGG, MP3&#10;Maximale Dateigroesse: 20 MB.', {label})}">&#128193;</button>
       <button class="sample-btn" id="sprev_${key}"
               onclick="playSamplePreview('${key}')"
-              data-tooltip="Zugewiesenes Sample vorabhoeren.&#10;Nur verfuegbar wenn eine Datei zugewiesen ist." disabled>&#9654;</button>
+              data-tooltip="${t('Zugewiesenes Sample vorabhoeren.&#10;Nur verfuegbar wenn eine Datei zugewiesen ist.')}" disabled>&#9654;</button>
       <button class="sample-btn clear" id="sclear_${key}"
               onclick="clearSampleAssignment('${key}')"
-              data-tooltip="Sample-Zuweisung fuer ${label} entfernen.&#10;Die Spur verwendet wieder den eingebauten Synthesizer." disabled>&#10005;</button>
+              data-tooltip="${t('Sample-Zuweisung fuer {label} entfernen.&#10;Die Spur verwendet wieder den eingebauten Synthesizer.', {label})}" disabled>&#10005;</button>
       <input type="file" id="sfile_${key}" accept=".wav,.aif,.aiff,.flac,.ogg,.mp3"
              style="display:none" onchange="onSampleFileSelect('${key}', this)">
     </div>
@@ -2542,7 +2538,7 @@ function buildSamplePanel() {
 
 // Datei-Dialog oeffnen fuer einen Track.
 function triggerSampleUpload(key) {
-  if (!G.currentUuid) { alert('Zuerst einen Beat generieren.'); return; }
+  if (!G.currentUuid) { alert(t('Zuerst einen Beat generieren.')); return; }
   $('sfile_' + key)?.click();
 }
 
@@ -2553,7 +2549,7 @@ async function onSampleFileSelect(key, inputEl) {
 
   const ext = '.' + datei.name.split('.').pop().toLowerCase();
   if (!SAMPLE_ERLAUBTE_ENDUNGEN.has(ext)) {
-    alert(`Format '${ext}' nicht unterstuetzt.\nErlaubt: ${[...SAMPLE_ERLAUBTE_ENDUNGEN].join('  ')}`);
+    alert(t('Format {ext} nicht unterstuetzt.', {ext}) + '\n' + t('Erlaubt: {allowed}', {allowed: [...SAMPLE_ERLAUBTE_ENDUNGEN].join('  ')}));
     inputEl.value = '';
     return;
   }
@@ -2575,7 +2571,7 @@ async function onSampleFileSelect(key, inputEl) {
     G.sampleAssignments[key] = {filename: datei.name, sizeKb};
     _updateSampleRow(key, G.sampleAssignments[key]);
   } catch (err) {
-    alert('Upload fehlgeschlagen: ' + err.message);
+    alert(t('Upload fehlgeschlagen: ') + err.message);
     G.sampleFiles[key] = null;
   } finally {
     if (prog) prog.style.display = 'none';
@@ -2603,7 +2599,7 @@ function _uploadSample(key, datei, onProgress) {
         try {
           const r = JSON.parse(xhr.responseText);
           if (r.ok) resolve(Math.round(r.size_bytes / 1024));
-          else reject(new Error(r.error || 'Server-Fehler'));
+          else reject(new Error(r.error || t('Server-Fehler')));
         } catch { reject(new Error('Ungueltige Server-Antwort')); }
       } else {
         reject(new Error(`HTTP ${xhr.status}`));
@@ -2641,7 +2637,7 @@ function _updateSampleRow(key, info) {
 // Web-Audio-API-Vorschau: Datei direkt clientseitig abspielen.
 async function playSamplePreview(key) {
   const datei = G.sampleFiles[key];
-  if (!datei) { alert('Kein Sample-File im Speicher. Bitte Seite nicht neu laden.'); return; }
+  if (!datei) { alert(t('Kein Sample-File im Speicher. Bitte Seite nicht neu laden.')); return; }
   try {
     const ctx    = _getAudioCtx();
     const puffer = await datei.arrayBuffer();
@@ -2651,7 +2647,7 @@ async function playSamplePreview(key) {
     quelle.connect(ctx.destination);
     quelle.start(0);
   } catch (err) {
-    alert('Vorschau fehlgeschlagen: ' + err.message);
+    alert(t('Vorschau fehlgeschlagen: ') + err.message);
   }
 }
 
@@ -2676,9 +2672,9 @@ async function loadAvailableSoundfonts() {
     const data = await res.json();
     const sel  = $('sf2PresetSelect'); if(!sel) return;
     const fonts = data.fonts || [];
-    const fsNote = data.fluidsynth_available ? '' : ' (FluidSynth nicht gefunden)';
+    const fsNote = data.fluidsynth_available ? '' : t(' (FluidSynth nicht gefunden)');
     // Standardoption: leerer Wert = Genre-Standard-SF2 (wie MA V7), kein Builtin.
-    const _defaultOpt = `<option value="">— Genre-Standard (SF2) —</option>`;
+    const _defaultOpt = `<option value="">${t('— Genre-Standard (SF2) —')}</option>`;
     const _fontOpts   = fonts.map(f=>`<option value="${esc(f.key)}">${esc(f.label)}${fsNote}</option>`).join('');
     sel.innerHTML = _defaultOpt + _fontOpts;
     // Sidebar-Selector ebenfalls befuellen.
@@ -2698,13 +2694,13 @@ async function uploadSf2File(input) {
       G.sf2Uuid = data.sf2_uuid; G.sf2Key = null;
       const fn=$('sf2FileName'); if(fn) fn.textContent=data.name;
       const sel=$('sf2PresetSelect'); if(sel) sel.value='';
-    } else { alert(data.error||'Upload fehlgeschlagen.'); }
-  } catch(e){ alert('Upload-Fehler: '+e.message); }
+    } else { alert(data.error||t('Upload fehlgeschlagen.')); }
+  } catch(e){ alert(t('Upload-Fehler: ')+e.message); }
   finally{ if(prog) prog.hidden=true; }
 }
 
 function openExportModalForRerender() {
-  if(!G.rerenderUuid){ alert('Zuerst neu rendern.'); return; }
+  if(!G.rerenderUuid){ alert(t('Zuerst neu rendern.')); return; }
   openExportModal();
   setTimeout(()=>setExportSrc('rerender'), 80);
 }
@@ -2721,9 +2717,9 @@ async function loadPaletteData(genre) {
     const sel = $('paletteSelect'); if(!sel) return;
     const palettes = data.palettes || [];
     sel.innerHTML = palettes.length
-      ? `<option value="">— Palette waehlen —</option>` +
+      ? `<option value="">${t('— Palette waehlen —')}</option>` +
         palettes.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}${p.branch?' ('+esc(p.branch)+')':''}</option>`).join('')
-      : `<option value="">Keine Paletten fuer dieses Genre</option>`;
+      : `<option value="">${t('Keine Paletten fuer dieses Genre')}</option>`;
     updateFxVariantButtons(data.fx_variants || []);
     setPaletteVariant(G.currentFxVariant || 'neutral');
   } catch(e) { console.warn('Paletten-Ladefehler:', e); }
@@ -2777,7 +2773,7 @@ function setPaletteVariant(variantId) {
 }
 
 async function checkTheory() {
-  if(!G.lastData){alert('Zuerst einen Beat generieren.'); return;}
+  if(!G.lastData){alert(t('Zuerst einen Beat generieren.')); return;}
 
   // Branch aus der gewaehlten Palette lesen (A/B/C); Standard 'A' wenn keine Palette.
   const branch = G.currentPalette?.branch || 'A';
@@ -2832,7 +2828,7 @@ function renderTheoryResult(result) {
 function setGenerating(a) {
   const b=$('btnGenerate'), sp=$('genSpinner');
   // innerHTML verwenden, damit HTML-Entities korrekt gerendert werden
-  if(b){ b.disabled=a; b.innerHTML=a?'&#8230;':'&#9654; Beat generieren'; }
+  if(b){ b.disabled=a; b.innerHTML=a?'&#8230;':t('&#9654; Beat generieren'); }
   // style.display direkt setzen, damit kein CSS-display-Konflikt mit hidden entsteht
   if(sp) sp.style.display = a ? 'flex' : 'none';
 }
@@ -3101,7 +3097,7 @@ const EX = {
 };
 
 async function openExportModal() {
-  if (!G.currentUuid) { alert('Zuerst einen Beat generieren.'); return; }
+  if (!G.currentUuid) { alert(t('Zuerst einen Beat generieren.')); return; }
 
   // Formate und ffmpeg-Status laden (einmalig).
   // Scheitert die Anfrage (z.B. nicht eingeloggt oder Server-Fehler), wird der Fehler sichtbar.
@@ -3110,7 +3106,7 @@ async function openExportModal() {
       const r = await fetch('/export_formats');
       if (!r.ok) {
         const errEl = $('exportAudioErr');
-        if (errEl) { errEl.textContent = `⚠ Format-Liste konnte nicht geladen werden (HTTP ${r.status}). Bitte neu einloggen.`; errEl.hidden = false; }
+        if (errEl) { errEl.textContent = t('⚠ Format-Liste konnte nicht geladen werden (HTTP {status}). Bitte neu einloggen.', {status: r.status}); errEl.hidden = false; }
       } else {
         const d = await r.json();
         EX.formats = d.formats || {};
@@ -3118,7 +3114,7 @@ async function openExportModal() {
       }
     } catch(e) {
       const errEl = $('exportAudioErr');
-      if (errEl) { errEl.textContent = `⚠ Format-Liste Fehler: ${e.message}`; errEl.hidden = false; }
+      if (errEl) { errEl.textContent = t('⚠ Format-Liste Fehler: {msg}', {msg: e.message}); errEl.hidden = false; }
     }
   }
 
@@ -3201,7 +3197,7 @@ function _downloadUrl(url) {
 
 async function doExportAudio() {
   const uuid = _exportUuid();
-  if (!uuid) { alert('Kein Beat vorhanden.'); return; }
+  if (!uuid) { alert(t('Kein Beat vorhanden.')); return; }
   const fmt  = EX.formats[EX.format] || {};
   const needsFfmpeg = fmt.ffmpeg && !EX.ffmpeg;
 
@@ -3209,19 +3205,19 @@ async function doExportAudio() {
   if (errEl) errEl.hidden = true;
 
   if (needsFfmpeg) {
-    if (errEl) { errEl.textContent = '⚠ ffmpeg nicht gefunden. Bitte ffmpeg installieren oder WAV CD Quality waehlen.'; errEl.hidden = false; }
+    if (errEl) { errEl.textContent = t('⚠ ffmpeg nicht gefunden. Bitte ffmpeg installieren oder WAV CD Quality waehlen.'); errEl.hidden = false; }
     return;
   }
 
   const btn = $('btnExportAudio');
-  if (btn) { btn.disabled = true; btn.textContent = 'Wird konvertiert…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('Wird konvertiert…'); }
   try {
     const url = `/export_audio/${uuid}?format=${encodeURIComponent(EX.format)}`;
     const res = await fetch(url);
     if (!res.ok) {
       const d = await res.json().catch(()=>({}));
       // Lesbare Fehlermeldung anzeigen (message bevorzugt vor error-Code)
-      showExportError(errEl, d, 'Fehler beim Exportieren.');
+      showExportError(errEl, d, t('Fehler beim Exportieren.'));
       return;
     }
     // Datei-Download: Blob aus Response holen
@@ -3236,9 +3232,9 @@ async function doExportAudio() {
     // Kontingent-Anzeige nach erfolgreichem Export aktualisieren
     refreshQuota();
   } catch(e) {
-    if (errEl) { errEl.textContent = '⚠ Netzwerkfehler: ' + e.message; errEl.hidden = false; }
+    if (errEl) { errEl.textContent = t('⚠ Netzwerkfehler: ') + e.message; errEl.hidden = false; }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '⬇ AUDIO HERUNTERLADEN'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('⬇ AUDIO HERUNTERLADEN'); }
   }
 }
 
@@ -3249,7 +3245,7 @@ function showExportError(errEl, d, fallback) {
   if (d.error === 'quota_exceeded') {
     if (d.buy_url) {
       const a = document.createElement('a');
-      a.href = d.buy_url; a.textContent = 'Tokens kaufen →';
+      a.href = d.buy_url; a.textContent = t('Tokens kaufen →');
       errEl.appendChild(a);
     }
     refreshQuota();
@@ -3262,7 +3258,6 @@ async function refreshQuota() {
   try {
     const res = await fetch('/quota');
     const d = await res.json();
-    const qd = $('quotaDaily');   if (qd) qd.textContent = d.daily_remaining   ?? '?';
     const qm = $('quotaMonthly'); if (qm) qm.textContent = d.monthly_remaining ?? '?';
     const qt = $('quotaTokens');  if (qt) qt.textContent = d.token_balance     ?? '?';
   } catch(e) { /* Stilles Scheitern — Anzeige bleibt unveraendert */ }
@@ -3271,13 +3266,13 @@ async function refreshQuota() {
 async function doExportMIDI() {
   // Re-Render-Kontext: groovte Version exportieren; sonst Original
   const uuid = _exportUuid();
-  if (!uuid) { alert('Kein Beat vorhanden.'); return; }
+  if (!uuid) { alert(t('Kein Beat vorhanden.')); return; }
   const errEl = $('exportOtherErr');
   try {
     const res = await fetch(`/export_midi/${uuid}`);
     if (!res.ok) {
       const d = await res.json().catch(()=>({}));
-      showExportError(errEl, d, 'MIDI-Export fehlgeschlagen.');
+      showExportError(errEl, d, t('MIDI-Export fehlgeschlagen.'));
       return;
     }
     const blob = await res.blob();
@@ -3295,13 +3290,13 @@ async function doExportMIDI() {
 async function doExportJSON() {
   // Re-Render-Kontext: groovte Kompositionsdaten exportieren; sonst Original
   const uuid = _exportUuid();
-  if (!uuid) { alert('Kein Beat vorhanden.'); return; }
+  if (!uuid) { alert(t('Kein Beat vorhanden.')); return; }
   const errEl = $('exportOtherErr');
   try {
     const res = await fetch(`/export_json/${uuid}`);
     if (!res.ok) {
       const d = await res.json().catch(()=>({}));
-      if(errEl){errEl.textContent='⚠ '+(d.error||'JSON-Export fehlgeschlagen.');errEl.hidden=false;}
+      if(errEl){errEl.textContent='⚠ '+(d.error||t('JSON-Export fehlgeschlagen.'));errEl.hidden=false;}
       return;
     }
     const blob = await res.blob();
@@ -3317,13 +3312,13 @@ async function doExportJSON() {
 
 async function doExportPDF() {
   const uuid = _exportOrigUuid();
-  if (!uuid) { alert('Kein Beat vorhanden.'); return; }
+  if (!uuid) { alert(t('Kein Beat vorhanden.')); return; }
   const errEl = $('exportOtherErr');
   try {
     const res = await fetch(`/export_advisory_pdf/${uuid}`);
     if (!res.ok) {
       const d = await res.json().catch(()=>({}));
-      if(errEl){errEl.textContent='⚠ '+(d.error||d.message||'PDF-Export fehlgeschlagen.');errEl.hidden=false;}
+      if(errEl){errEl.textContent='⚠ '+(d.error||d.message||t('PDF-Export fehlgeschlagen.'));errEl.hidden=false;}
       return;
     }
     const blob = await res.blob();

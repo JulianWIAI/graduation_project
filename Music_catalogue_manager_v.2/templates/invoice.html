@@ -1,46 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Rechnung {{ ctx.number }} · SBS Catalog{% endblock %}
+{% block title %}{{ _('Rechnung') }} {{ ctx.number }} · SBS Catalog{% endblock %}
 {% block content %}
 <div class="row-actions" style="margin-bottom:16px;">
-  <button class="btn btn-ghost" onclick="window.print()">Drucken</button>
+  <button class="btn btn-ghost" onclick="window.print()">{{ _('Drucken') }}</button>
 </div>
 
 <div class="panel" style="max-width:640px;">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div>
       <div class="mono" style="font-size:16px;color:var(--cyan);">{{ ctx.seller }}</div>
-      <div class="muted small">Musikproduktion &amp; Lizenzierung</div>
+      <div class="muted small">{{ _('Musikproduktion &amp; Lizenzierung') }}</div>
     </div>
     <div style="text-align:right;">
-      <div class="mono">{{ 'RECHNUNG' if ctx.status == 'paid' else 'PROFORMA' }}</div>
-      <div class="muted small">Nr. {{ ctx.number }}</div>
+      <div class="mono">{{ _('RECHNUNG') if ctx.status == 'paid' else 'PROFORMA' }}</div>
+      <div class="muted small">{{ _('Nr.') }} {{ ctx.number }}</div>
       <div class="muted small">{{ ctx.date }}</div>
     </div>
   </div>
 
   <div class="spacer"></div><div class="spacer"></div>
-  <label>Rechnung an</label>
+  <label>{{ _('Rechnung an') }}</label>
   <div>{{ ctx.buyer }}</div>
 
   <div class="spacer"></div><div class="spacer"></div>
   <table>
-    <thead><tr><th>Beschreibung</th><th class="num">Betrag</th></tr></thead>
+    <thead><tr><th>{{ _('Beschreibung') }}</th><th class="num">{{ _('Betrag') }}</th></tr></thead>
     <tbody>
       <tr><td>{{ ctx.desc }}</td><td class="num">{{ ctx.net | euro }}</td></tr>
       {% if ctx.discount_pct %}
-      <tr><td class="muted small">Enthält Abo-Rabatt von {{ ctx.discount_pct | round(0) }} % (Liste {{ ctx.list_price | euro }})</td><td></td></tr>
+      <tr><td class="muted small">{{ _('Enthält Abo-Rabatt von') }} {{ ctx.discount_pct | round(0) }} {{ _('% (Liste') }} {{ ctx.list_price | euro }})</td><td></td></tr>
       {% endif %}
-      <tr><td>Zwischensumme (netto)</td><td class="num">{{ ctx.net | euro }}</td></tr>
-      <tr><td>Umsatzsteuer {{ ctx.vat_pct | round(0) }} %</td><td class="num">{{ ctx.vat | euro }}</td></tr>
-      <tr><td><strong>Gesamtbetrag</strong></td><td class="num"><strong>{{ ctx.gross | euro }}</strong></td></tr>
+      <tr><td>{{ _('Zwischensumme (netto)') }}</td><td class="num">{{ ctx.net | euro }}</td></tr>
+      <tr><td>{{ _('Umsatzsteuer') }} {{ ctx.vat_pct | round(0) }} %</td><td class="num">{{ ctx.vat | euro }}</td></tr>
+      <tr><td><strong>{{ _('Gesamtbetrag') }}</strong></td><td class="num"><strong>{{ ctx.gross | euro }}</strong></td></tr>
     </tbody>
   </table>
 
   <div class="spacer"></div>
   <div class="hint-box">
-    Status: <strong>{{ 'bezahlt am ' ~ ctx.date if ctx.status == 'paid' else 'offen' }}</strong>.
-    {% if ctx.vat_pct == 0 %}Hinweis: keine USt ausgewiesen (Kleinunternehmerregelung).{% endif %}
+    {{ _('Status:') }} <strong>{{ _('bezahlt am %(date)s', date=ctx.date) if ctx.status == 'paid' else _('offen') }}</strong>.
+    {% if ctx.vat_pct == 0 %}{{ _('Hinweis: keine USt ausgewiesen (Kleinunternehmerregelung).') }}{% endif %}
   </div>
-  <p class="muted small" style="margin-top:12px;">Simulierter Beleg für Demonstrationszwecke — keine echte Zahlung.</p>
+  <p class="muted small" style="margin-top:12px;">{{ _('Simulierter Beleg für Demonstrationszwecke — keine echte Zahlung.') }}</p>
 </div>
 {% endblock %}

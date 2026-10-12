@@ -14,12 +14,14 @@ import io
 import pathlib
 from datetime import timedelta
 
-from flask import (Flask, flash, redirect, render_template, request,
+from flask import (Flask, abort, flash, redirect, render_template, request,
                    Response, url_for)
 from flask_login import LoginManager, login_required, current_user
 from flask_session import Session
 
 import config
+import i18n
+from i18n import _
 from db import database as db
 from commerce import billing
 from commerce import economics
@@ -59,6 +61,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = "auth.login"
 login_manager.login_message = "Bitte melden Sie sich an, um auf diese Seite zuzugreifen."
 login_manager.login_message_category = "error"
+login_manager.localize_callback = _      # Login-Hinweis in der gewaehlten Sprache
 
 
 @login_manager.user_loader
@@ -73,6 +76,7 @@ app.register_blueprint(generate_bp)
 app.register_blueprint(sample_upload_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(tokens_bp)
+i18n.init_app(app)                       # Sprachumschaltung DE / EN / FR
 
 # Datenbank beim Import initialisieren (idempotent).
 db.init_db()
@@ -131,7 +135,7 @@ def track_detail(track_id):
     track = conn.execute("SELECT * FROM tracks WHERE id = ?", (track_id,)).fetchone()
     if not track:
         conn.close()
-        flash("Track nicht gefunden.", "error")
+        flash(_("Track nicht gefunden."), "error")
         return redirect(url_for("catalog"))
     exports = conn.execute(
         "SELECT * FROM exports WHERE track_id = ? ORDER BY tier", (track_id,)
@@ -181,7 +185,7 @@ def sell():
 def checkout(license_id):
     lic = billing.get_license(license_id)
     if not lic:
-        flash("Bestellung nicht gefunden.", "error")
+        flash(_("Bestellung nicht gefunden."), "error")
         return redirect(url_for("catalog"))
     ctx = billing.invoice_context("license", lic)
     return render_template("checkout.html", lic=lic, ctx=ctx)
@@ -192,7 +196,7 @@ def checkout(license_id):
 @require_admin
 def license_pay(license_id):
     ok, err = billing.pay_license(license_id)
-    flash("Zahlung bestätigt — die Lizenz ist bezahlt." if ok else err,
+    flash(_("Zahlung bestätigt — die Lizenz ist bezahlt.") if ok else err,
           "success" if ok else "error")
     return redirect(url_for("invoice", license_id=license_id))
 
@@ -204,7 +208,7 @@ def license_cancel(license_id):
     lic = billing.get_license(license_id)
     track_id = lic["track_id"] if lic else None
     ok, err = billing.cancel_license(license_id)
-    flash("Bestellung storniert, Track wieder freigegeben." if ok else err,
+    flash(_("Bestellung storniert, Track wieder freigegeben.") if ok else err,
           "success" if ok else "error")
     return redirect(url_for("track_detail", track_id=track_id) if track_id
                     else url_for("licenses"))
@@ -216,7 +220,7 @@ def license_cancel(license_id):
 def invoice(license_id):
     lic = billing.get_license(license_id)
     if not lic:
-        flash("Rechnung nicht gefunden.", "error")
+        flash(_("Rechnung nicht gefunden."), "error")
         return redirect(url_for("licenses"))
     ctx = billing.invoice_context("license", lic)
     return render_template("invoice.html", ctx=ctx)
@@ -263,7 +267,7 @@ def settings_view():
                 request.form.get("token_price_basic", current["basic"]),
                 request.form.get("token_price_subscriber", current["subscriber"]))
             if err:
-                flash(err + " Einstellungen wurden nicht gespeichert.", "error")
+                flash(err + " " + _("Einstellungen wurden nicht gespeichert."), "error")
                 return redirect(url_for("settings_view"))
         changed = {}
         for key in keys:
@@ -271,7 +275,7 @@ def settings_view():
                 db.set_setting(key, request.form[key])
                 changed[key] = request.form[key]
         db.log_event("SETTINGS_CHANGED", "settings", None, changed)
-        flash("Einstellungen gespeichert.", "success")
+        flash(_("Einstellungen gespeichert."), "success")
         return redirect(url_for("settings_view"))
 
     settings = db.get_all_settings()
@@ -289,13 +293,14 @@ def scan():
     if cat.get("error"):
         flash(cat["error"], "error")
     else:
-        flash(f"Katalog gescannt: {cat['added']} neu, {cat['updated']} "
-              f"aktualisiert ({cat['scanned']} Dateien).", "success")
+        flash(_("Katalog gescannt: %(added)s neu, %(updated)s aktualisiert "
+                "(%(scanned)s Dateien).", added=cat["added"], updated=cat["updated"],
+                scanned=cat["scanned"]), "success")
     if exp.get("error"):
         flash(exp["error"], "error")
     else:
-        flash(f"Exporte gescannt: {exp['linked']} verknuepft, "
-              f"{exp['unmatched']} ohne Zuordnung.", "success")
+        flash(_("Exporte gescannt: %(linked)s verknuepft, %(unmatched)s ohne Zuordnung.",
+                linked=exp["linked"], unmatched=exp["unmatched"]), "success")
     return redirect(request.referrer or url_for("dashboard_view"))
 
 
@@ -307,9 +312,9 @@ def load_demo():
     if result.get("error"):
         flash(result["error"], "error")
     else:
-        flash(f"Demo-Daten erzeugt: {result['midi_created']} MIDI-Dateien, "
-              f"{result['exports_created']} Exporte. Jetzt 'Scannen' klicken.",
-              "success")
+        flash(_("Demo-Daten erzeugt: %(midi)s MIDI-Dateien, %(exports)s Exporte. "
+                "Jetzt 'Scannen' klicken.", midi=result["midi_created"],
+                exports=result["exports_created"]), "success")
         db.log_event("DEMO_LOADED", "catalog", None, result)
     return redirect(request.referrer or url_for("dashboard_view"))
 
@@ -345,56 +350,75 @@ def users_tokens(user_id):
     try:
         tokens.admin_adjust(user_id, int(request.form.get("amount", "0")),
                             admin_id=current_user.id)
-        flash("Token-Guthaben angepasst.", "success")
+        flash(_("Token-Guthaben angepasst."), "success")
     except (ValueError, tokens.TokenError) as exc:
-        flash(str(exc) or "Ungueltiger Betrag.", "error")
+        flash(str(exc) or _("Ungueltiger Betrag."), "error")
     return redirect(url_for("users_view"))
 
 
-# --- Abo-Checkout -----------------------------------------------------------
+# --- Tarifwahl & Abo-Checkout -----------------------------------------------
+# Kunden buchen und bezahlen nur ihr EIGENES Abo; Admins duerfen es fuer jeden.
+
+def _own_subscription_or_404(sub_id):
+    sub = billing.get_subscription(sub_id)
+    if not sub or (sub["user_id"] != current_user.id and not current_user.is_admin):
+        abort(404)   # fremde Bestellungen nicht preisgeben
+    return sub
+
+
+@app.route("/plan")
+@login_required
+def plan():
+    """Tarifwahl Basis/Abo -- erste Seite nach der Registrierung."""
+    user = quota.get_user(current_user.id)
+    terms = [{"months": m, "price": billing.subscription_price(m)}
+             for m in config.SUBSCRIPTION_TERMS]
+    limits = {"free": db.get_setting("limit_free"),
+              "sub": db.get_setting("limit_subscriber"),
+              "discount": db.get_setting("discount_pct")}
+    return render_template("plan.html", user=user, terms=terms, limits=limits,
+                           active=quota.has_subscription(user),
+                           notice=quota.subscription_notice(user),
+                           status=quota.quota_status(user),
+                           token_prices=tokens.get_prices())
+
 
 @app.route("/subscription/start", methods=["POST"])
 @login_required
-@require_admin
 def subscription_start():
-    user_id = int(request.form["user_id"])
-    term = int(request.form.get("term_months", "1"))
+    # Nur Admins duerfen fuer andere Nutzer buchen -- Kunden immer fuer sich selbst.
+    for_other = current_user.is_admin and "user_id" in request.form
+    user_id = request.form.get("user_id", type=int) if for_other else current_user.id
+    back = url_for("users_view") if for_other else url_for("plan")
+    term = request.form.get("term_months", 1, type=int)
     sub_id, err = billing.create_subscription(user_id, term)
     if err:
         flash(err, "error")
-        return redirect(url_for("users_view"))
+        return redirect(back)
     return redirect(url_for("subscription_checkout", sub_id=sub_id))
 
 
 @app.route("/subscription/checkout/<int:sub_id>")
 @login_required
-@require_admin
 def subscription_checkout(sub_id):
-    sub = billing.get_subscription(sub_id)
-    if not sub:
-        flash("Abo-Bestellung nicht gefunden.", "error")
-        return redirect(url_for("users_view"))
+    sub = _own_subscription_or_404(sub_id)
     ctx = billing.invoice_context("subscription", sub)
     return render_template("checkout.html", sub=sub, ctx=ctx)
 
 
 @app.route("/subscription/<int:sub_id>/pay", methods=["POST"])
 @login_required
-@require_admin
 def subscription_pay(sub_id):
+    _own_subscription_or_404(sub_id)
     ok, err = billing.pay_subscription(sub_id)
-    flash("Abo bezahlt und aktiviert." if ok else err, "success" if ok else "error")
+    flash(_("Abo bezahlt und aktiviert.") if ok else err, "success" if ok else "error")
     return redirect(url_for("subscription_invoice", sub_id=sub_id))
 
 
 @app.route("/subscription/invoice/<int:sub_id>")
 @login_required
-@require_admin
 def subscription_invoice(sub_id):
-    sub = billing.get_subscription(sub_id)
-    if not sub:
-        flash("Rechnung nicht gefunden.", "error")
-        return redirect(url_for("users_view"))
+    sub = _own_subscription_or_404(sub_id)
     ctx = billing.invoice_context("subscription", sub)
     return render_template("invoice.html", ctx=ctx)
 
@@ -407,10 +431,11 @@ def users_add():
     email = request.form.get("email", "").strip()
     is_sub = request.form.get("is_subscriber") == "on"
     if not name:
-        flash("Bitte einen Namen angeben.", "error")
+        flash(_("Bitte einen Namen angeben."), "error")
     else:
         quota.add_user(name, email, is_sub)
-        flash(f"Nutzer '{name}' angelegt{' (Abo)' if is_sub else ''}.", "success")
+        flash(_("Nutzer '%(name)s' angelegt (Abo).", name=name) if is_sub
+              else _("Nutzer '%(name)s' angelegt.", name=name), "success")
     return redirect(url_for("users_view"))
 
 
@@ -422,8 +447,8 @@ def users_toggle(user_id):
     if user:
         new_state = not bool(user["is_subscriber"])
         quota.set_subscriber(user_id, new_state)
-        flash(f"'{user['name']}' ist jetzt {'Abonnent' if new_state else 'Basis-Nutzer'}.",
-              "success")
+        flash(_("'%(name)s' ist jetzt Abonnent.", name=user["name"]) if new_state
+              else _("'%(name)s' ist jetzt Basis-Nutzer.", name=user["name"]), "success")
     return redirect(url_for("users_view"))
 
 
@@ -438,12 +463,14 @@ def generate_track():
         count = 1
     res = gateway.run_generation(user_id, count=count)
     if res["ok"]:
-        token_note = (f" {res['tokens_used']} Token(s) verbraucht."
-                      if res.get("tokens_used") else "")
-        flash(f"[{res['mode']}] {res['count']} Track(s) fuer {res['user']} erzeugt. "
-              f"Heute {res['status']['used']}/{res['status']['limit']} "
-              f"(noch {res['status']['remaining']}).{token_note} Zum Uebernehmen: Scannen.",
-              "success")
+        st = res["status"]
+        msg = _("[%(mode)s] %(count)s Track(s) fuer %(user)s erzeugt. "
+                "Diesen Monat %(used)s/%(limit)s (noch %(remaining)s).",
+                mode=res["mode"], count=res["count"], user=res["user"],
+                used=st["used"], limit=st["limit"], remaining=st["remaining"])
+        if res.get("tokens_used"):
+            msg += " " + _("%(n)s Token(s) verbraucht.", n=res["tokens_used"])
+        flash(msg + " " + _("Zum Uebernehmen: Scannen."), "success")
     else:
         flash(res["error"], "error")
     return redirect(request.referrer or url_for("users_view"))

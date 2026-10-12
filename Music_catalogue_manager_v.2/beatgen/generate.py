@@ -5,7 +5,7 @@ Der Music-Architect-Motor liegt ein Verzeichnis hoeher. Beide Pfade (Root und sr
 werden zu sys.path hinzugefuegt, damit die internen 'from src.*'-Imports des Motors
 ohne Aenderung aufgeloest werden koennen.
 
-Kontingent wird NUR bei /save bzw. beim ersten Export verbraucht, niemals bei
+Das Monatskontingent wird NUR bei /save bzw. beim ersten Export verbraucht, niemals bei
 /generate. Zuhoeren ist immer frei. Ist das Kontingent erschoepft, wird statt-
 dessen 1 gekaufter Token abgebucht (siehe _gate_quota / commerce/tokens.py).
 """
@@ -26,8 +26,11 @@ from flask import (Blueprint, current_app, jsonify, request,
 from flask_login import current_user, login_required
 
 from db import database as db
+from commerce import quota as _quota
 from commerce import tokens as _tokens
+from i18n import _
 from beatgen import export_service
+from beatgen import synth_core_fix
 from appdata import fusion_data
 from appdata import palette_data as _palette_data
 from beatgen import theory_scorer as _theory_scorer
@@ -96,41 +99,24 @@ def _ensure_ma_path():
         sys.path.insert(0, ma_root)
     if ma_src not in sys.path:
         sys.path.insert(0, ma_src)
+    # Ohne kompiliertes synth_core den reinen Python-Renderer erzwingen.
+    synth_core_fix.ensure_python_fallback()
 
 
 # ---------------------------------------------------------------------------
-# Kontingent-Grenzen
+# Kontingent (Monatslimit) -- einzige Quelle ist commerce/quota.py
 # ---------------------------------------------------------------------------
-_FREE_DAILY    = 3
-_PRO_DAILY     = 10
-_PRO_MONTHLY   = 100
 
-
-def _quota_limits(tier: str):
-    daily   = _PRO_DAILY    if tier == "pro" else _FREE_DAILY
-    monthly = _PRO_MONTHLY  if tier == "pro" else None
-    return daily, monthly
-
-
-def _quota_remaining(user_id: int, tier: str):
-    today = date.today().isoformat()
-    row   = db.get_quota(user_id, today)
-
-    daily_used   = row["daily_saves"]   if row else 0
-    monthly_used = row["monthly_saves"] if row else 0
-
-    daily_limit, monthly_limit = _quota_limits(tier)
-    daily_rem   = max(daily_limit - daily_used, 0)
-    monthly_rem = (max(monthly_limit - monthly_used, 0)
-                   if monthly_limit is not None else None)
-    return daily_rem, monthly_rem, daily_used, monthly_used
+def _quota_status():
+    """Monatskontingent des eingeloggten Nutzers: limit / used / remaining / tokens."""
+    return _quota.quota_status(_quota.get_user(current_user.id))
 
 
 def _gate_quota(reference: str):
     """
     Gemeinsames Kontingent-Gate fuer /save, /export_audio und /export_midi.
 
-    * Kontingent frei          -> (None, False)
+    * Monatskontingent frei    -> (None, False)
     * Kontingent erschoepft,
       Token-Guthaben vorhanden -> 1 Token wird abgebucht, (None, True)
     * sonst                    -> (429-JSON-Antwort, False)
@@ -138,24 +124,21 @@ def _gate_quota(reference: str):
     Das Kontingent (quota_ledger) wird vom Aufrufer in jedem Fall weiter
     hochgezaehlt, damit die Statistik alle Speichervorgaenge enthaelt.
     """
-    tier = current_user.tier
-    daily_rem, monthly_rem, _, _ = _quota_remaining(current_user.id, tier)
-    if daily_rem > 0 and (monthly_rem is None or monthly_rem > 0):
+    status = _quota_status()
+    if status["remaining"] > 0:
         return None, False
 
     if _tokens.consume(current_user.id, 1, reference=reference):
         return None, True
 
-    if daily_rem <= 0:
-        limit = _PRO_DAILY if tier == "pro" else _FREE_DAILY
-        msg = f"Tageslimit erreicht ({limit}/Tag im {tier}-Tarif)."
-    else:
-        msg = f"Monatslimit erreicht ({_PRO_MONTHLY}/Monat im {tier}-Tarif)."
     offer = _tokens.price_for(current_user.id)
     return (jsonify({
         "error":         "quota_exceeded",
-        "message":       (f"{msg} Kein Token-Guthaben — weitere Sounds sind mit "
-                          f"Tokens möglich ({_tokens.fmt_eur(offer['unit_price'])} je Token)."),
+        "message":       _("Monatslimit erreicht (%(limit)s Sounds pro Monat). Kein "
+                           "Token-Guthaben — weitere Sounds sind mit Tokens möglich "
+                           "(%(price)s je Token).",
+                           limit=status["limit"],
+                           price=_tokens.fmt_eur(offer["unit_price"])),
         "token_balance": 0,
         "token_price":   offer["unit_price"],
         "buy_url":       url_for("tokens.shop"),
@@ -259,8 +242,7 @@ def _persist_track(audio_uuid: str, user_id: int) -> int | None:
 @login_required
 def generate_page():
     from flask import render_template
-    daily_rem, monthly_rem, _, _ = _quota_remaining(
-        current_user.id, current_user.tier)
+    status = _quota_status()
     # GM-Beschreibungen als JSON-String fuer das Template laden.
     import json as _json
     gm_descs: dict = {}
@@ -285,9 +267,9 @@ def generate_page():
     return render_template(
         "generate.html",
         tier                 = current_user.tier,
-        daily_remaining      = daily_rem,
-        monthly_remaining    = monthly_rem,
-        token_balance        = _tokens.balance(current_user.id),
+        monthly_remaining    = status["remaining"],
+        monthly_limit        = status["limit"],
+        token_balance        = status["tokens"],
         _instruments         = _INSTRUMENTS,
         _fusion_presets      = _FUSION_PRESETS,
         _fusion_genres       = fusion_data.AVAILABLE_GENRES,
@@ -401,10 +383,8 @@ def generate_track():
             if _row:
                 return jsonify({
                     "error":   "seed_locked",
-                    "message": (
-                        f"Seed {seed_int} wurde bereits exklusiv verkauft "
-                        "und kann nicht erneut generiert werden."
-                    ),
+                    "message": _("Seed %(seed)s wurde bereits exklusiv verkauft "
+                                 "und kann nicht erneut generiert werden.", seed=seed_int),
                 }), 409
         except ValueError:
             pass  # Kein gueltiger Integer-Seed — wird spaeter in CompositionConfig behandelt.
@@ -524,8 +504,8 @@ def generate_track():
         # Sicherstellen, dass die WAV-Datei tatsaechlich erstellt wurde.
         if not wav_path.exists() or wav_path.stat().st_size == 0:
             raise RuntimeError(
-                "Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. "
-                "Bitte Server-Log pruefen."
+                _("Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. "
+                  "Bitte Server-Log pruefen.")
             )
 
         # Komposition als JSON speichern — wird fuer Solo-Rendering und Re-Render benoetigt.
@@ -724,13 +704,12 @@ def save_track():
     wav_str = session.get(f"temp_{audio_uuid}")
     if not wav_str:
         return jsonify({"error": "not_found",
-                        "message": "Kein generiertes Audio gefunden. Bitte zuerst generieren."}), 400
+                        "message": _("Kein generiertes Audio gefunden. Bitte zuerst generieren.")}), 400
 
     genre = session.get(f"temp_genre_{audio_uuid}", "unknown")
 
     # --- Kontingent-Pruefung (ggf. Token-Abbuchung) --------------------------
     today = date.today().isoformat()
-    tier  = current_user.tier
     blocked, used_token = _gate_quota(reference=f"save:{audio_uuid}")
     if blocked:
         return blocked
@@ -741,7 +720,7 @@ def save_track():
         if used_token:
             _tokens.refund(current_user.id, 1, reference=f"save:{audio_uuid}")
         return jsonify({"error": "not_found",
-                        "message": "Temporaere Datei fehlt. Bitte neu generieren."}), 400
+                        "message": _("Temporaere Datei fehlt. Bitte neu generieren.")}), 400
 
     audio_dir = (pathlib.Path(__file__).parent.parent / "static" / "audio"
                  / str(current_user.id))
@@ -791,7 +770,7 @@ def save_track():
     db.increment_quota(current_user.id, today)
 
     # Verbleibenden Stand nach Erhoehung neu auslesen.
-    daily_rem_new, monthly_rem_new, _, _ = _quota_remaining(current_user.id, tier)
+    status = _quota_status()
 
     # Temporaere Dateien aufraumen.
     try:
@@ -805,10 +784,9 @@ def save_track():
     return jsonify({
         "success":           True,
         "track_id":          track_id,
-        "quota_remaining":   daily_rem_new,
-        "monthly_remaining": monthly_rem_new,
+        "monthly_remaining": status["remaining"],
         "used_token":        used_token,
-        "token_balance":     _tokens.balance(current_user.id),
+        "token_balance":     status["tokens"],
     })
 
 
@@ -1229,7 +1207,7 @@ def export_advisory_pdf_route(audio_uuid: str):
     if not adv_path.exists():
         return jsonify({
             "error":   "advisor_not_found",
-            "message": "Berater-Daten nicht gefunden — bitte neu generieren.",
+            "message": _("Berater-Daten nicht gefunden — bitte neu generieren."),
         }), 404
 
     try:
@@ -1286,10 +1264,10 @@ def available_soundfonts_route():
 def upload_soundfont_route():
     """SF2-Datei vom Browser hochladen und temporaer speichern."""
     if "sf2" not in request.files:
-        return jsonify({"error": "Keine Datei empfangen."}), 400
+        return jsonify({"error": _("Keine Datei empfangen.")}), 400
     f = request.files["sf2"]
     if not f.filename.lower().endswith(".sf2"):
-        return jsonify({"error": "Nur .sf2-Dateien erlaubt."}), 400
+        return jsonify({"error": _("Nur .sf2-Dateien erlaubt.")}), 400
     safe_name = pathlib.Path(f.filename).name
     sf2_dir   = pathlib.Path(tempfile.mkdtemp())
     sf2_path  = sf2_dir / safe_name
@@ -1329,13 +1307,13 @@ def theory_score_route():
 @generate_bp.route("/quota")
 @login_required
 def quota():
-    daily_rem, monthly_rem, _, _ = _quota_remaining(current_user.id, current_user.tier)
+    status = _quota_status()
     offer = _tokens.price_for(current_user.id)
     return jsonify({
-        "daily_remaining":   daily_rem,
-        "monthly_remaining": monthly_rem,
+        "monthly_remaining": status["remaining"],
+        "monthly_limit":     status["limit"],
         "tier":              current_user.tier,
-        "token_balance":     _tokens.balance(current_user.id),
+        "token_balance":     status["tokens"],
         "token_price":       offer["unit_price"],
         "token_price_group": offer["group"],
     })

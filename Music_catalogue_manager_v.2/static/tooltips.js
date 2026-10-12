@@ -48,13 +48,13 @@
     var btn = document.getElementById(BTN_ID);
     if (btn) {
       if (sichtbar) {
-        btn.textContent = '? Hilfe AN';
+        btn.textContent = t('? Hilfe AN');
         btn.classList.add('tt-an');
-        btn.title = 'Tooltips ausschalten';
+        btn.title = t('Tooltips ausschalten');
       } else {
-        btn.textContent = '? Hilfe AUS';
+        btn.textContent = t('? Hilfe AUS');
         btn.classList.remove('tt-an');
-        btn.title = 'Tooltips einschalten';
+        btn.title = t('Tooltips einschalten');
       }
     }
   }

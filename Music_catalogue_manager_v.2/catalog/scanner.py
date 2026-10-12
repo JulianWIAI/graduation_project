@@ -17,6 +17,7 @@ import config
 from db import database as db
 from catalog import watermark_reader
 from catalog.watermark_reader import read_watermark
+from i18n import _
 
 
 # --- Hilfsfunktionen --------------------------------------------------------
@@ -55,7 +56,7 @@ def scan_catalog(catalog_dir=None):
     stats = {"scanned": 0, "added": 0, "updated": 0, "dir": catalog_dir}
 
     if not catalog_dir or not os.path.isdir(catalog_dir):
-        stats["error"] = f"Katalog-Ordner nicht gefunden: {catalog_dir}"
+        stats["error"] = _("Katalog-Ordner nicht gefunden: %(dir)s", dir=catalog_dir)
         db.log_event("SCAN_CATALOG", "catalog", None, stats)
         return stats
 
@@ -108,7 +109,7 @@ def scan_exports(export_dir=None):
     stats = {"scanned": 0, "linked": 0, "unmatched": 0, "dir": export_dir}
 
     if not export_dir or not os.path.isdir(export_dir):
-        stats["error"] = f"Export-Ordner nicht gefunden: {export_dir}"
+        stats["error"] = _("Export-Ordner nicht gefunden: %(dir)s", dir=export_dir)
         db.log_event("SCAN_EXPORTS", "catalog", None, stats)
         return stats
 

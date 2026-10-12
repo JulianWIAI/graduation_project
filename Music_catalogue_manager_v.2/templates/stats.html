@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Meine Statistik — SBS Catalog{% endblock %}
+{% block title %}{{ _('Meine Statistik — SBS Catalog') }}{% endblock %}
 
 {% block content %}
 <style>
@@ -87,52 +87,52 @@
 <div class="user-bar">
   <span>{{ email }}</span>
   <span class="badge {{ tier }}">{{ tier }}</span>
-  <button class="btn-refresh" onclick="refreshStats()">&#8635; Aktualisieren</button>
+  <button class="btn-refresh" onclick="refreshStats()">{{ _('&#8635; Aktualisieren') }}</button>
 </div>
 
 <!-- Abschnitt: Gespeicherte Beats -->
-<p class="section-title">Gespeicherte Beats</p>
+<p class="section-title">{{ _('Gespeicherte Beats') }}</p>
 <div class="stats-grid" id="saves-grid">
   <div class="stat-card accent-blue">
-    <div class="label">Heute</div>
+    <div class="label">{{ _('Heute') }}</div>
     <div class="value" id="saves-today">{{ s.saves_today }}</div>
     <div class="sub">{{ s.today }}</div>
   </div>
   <div class="stat-card accent-green">
-    <div class="label">Diese Woche</div>
+    <div class="label">{{ _('Diese Woche') }}</div>
     <div class="value" id="saves-week">{{ s.saves_week }}</div>
-    <div class="sub">ab {{ s.week_start }}</div>
+    <div class="sub">{{ _('ab') }} {{ s.week_start }}</div>
   </div>
   <div class="stat-card accent-purple">
-    <div class="label">Diesen Monat</div>
+    <div class="label">{{ _('Diesen Monat') }}</div>
     <div class="value" id="saves-month">{{ s.saves_month }}</div>
-    <div class="sub">ab {{ s.month_start }}</div>
+    <div class="sub">{{ _('ab') }} {{ s.month_start }}</div>
   </div>
 </div>
 
 <!-- Abschnitt: Generierungen (ohne Speichern) -->
-<p class="section-title">Generierungen gesamt (inkl. nicht gespeichert)</p>
+<p class="section-title">{{ _('Generierungen gesamt (inkl. nicht gespeichert)') }}</p>
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="label">Heute</div>
+    <div class="label">{{ _('Heute') }}</div>
     <div class="value" style="color:#94a3b8;" id="gen-today">{{ s.gen_today }}</div>
     <div class="sub">{{ s.today }}</div>
   </div>
   <div class="stat-card">
-    <div class="label">Diese Woche</div>
+    <div class="label">{{ _('Diese Woche') }}</div>
     <div class="value" style="color:#94a3b8;" id="gen-week">{{ s.gen_week }}</div>
-    <div class="sub">ab {{ s.week_start }}</div>
+    <div class="sub">{{ _('ab') }} {{ s.week_start }}</div>
   </div>
   <div class="stat-card">
-    <div class="label">Diesen Monat</div>
+    <div class="label">{{ _('Diesen Monat') }}</div>
     <div class="value" style="color:#94a3b8;" id="gen-month">{{ s.gen_month }}</div>
-    <div class="sub">ab {{ s.month_start }}</div>
+    <div class="sub">{{ _('ab') }} {{ s.month_start }}</div>
   </div>
 </div>
 
 <!-- Letzte 7 Tage Balkendiagramm -->
 <div class="chart-panel">
-  <h3>Gespeicherte Beats — letzte 7 Tage</h3>
+  <h3>{{ _('Gespeicherte Beats — letzte 7 Tage') }}</h3>
   <div class="bar-chart" id="bar-chart">
     {% set max_val = s.chart_data | max if s.chart_data else 1 %}
     {% for i in range(s.chart_labels | length) %}
@@ -150,7 +150,7 @@
 <!-- Genre-Verteilung -->
 {% if s.genres %}
 <div class="chart-panel">
-  <h3>Genre-Verteilung (gespeicherte Tracks)</h3>
+  <h3>{{ _('Genre-Verteilung (gespeicherte Tracks)') }}</h3>
   {% set max_cnt = s.genre_counts[0] if s.genre_counts else 1 %}
   <!-- Farben fuer bis zu 8 Genres -->
   {% set colors = ['#7c6dea','#4ade80','#60a5fa','#f87171','#fb923c','#c084fc','#34d399','#fbbf24'] %}

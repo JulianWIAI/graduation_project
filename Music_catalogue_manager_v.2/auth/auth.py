@@ -10,7 +10,9 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from commerce import quota
 from db import database as db
+from i18n import _
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -23,7 +25,8 @@ class User(UserMixin):
         self.id            = row["id"]
         self.email         = row["email"]
         self.password_hash = row["password_hash"]
-        self.tier          = row["tier"] if row["tier"] else "free"
+        # Effektiver Tarif: 'pro' bei aktivem (nicht abgelaufenem) Abo, sonst 'free'.
+        self.tier          = "pro" if quota.has_subscription(row) else "free"
         # is_admin: 1 = voller Admin-Zugang, 0 = nur /generate und /stats.
         self.is_admin      = bool(row["is_admin"]) if "is_admin" in row.keys() else False
 
@@ -49,13 +52,13 @@ def register():
         confirm = request.form.get("confirm", "")
 
         if not email or not password:
-            flash("E-Mail und Passwort sind erforderlich.", "error")
+            flash(_("E-Mail und Passwort sind erforderlich."), "error")
             return render_template("register.html")
         if password != confirm:
-            flash("Passwoerter stimmen nicht ueberein.", "error")
+            flash(_("Passwoerter stimmen nicht ueberein."), "error")
             return render_template("register.html")
         if db.get_user_by_email(email):
-            flash("Ein Konto mit dieser E-Mail-Adresse existiert bereits.", "error")
+            flash(_("Ein Konto mit dieser E-Mail-Adresse existiert bereits."), "error")
             return render_template("register.html")
 
         hashed = generate_password_hash(password)
@@ -64,7 +67,8 @@ def register():
 
         row = db.get_user_by_email(email)
         login_user(User(row))
-        return redirect(url_for("generate.generate_page"))
+        # Neukunden waehlen direkt nach der Registrierung ihren Tarif (Basis/Abo).
+        return redirect(url_for("plan"))
 
     return render_template("register.html")
 
@@ -77,14 +81,18 @@ def login():
 
         row = db.get_user_by_email(email)
         if not row or not row["password_hash"]:
-            flash("Ungueltige E-Mail oder falsches Passwort.", "error")
+            flash(_("Ungueltige E-Mail oder falsches Passwort."), "error")
             return render_template("login.html")
         if not check_password_hash(row["password_hash"], password):
-            flash("Ungueltige E-Mail oder falsches Passwort.", "error")
+            flash(_("Ungueltige E-Mail oder falsches Passwort."), "error")
             return render_template("login.html")
 
         login_user(User(row))
         next_page = request.args.get("next")
+        # Laeuft das Abo bald aus oder ist es gerade abgelaufen, fuehrt der Login
+        # zuerst auf die Tarifseite -- dort kann der Kunde verlaengern oder weitergehen.
+        if not next_page and quota.subscription_notice(row):
+            return redirect(url_for("plan"))
         return redirect(next_page or url_for("generate.generate_page"))
 
     return render_template("login.html")

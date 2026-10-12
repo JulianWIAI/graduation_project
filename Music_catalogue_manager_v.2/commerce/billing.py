@@ -20,13 +20,14 @@ from datetime import date, datetime
 
 import config
 from db import database as db
+from i18n import _
 
 
 def _today():
     return date.today().isoformat()
 
 
-def _add_months(iso_start, months):
+def add_months(iso_start, months):
     """Addiert Monate auf ein ISO-Datum (einfache, robuste Variante)."""
     d = date.fromisoformat(iso_start)
     month_index = d.month - 1 + months
@@ -70,10 +71,10 @@ def pay_license(license_id):
     lic = conn.execute("SELECT * FROM licenses WHERE id = ?", (license_id,)).fetchone()
     if not lic:
         conn.close()
-        return False, "Lizenz nicht gefunden."
+        return False, _("Lizenz nicht gefunden.")
     if lic["payment_status"] == "paid":
         conn.close()
-        return False, "Diese Lizenz ist bereits bezahlt."
+        return False, _("Diese Lizenz ist bereits bezahlt.")
     conn.execute("UPDATE licenses SET payment_status = 'paid', paid_at = ? WHERE id = ?",
                  (datetime.now().isoformat(timespec="seconds"), license_id))
     conn.commit()
@@ -88,10 +89,10 @@ def cancel_license(license_id):
     lic = conn.execute("SELECT * FROM licenses WHERE id = ?", (license_id,)).fetchone()
     if not lic:
         conn.close()
-        return False, "Lizenz nicht gefunden."
+        return False, _("Lizenz nicht gefunden.")
     if lic["payment_status"] == "paid":
         conn.close()
-        return False, "Bezahlte Lizenzen koennen nicht storniert werden."
+        return False, _("Bezahlte Lizenzen koennen nicht storniert werden.")
     track_id = lic["track_id"]
     conn.execute("DELETE FROM licenses WHERE id = ?", (license_id,))
     conn.commit()
@@ -132,11 +133,20 @@ def subscription_price(term_months):
 def create_subscription(user_id, term_months):
     """Legt ein Abo (Status 'open') mit Laufzeit an. Gibt subscription_id zurueck."""
     if term_months not in config.SUBSCRIPTION_TERMS:
-        return None, "Ungueltige Laufzeit."
+        return None, _("Ungueltige Laufzeit.")
     price = subscription_price(term_months)
     start = _today()
-    end = _add_months(start, term_months)
     conn = db.get_conn()
+    user = conn.execute("SELECT is_subscriber, sub_end FROM users WHERE id = ?",
+                        (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        return None, _("Nutzer nicht gefunden.")
+    # Verlaengerung: Laeuft noch ein Abo, schliesst die neue Laufzeit nahtlos an
+    # dessen Enddatum an -- bezahlte Restzeit geht nicht verloren.
+    if user["is_subscriber"] and user["sub_end"] and user["sub_end"] >= start:
+        start = user["sub_end"]
+    end = add_months(start, term_months)
     cur = conn.execute(
         "INSERT INTO subscriptions (user_id, term_months, price, status, "
         "start_date, end_date, created_at) VALUES (?, ?, ?, 'open', ?, ?, ?)",
@@ -168,16 +178,22 @@ def pay_subscription(sub_id):
     sub = conn.execute("SELECT * FROM subscriptions WHERE id = ?", (sub_id,)).fetchone()
     if not sub:
         conn.close()
-        return False, "Abo nicht gefunden."
+        return False, _("Abo nicht gefunden.")
     if sub["status"] == "paid":
         conn.close()
-        return False, "Dieses Abo ist bereits bezahlt."
+        return False, _("Dieses Abo ist bereits bezahlt.")
     conn.execute("UPDATE subscriptions SET status = 'paid', paid_at = ? WHERE id = ?",
                  (datetime.now().isoformat(timespec="seconds"), sub_id))
-    # Nutzer als aktiven Abonnenten mit Laufzeit setzen.
+    # Nutzer als aktiven Abonnenten mit Laufzeit setzen. Bei einer nahtlosen
+    # Verlaengerung bleibt der urspruengliche Beginn erhalten, damit die
+    # Abo-Monate (Kontingent-Zeitraeume) ihren Stichtag behalten.
     conn.execute(
-        "UPDATE users SET is_subscriber = 1, sub_start = ?, sub_end = ? WHERE id = ?",
-        (sub["start_date"], sub["end_date"], sub["user_id"]),
+        "UPDATE users SET "
+        "sub_start = CASE WHEN is_subscriber = 1 AND sub_end >= ? "
+        "                 THEN COALESCE(sub_start, ?) ELSE ? END, "
+        "is_subscriber = 1, sub_end = ? WHERE id = ?",
+        (sub["start_date"], sub["start_date"], sub["start_date"],
+         sub["end_date"], sub["user_id"]),
     )
     conn.commit()
     conn.close()
@@ -197,8 +213,9 @@ def invoice_context(kind, obj):
     seller = db.get_setting("seller_name", "SBS Sound Studio")
     if kind == "license":
         tier = config.DEFAULT_TIERS.get(obj["tier"], {})
-        desc = f"Lizenz: {obj['track_title']} — {tier.get('label', obj['tier'])}"
-        buyer = obj["buyer_name"] or "Gast"
+        desc = _("Lizenz: %(title)s — %(tier)s", title=obj["track_title"],
+                 tier=_(tier.get("label", obj["tier"])))
+        buyer = obj["buyer_name"] or _("Gast")
         net = obj["price"]
         list_price = obj["list_price"] if obj["list_price"] is not None else obj["price"]
         discount_pct = obj["discount_pct"] or 0
@@ -208,8 +225,9 @@ def invoice_context(kind, obj):
     elif kind == "tokens":
         is_sub = obj["price_group"] == "subscriber"
         from commerce.tokens import fmt_eur
-        desc = (f"{obj['quantity']} Generierungs-Token à {fmt_eur(obj['unit_price'])} "
-                f"({'Abo-Preis' if is_sub else 'Basis-Preis'})")
+        desc = _("%(n)s Generierungs-Token à %(price)s (%(group)s)",
+                 n=obj["quantity"], price=fmt_eur(obj["unit_price"]),
+                 group=_("Abo-Preis") if is_sub else _("Basis-Preis"))
         buyer = obj["user_name"] or obj["user_email"]
         net = obj["price"]
         list_price = round(obj["list_unit_price"] * obj["quantity"], 2)
@@ -220,7 +238,8 @@ def invoice_context(kind, obj):
         status = obj["status"]
         dt = obj["paid_at"] or obj["created_at"]
     else:
-        desc = f"Abo — Laufzeit {obj['term_months']} Monat(e) ({obj['start_date']} bis {obj['end_date']})"
+        desc = _("Abo — Laufzeit %(n)s Monat(e) (%(start)s bis %(end)s)",
+                 n=obj["term_months"], start=obj["start_date"], end=obj["end_date"])
         buyer = obj["user_name"]
         net = obj["price"]
         list_price = obj["price"]

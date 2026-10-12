@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Tarif wählen') }} · SBS Catalog{% endblock %}
+{% block content %}
+<h1>{{ _('Tarif wählen') }}</h1>
+<p class="subtitle">
+  {{ _('Wie möchtest du SBS Catalog nutzen? Ein Abo kannst du auch später jederzeit hier abschließen.') }}
+</p>
+
+{% if notice == 'expiring' %}
+<div class="flash flash-warning" style="margin-bottom:16px;">
+  {{ _('Dein Abo läuft am %(date)s aus. Verlängere es jetzt, damit du bei %(n)s Sounds pro Monat bleibst.', date=user.sub_end, n=limits.sub) }}
+</div>
+{% elif notice == 'expired' %}
+<div class="flash flash-warning" style="margin-bottom:16px;">
+  {{ _('Dein Abo ist am %(date)s abgelaufen. Du nutzt jetzt den Basis-Tarif — hier kannst du das Abo erneuern.', date=user.sub_end) }}
+</div>
+{% elif active %}
+<div class="hint-box" style="margin-bottom:16px;">
+  {% if user.sub_end %}{{ _('Dein Abo ist aktiv bis %(date)s.', date=user.sub_end) }}
+  {% else %}{{ _('Dein Abo ist aktiv.') }}{% endif %}
+</div>
+{% endif %}
+<p class="muted small" style="margin:0 0 16px;">
+  {{ _('Aktuelles Kontingent: %(used)s von %(limit)s Sounds genutzt, erneuert sich am %(date)s.', used=status.used, limit=status.limit, date=status.resets_on) }}
+</p>
+
+<div class="grid grid-2">
+  <div class="kpi">
+    <div class="label">{{ _('Basis') }}</div>
+    <div class="value">{{ _('kostenlos') }}</div>
+    <div class="hint">{{ _('%(n)s Sounds pro Monat', n=limits.free) }}</div>
+    <div class="hint">{{ _('Weitere Sounds per Token: %(price)s je Token', price=token_prices.basic | euro) }}</div>
+    <div class="spacer"></div><div class="spacer"></div>
+    {% if not active %}
+    <a class="btn btn-ghost" href="{{ url_for('generate.generate_page') }}">{{ _('Als Basis-Kunde starten') }}</a>
+    {% endif %}
+  </div>
+
+  <div class="kpi">
+    <div class="label">{{ _('Abo') }}</div>
+    <div class="value cyan">{{ terms[0].price | euro }}<span class="muted" style="font-size:14px;"> {{ _('/Monat') }}</span></div>
+    <div class="hint">{{ _('%(n)s Sounds pro Monat', n=limits.sub) }}</div>
+    <div class="hint">{{ _('Günstigere Tokens: %(price)s je Token', price=token_prices.subscriber | euro) }}</div>
+    <div class="hint">{{ _('%(pct)s %% Rabatt auf Lizenzen', pct=limits.discount) }}</div>
+    <div class="spacer"></div><div class="spacer"></div>
+    <form method="post" action="{{ url_for('subscription_start') }}" class="row-actions" style="margin:0;">
+      <select name="term_months" style="width:auto;padding:6px 8px;">
+        {% for t in terms %}
+        <option value="{{ t.months }}">{{ _('%(n)s Monat(e)', n=t.months) }} · {{ t.price | euro }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">{{ _('Abo verlängern') if active else _('Abo abschließen') }}</button>
+      {% if active %}
+      <a class="btn btn-ghost" href="{{ url_for('generate.generate_page') }}">{{ _('Weiter zum Generator') }}</a>
+      {% endif %}
+    </form>
+    {% if active %}
+    <div class="hint">{{ _('Eine Verlängerung schließt nahtlos an das aktuelle Enddatum an.') }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<p class="muted small" style="margin-top:12px;">
+  {{ _('Im Basis-Tarif gilt das Kontingent je Kalendermonat, im Abo je Abo-Monat ab dem Abschlussdatum. Das Abo verlängert sich nicht automatisch. Gezählt werden gespeicherte bzw. exportierte Sounds — Vorhören ist immer kostenlos. Alle Preise netto zzgl. USt.') }}
+</p>
+{% endblock %}

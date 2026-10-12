@@ -1,7 +1,7 @@
 """
 Gateway / Wrapper fuer die Track-Generierung.
 
-Dies ist der Durchsetzungspunkt des Tageslimits: Der Gateway prueft ZUERST das
+Dies ist der Durchsetzungspunkt des Monatslimits: Der Gateway prueft ZUERST das
 Kontingent des Nutzers und ruft ERST DANN Music Architect auf. Reicht das
 Kontingent nicht, wird die Differenz mit gekauften Tokens gedeckt; scheitert
 die Generierung danach, werden die Tokens automatisch erstattet. Der Code des
@@ -32,6 +32,7 @@ import config
 from db import database as db
 from commerce import quota
 from commerce import tokens
+from i18n import _
 
 
 def _simulate_generation(count, catalog_dir):
@@ -77,10 +78,10 @@ def run_generation(user_id, count=1, simulate=None):
     """
     user = quota.get_user(user_id)
     if not user:
-        return {"ok": False, "error": "Nutzer nicht gefunden."}
+        return {"ok": False, "error": _("Nutzer nicht gefunden.")}
 
     if count < 1:
-        return {"ok": False, "error": "Anzahl muss mindestens 1 sein."}
+        return {"ok": False, "error": _("Anzahl muss mindestens 1 sein.")}
 
     allowed, status = quota.check_quota(user, count)
     tokens_needed = 0
@@ -94,12 +95,16 @@ def run_generation(user_id, count=1, simulate=None):
             balance = tokens.balance(user_id)
             return {
                 "ok": False,
-                "error": (f"Kontingent reicht nicht. {user['name']} hat heute "
-                          f"{status['used']}/{status['limit']} Tracks erzeugt "
-                          f"(noch {status['remaining']} moeglich, {count} angefragt). "
-                          f"Benoetigt: {tokens_needed} Token(s), Guthaben: {balance}. "
-                          f"Token-Preis: {tokens.fmt_eur(offer['unit_price'])} "
-                          f"({'Abo' if offer['group'] == 'subscriber' else 'Basis'})."),
+                "error": _("Kontingent reicht nicht. %(name)s hat diesen Monat "
+                           "%(used)s/%(limit)s Sounds bezogen "
+                           "(noch %(remaining)s moeglich, %(count)s angefragt). "
+                           "Benoetigt: %(needed)s Token(s), Guthaben: %(balance)s. "
+                           "Token-Preis: %(price)s (%(group)s).",
+                           name=user["name"], used=status["used"], limit=status["limit"],
+                           remaining=status["remaining"], count=count,
+                           needed=tokens_needed, balance=balance,
+                           price=tokens.fmt_eur(offer["unit_price"]),
+                           group=_("Abo") if offer["group"] == "subscriber" else _("Basis")),
                 "status": status,
                 "user": user["name"],
                 "tokens_needed": tokens_needed,
@@ -123,7 +128,7 @@ def run_generation(user_id, count=1, simulate=None):
     if use_sim:
         produced = _simulate_generation(count, catalog_dir)
         if not produced:
-            return _fail({"error": "Simulation fehlgeschlagen (mido nicht verfuegbar)."})
+            return _fail({"error": _("Simulation fehlgeschlagen (mido nicht verfuegbar).")})
     else:
         # Echtbetrieb: externen Befehl ausfuehren. Platzhalter ersetzen.
         cmd = cmd_template.replace("{count}", str(count)).replace(
@@ -132,9 +137,10 @@ def run_generation(user_id, count=1, simulate=None):
             result = subprocess.run(shlex.split(cmd), capture_output=True,
                                     text=True, timeout=600)
         except Exception as exc:
-            return _fail({"error": f"Aufruf von Music Architect fehlgeschlagen: {exc}"})
+            return _fail({"error": _("Aufruf von Music Architect fehlgeschlagen: %(exc)s", exc=exc)})
         if result.returncode != 0:
-            return _fail({"error": f"Music Architect endete mit Fehlercode {result.returncode}.",
+            return _fail({"error": _("Music Architect endete mit Fehlercode %(code)s.",
+                                     code=result.returncode),
                           "stderr": result.stderr[-500:]})
 
     # Erst nach erfolgreicher Generierung das Kontingent verbuchen.
@@ -143,7 +149,7 @@ def run_generation(user_id, count=1, simulate=None):
 
     db.log_event("GENERATION", "user", user_id,
                  {"mode": mode, "count": count, "tokens_used": tokens_needed,
-                  "used_today": new_status["used"], "limit": new_status["limit"]})
+                  "used_month": new_status["used"], "limit": new_status["limit"]})
 
     return {
         "ok": True,
@@ -157,7 +163,7 @@ def run_generation(user_id, count=1, simulate=None):
 
 
 def _main(argv=None):
-    parser = argparse.ArgumentParser(description="Gateway fuer Track-Generierung mit Tageslimit.")
+    parser = argparse.ArgumentParser(description="Gateway fuer Track-Generierung mit Monatslimit.")
     parser.add_argument("--user", required=True, help="Nutzer-ID oder exakter Name")
     parser.add_argument("--count", type=int, default=1, help="Anzahl Tracks (Standard 1)")
     parser.add_argument("--simulate", action="store_true", help="Simulationsmodus erzwingen")
@@ -179,7 +185,7 @@ def _main(argv=None):
                          simulate=True if args.simulate else None)
     if res["ok"]:
         print(f"OK [{res['mode']}]: {res['count']} Track(s) fuer {res['user']} erzeugt. "
-              f"Heute {res['status']['used']}/{res['status']['limit']} "
+              f"Diesen Monat {res['status']['used']}/{res['status']['limit']} "
               f"(noch {res['status']['remaining']}). "
               f"Tokens verbraucht: {res['tokens_used']}, Guthaben: {res['status']['tokens']}.")
         return 0

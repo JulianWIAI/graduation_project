@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Katalog & Lizenzen{% endblock %}</title>
+  <title>{% block title %}{{ _('Katalog & Lizenzen') }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='tooltips.css') }}">
+  <script>
+    /* Uebersetzungen fuer JavaScript-Texte: t('Text {n}', {n: 3}) -- siehe i18n.py */
+    const I18N = {{ js_i18n|tojson }};
+    function t(text, params) {
+      text = I18N[text] || text;
+      return params ? text.replace(/\{(\w+)\}/g, (m, k) => (k in params ? params[k] : m)) : text;
+    }
+  </script>
 </head>
 <body>
   <header class="topbar">
@@ -13,47 +21,53 @@
       <div class="brand-mark">◈</div>
       <div>
         <div class="brand-name">SBS&nbsp;CATALOG</div>
-        <div class="brand-sub">for creators</div>
+        <div class="brand-sub">{{ _('for creators') }}</div>
       </div>
     </a>
     <nav class="nav">
       <!-- Nutzer-Routen: immer sichtbar nach Login -->
       <a href="{{ url_for('generate.generate_page') }}"
          class="{{ 'active' if request.endpoint == 'generate.generate_page' }}">
-        Generate
+        {{ _('Generate') }}
       </a>
       <a href="{{ url_for('stats.stats_page') }}"
          class="{{ 'active' if request.endpoint == 'stats.stats_page' }}">
-        Statistik
+        {{ _('Statistik') }}
       </a>
       <a href="{{ url_for('tokens.shop') }}"
          class="{{ 'active' if request.endpoint and request.endpoint.startswith('tokens.') }}">
-        Tokens
+        {{ _('Tokens') }}
+      </a>
+      <a href="{{ url_for('plan') }}"
+         class="{{ 'active' if request.endpoint == 'plan' }}">
+        {{ _('Abo') }}
       </a>
 
       <!-- Admin-Routen: nur fuer Administratoren anzeigen -->
       {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('dashboard_view') }}"
-           class="{{ 'active' if request.endpoint == 'dashboard_view' }}">Dashboard</a>
+           class="{{ 'active' if request.endpoint == 'dashboard_view' }}">{{ _('Dashboard') }}</a>
         <a href="{{ url_for('catalog') }}"
-           class="{{ 'active' if request.endpoint in ['catalog','track_detail'] }}">Katalog</a>
+           class="{{ 'active' if request.endpoint in ['catalog','track_detail'] }}">{{ _('Katalog') }}</a>
         <a href="{{ url_for('licenses') }}"
-           class="{{ 'active' if request.endpoint == 'licenses' }}">Lizenzen</a>
+           class="{{ 'active' if request.endpoint == 'licenses' }}">{{ _('Lizenzen') }}</a>
         <a href="{{ url_for('users_view') }}"
-           class="{{ 'active' if request.endpoint == 'users_view' }}">Nutzer</a>
+           class="{{ 'active' if request.endpoint == 'users_view' }}">{{ _('Nutzer') }}</a>
         <a href="{{ url_for('economics_view') }}"
-           class="{{ 'active' if request.endpoint == 'economics_view' }}">Wirtschaftlichkeit</a>
+           class="{{ 'active' if request.endpoint == 'economics_view' }}">{{ _('Wirtschaftlichkeit') }}</a>
         <a href="{{ url_for('audit') }}"
-           class="{{ 'active' if request.endpoint == 'audit' }}">Protokoll</a>
+           class="{{ 'active' if request.endpoint == 'audit' }}">{{ _('Protokoll') }}</a>
         <a href="{{ url_for('settings_view') }}"
-           class="{{ 'active' if request.endpoint == 'settings_view' }}">Einstellungen</a>
+           class="{{ 'active' if request.endpoint == 'settings_view' }}">{{ _('Einstellungen') }}</a>
       {% endif %}
     </nav>
 
     <div style="display:flex;align-items:center;gap:.8rem;">
+      <!-- Sprachumschalter: DE / EN / FR -->
+      <span class="lang-switch">{% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" title="{{ languages[code] }}" class="lang-link{{ ' active' if code == lang }}">{{ code|upper }}</a>{% endfor %}</span>
       <!-- Tooltip-Toggle: fuer alle eingeloggten Nutzer sichtbar -->
       {% if current_user.is_authenticated %}
-        <button id="btnTooltipToggle" type="button">? Hilfe AN</button>
+        <button id="btnTooltipToggle" type="button">{{ _('? Hilfe AN') }}</button>
       {% endif %}
       {% if current_user.is_authenticated %}
         <span style="font-size:.78rem;color:#888;">{{ current_user.email }}</span>
@@ -64,11 +78,11 @@
           </span>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}"
-           style="font-size:.78rem;color:#7c6dea;text-decoration:none;">Logout</a>
+           style="font-size:.78rem;color:#7c6dea;text-decoration:none;">{{ _('Logout') }}</a>
       {% endif %}
       {% if current_user.is_authenticated and current_user.is_admin %}
         <form method="post" action="{{ url_for('scan') }}" class="topbar-action">
-          <button type="submit" class="btn btn-ghost">↻ Scannen</button>
+          <button type="submit" class="btn btn-ghost">{{ _('↻ Scannen') }}</button>
         </form>
       {% endif %}
     </div>
@@ -88,7 +102,7 @@
   </main>
 
   <footer class="footer">
-    Ergänzungsmodul zum Gesamtpaket · koppelt read-only an Music Architect V7 &amp; SBS-Synth Master
+    {{ _('Ergänzungsmodul zum Gesamtpaket · koppelt read-only an Music Architect V7 &amp; SBS-Synth Master') }}
   </footer>
   <script src="{{ url_for('static', filename='tooltips.js') }}"></script>
 </body>

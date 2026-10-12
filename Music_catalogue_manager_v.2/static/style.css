@@ -238,3 +238,9 @@ input:focus, select:focus, textarea:focus {
 
 /* Topbar-Action-Form */
 .topbar-action { margin: 0; }
+
+/* Sprachumschalter (DE / EN / FR) */
+.lang-switch { display: flex; gap: 2px; }
+.lang-link { font-size: 11px; padding: 3px 6px; border-radius: 6px; color: var(--tx3); text-decoration: none; }
+.lang-link:hover { color: var(--tx2); }
+.lang-link.active { color: var(--vl); background: rgba(124,109,234,0.12); }

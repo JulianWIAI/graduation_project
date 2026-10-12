@@ -26,6 +26,7 @@ verkaufsfähigen Track.
 | Wirtschaftlichkeit | Umsatz, Deckungsbeitrag, Break-even, ROI |
 | Audit-Protokoll | Revisionssicheres Ereignisprotokoll, CSV-Export |
 | Auth & Rollen | Login, Admin-Rolle, Freemium-Kontingent |
+| Sprachen | Oberfläche in Deutsch, Englisch und Französisch (Umschalter DE / EN / FR) |
 
 ---
 
@@ -46,7 +47,7 @@ pip install -r requirements.txt
 ## Starten
 
 ```bash
-python app.py
+python main.py
 ```
 
 Browser öffnen: <http://127.0.0.1:5000>
@@ -54,6 +55,18 @@ Browser öffnen: <http://127.0.0.1:5000>
 Standardmäßig wird die Anwendung auf `127.0.0.1:5000` gestartet.  
 Der Music Architect V7 muss sich im übergeordneten Verzeichnis befinden:
 `../MUSIC_ARCHITECT_V7/`.
+
+### Voraussetzungen für den Beat-Generator
+
+| Was | Wozu | Ohne |
+|---|---|---|
+| FluidSynth (`brew install fluid-synth`) | SoundFont-Rendering, schnelles Generieren | langsamer eingebauter Synthesizer |
+| ffmpeg (`brew install ffmpeg`) | Export als MP3 / FLAC / OGG | nur WAV-Export |
+| SoundFonts in `~/soundfonts/` | Klang je Genre: `FluidR3_GM.sf2`, `GeneralUser_GS.sf2`, `Arachno SoundFont - Version 1.0.sf2` | Ausweich-SoundFont von FluidSynth |
+| `../MUSIC_ARCHITECT_V7/seeds/master_seeds.json` | gelernte Rhythmus-, Lead- und Übergangsmuster | Komposition nur aus den Genre-Matrizen |
+
+Die C++-Erweiterung `synth_core` des Motors ist optional; ohne sie nutzt der
+Generator automatisch den reinen Python-Synthesizer (`beatgen/synth_core_fix.py`).
 
 ---
 
@@ -207,7 +220,7 @@ Nach dem Generieren oder Re-Rendern stehen folgende Exportformate zur Verfügung
 | MIDI | rohe Notendaten für die DAW |
 
 Das Kontingent wird **nur beim Speichern / Download** verbraucht, nicht beim Vorhören.
-Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Token-Nachkauf*).
+Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Abo-/Freemium-Modell*).
 
 ---
 
@@ -235,14 +248,33 @@ Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Token-Nachka
 
 ---
 
+## Mehrsprachigkeit (DE / EN / FR)
+
+- Umschalter oben rechts sowie auf der Anmelde- und Registrierseite; die Wahl
+  wird in einem Cookie gespeichert und gilt damit schon vor dem Login.
+- `i18n.py` stellt `_("Text")` für Python und Templates sowie `t('Text')` für
+  JavaScript bereit. Der deutsche Text ist der Schlüssel; die Übersetzungen
+  stehen in `translations.py`. Fehlt ein Eintrag, erscheint der deutsche Text.
+- Selbsttest: `python test_features.py` (arbeitet auf einer temporären Datenbank).
+
+---
+
 ## Abo-/Freemium-Modell
 
-| Tier | Tageslimit | Monatslimit | Rabatt |
-|---|---|---|---|
-| Free | 3 Tracks | — | — |
-| Subscriber | 10 Tracks | konfigurierbar | 5 % auf Lizenzen |
+| Tier | Monatslimit | Rabatt |
+|---|---|---|
+| Basis | 3 Sounds | — |
+| Abo | 10 Sounds | 5 % auf Lizenzen, günstigere Tokens |
 
-- Limit wird **vor** der Generierung geprüft (Gateway-Pattern).
+- Das Kontingent gilt im Basis-Tarif je Kalendermonat, im Abo je Abo-Monat ab dem
+  Abschlussdatum; die Limits sind in den Einstellungen konfigurierbar.
+- Das Abo verlängert sich nicht automatisch. Kurz vor und nach dem Ablauf führt der
+  Login auf die Tarifseite; eine Verlängerung schließt an das Enddatum an.
+- Nach der Registrierung wählt der Kunde zwischen Basis und Abo (`/plan`).
+- Ist das Kontingent aufgebraucht, verbraucht jeder weitere Sound 1 Token.
+
+- Im Admin-Gateway wird das Limit **vor** der Generierung geprüft (Gateway-Pattern),
+  im Web-Generator beim ersten Export eines Beats.
 - Stornierte Lizenzen geben das Kontingent wieder frei.
 - Abo mit wählbarer Laufzeit (1 / 3 / 12 Monate), eigener Checkout-Seite und
   Laufzeitprüfung bei jedem Request.
@@ -275,8 +307,10 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 ## Authentifizierung & Rollen
 
 - Flask-Login mit server-seitigen Sessions (kein Cookie-Limit).
-- Rollen: **Admin** (voller Zugriff) und **User** (nur Beat-Generierung).
-- Standardmäßig ist ein Admin-Account beim ersten Start anzulegen.
+- Rollen: **Admin** (voller Zugriff) und **User** (Beat-Generierung, Statistik,
+  Token-Shop, Tarifwahl).
+- Ein Admin-Account wird beim ersten Start automatisch angelegt (`db/database.py`).
+- Neue Nutzer registrieren sich selbst und wählen danach ihren Tarif (`/plan`).
 
 ---
 
@@ -285,7 +319,10 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 ### Anwendungskern
 | Datei | Zweck |
 |---|---|
-| `app.py` | Flask-Einstiegspunkt, Blueprints, Login-Manager |
+| `main.py` | Flask-Einstiegspunkt, Blueprints, Login-Manager |
+| `i18n.py` | Sprachumschaltung DE / EN / FR (`_()` für Python/Templates, `t()` für JavaScript) |
+| `translations.py` | Übersetzungstabellen Deutsch → Englisch / Französisch |
+| `test_features.py` | Selbsttest: Sprache, Tarifwahl, Kontingent, Abo, Tokens |
 | `auth.py` | Login / Logout, User-Modell |
 | `config.py` | Pfade, Preis-Stufen, Limits, Abrechnung |
 | `database.py` | SQLite-Schema, Einstellungen, Audit-Log, Migration |
@@ -321,7 +358,9 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 |---|---|
 | `scanner.py` | Katalog- und Export-Ordner scannen (read-only) |
 | `licensing.py` | Lizenzverkauf, Exklusiv-Sperre, Abo-Rabatt |
-| `quota.py` | Nutzerverwaltung, Kontingent, Tageslimit |
+| `quota.py` | Nutzerverwaltung, Kontingent, Monatslimit, Abo-Hinweis |
+| `tokens.py` | Token-Konto: Preise, Kauf, Verbrauch, Erstattung |
+| `token_shop.py` | Blueprint für den Token-Shop (`/tokens`) |
 | `gateway.py` | Limit-Prüfung vor Generierung (Gateway-Pattern) |
 | `billing.py` | Checkout, Zahlung, Storno, Abo-Laufzeit, Rechnungsdaten |
 | `economics.py` | Umsatz, Deckungsbeitrag, Break-even, ROI |
@@ -333,7 +372,7 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 
 ## Erster Durchlauf (Demo)
 
-1. App starten, einloggen.
+1. App starten, registrieren und Tarif wählen (Basis oder Abo) — oder als Admin einloggen.
 2. Auf **Beat generieren** gehen — Genre wählen, „▶ Generieren" klicken.
 3. Beat anhören, Piano Roll ansehen, Theory Score prüfen.
 4. Im **Groove & Mixer**: Feel laden (z. B. „Boom Bap" für Hiphop), Re-Rendern.

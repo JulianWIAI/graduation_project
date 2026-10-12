@@ -3,3 +3,8 @@ Flask-Login>=0.6
 Flask-Session>=0.8
 mido>=1.3
 reportlab>=4.0
+# Vom Beat-Generator (Music-Architect-Motor) benoetigt:
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12
+midiutil>=1.2.1

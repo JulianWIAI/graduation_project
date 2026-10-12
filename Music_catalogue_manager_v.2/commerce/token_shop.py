@@ -18,6 +18,7 @@ from flask_login import current_user, login_required
 import config
 from commerce import billing
 from commerce import tokens
+from i18n import _
 
 tokens_bp = Blueprint("tokens", __name__)
 
@@ -71,7 +72,7 @@ def buy():
 def checkout(purchase_id):
     p = _own_purchase_or_404(purchase_id)
     if p["status"] == "cancelled":
-        flash("Diese Bestellung wurde storniert.", "error")
+        flash(_("Diese Bestellung wurde storniert."), "error")
         return redirect(url_for("tokens.shop"))
     ctx = billing.invoice_context("tokens", p)
     return render_template("checkout.html", purchase=p, ctx=ctx)
@@ -83,7 +84,7 @@ def pay(purchase_id):
     p = _own_purchase_or_404(purchase_id)
     ok, err = tokens.pay_purchase(purchase_id)
     if ok:
-        flash(f"Zahlung bestätigt — {p['quantity']} Token(s) gutgeschrieben.", "success")
+        flash(_("Zahlung bestätigt — %(n)s Token(s) gutgeschrieben.", n=p["quantity"]), "success")
         return redirect(url_for("tokens.invoice", purchase_id=purchase_id))
     flash(err, "error")
     return redirect(url_for("tokens.shop"))
@@ -94,7 +95,7 @@ def pay(purchase_id):
 def cancel(purchase_id):
     _own_purchase_or_404(purchase_id)
     ok, err = tokens.cancel_purchase(purchase_id)
-    flash("Bestellung storniert." if ok else err, "success" if ok else "error")
+    flash(_("Bestellung storniert.") if ok else err, "success" if ok else "error")
     return redirect(url_for("tokens.shop"))
 
 
@@ -103,7 +104,7 @@ def cancel(purchase_id):
 def invoice(purchase_id):
     p = _own_purchase_or_404(purchase_id)
     if p["status"] == "cancelled":
-        flash("Für stornierte Bestellungen gibt es keine Rechnung.", "error")
+        flash(_("Für stornierte Bestellungen gibt es keine Rechnung."), "error")
         return redirect(url_for("tokens.shop"))
     ctx = billing.invoice_context("tokens", p)
     return render_template("invoice.html", ctx=ctx)

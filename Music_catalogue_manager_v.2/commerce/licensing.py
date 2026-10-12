@@ -17,6 +17,7 @@ from datetime import date, datetime
 import config
 from db import database as db
 from commerce import quota
+from i18n import _
 
 
 class LicenseError(Exception):
@@ -51,7 +52,7 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     Gibt bei Erfolg (license_id, warning) zurueck; wirft sonst LicenseError.
     """
     if tier not in config.DEFAULT_TIERS:
-        raise LicenseError(f"Unbekannte Preis-Stufe: {tier}")
+        raise LicenseError(_("Unbekannte Preis-Stufe: %(tier)s", tier=tier))
 
     conn = db.get_conn()
 
@@ -77,7 +78,7 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     track = conn.execute("SELECT * FROM tracks WHERE id = ?", (track_id,)).fetchone()
     if not track:
         conn.close()
-        raise LicenseError("Track nicht gefunden.")
+        raise LicenseError(_("Track nicht gefunden."))
 
     kind = _tier_kind(tier)
 
@@ -85,8 +86,8 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     if track["status"] == "exclusive_sold":
         conn.close()
         raise LicenseError(
-            f"'{track['title']}' wurde bereits exklusiv verkauft und ist "
-            "gesperrt. Keine weitere Lizenzierung moeglich."
+            _("'%(title)s' wurde bereits exklusiv verkauft und ist "
+              "gesperrt. Keine weitere Lizenzierung moeglich.", title=track["title"])
         )
 
     existing_leases = conn.execute(
@@ -96,11 +97,11 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     warning = None
     if kind == "exclusive" and existing_leases > 0:
         # Erlaubt, aber protokolliert (wichtig fuer saubere Historie).
-        warning = (f"Achtung: Fuer diesen Track existieren bereits "
-                   f"{existing_leases} Lease-Lizenz(en).")
+        warning = _("Achtung: Fuer diesen Track existieren bereits "
+                    "%(n)s Lease-Lizenz(en).", n=existing_leases)
 
-    # --- Geschaeftsregel: Tages-Bezugslimit -------------------------------
-    # Ein Lizenzkauf zaehlt (wie eine Generierung) als Tages-Bezug des Kaeufers.
+    # --- Geschaeftsregel: Monats-Bezugslimit ------------------------------
+    # Ein Lizenzkauf zaehlt (wie eine Generierung) als Monats-Bezug des Kaeufers.
     # Registrierte Nutzer sind gedeckelt (3 Basis / 10 Abo); Gaeste nicht.
     if user_id is not None:
         buyer_user = quota.get_user(user_id)
@@ -109,9 +110,10 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
             if not allowed:
                 conn.close()
                 raise LicenseError(
-                    f"Tageslimit erreicht: {buyer_user['name']} hat heute "
-                    f"{qs['used']}/{qs['limit']} Bezüge (Generierungen + Lizenzen). "
-                    "Heute ist kein weiterer Bezug möglich.")
+                    _("Monatslimit erreicht: %(name)s hat diesen Monat "
+                      "%(used)s/%(limit)s Bezüge (Generierungen + Lizenzen). "
+                      "In diesem Monat ist kein weiterer Bezug möglich.",
+                      name=buyer_user["name"], used=qs["used"], limit=qs["limit"]))
 
     list_price = get_price(tier) if price is None else float(price)
     net_price = round(list_price * (1 - discount_pct / 100.0), 2)

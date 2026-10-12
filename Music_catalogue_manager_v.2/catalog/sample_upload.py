@@ -20,6 +20,8 @@ from typing import Dict
 from flask import Blueprint, current_app, jsonify, request, session
 from flask_login import login_required
 
+from i18n import _
+
 # ---------------------------------------------------------------------------
 # Blueprint-Konfiguration
 # ---------------------------------------------------------------------------
@@ -122,28 +124,28 @@ def upload_sample():
 
     # --- Eingaben validieren -------------------------------------------------
     if not audio_uuid:
-        return jsonify({"ok": False, "error": "audio_uuid fehlt"}), 400
+        return jsonify({"ok": False, "error": _("audio_uuid fehlt")}), 400
     if builder_key not in _GUELTIGE_KEYS:
-        return jsonify({"ok": False, "error": f"Ungueltiger Track-Key: '{builder_key}'"}), 400
+        return jsonify({"ok": False, "error": _("Ungueltiger Track-Key: '%(key)s'", key=builder_key)}), 400
     if audio_datei is None:
-        return jsonify({"ok": False, "error": "Keine Datei empfangen"}), 400
+        return jsonify({"ok": False, "error": _("Keine Datei empfangen")}), 400
 
     endung = pathlib.Path(audio_datei.filename or "").suffix.lower()
     if endung not in _ERLAUBTE_ENDUNGEN:
         return jsonify({
             "ok":    False,
-            "error": (f"Format '{endung}' nicht unterstuetzt. "
-                      f"Erlaubt: {', '.join(sorted(_ERLAUBTE_ENDUNGEN))}"),
+            "error": _("Format '%(ext)s' nicht unterstuetzt. Erlaubt: %(allowed)s",
+                       ext=endung, allowed=", ".join(sorted(_ERLAUBTE_ENDUNGEN))),
         }), 415
 
     # --- Kompositionsverzeichnis aus Session lesen ---------------------------
     tmp_dir_str = session.get(f"temp_dir_{audio_uuid}")
     if not tmp_dir_str:
-        return jsonify({"ok": False, "error": "Kompositions-Session nicht gefunden"}), 404
+        return jsonify({"ok": False, "error": _("Kompositions-Session nicht gefunden")}), 404
 
     tmp_verz = pathlib.Path(tmp_dir_str)
     if not tmp_verz.exists():
-        return jsonify({"ok": False, "error": "Kompositions-Verzeichnis fehlt"}), 404
+        return jsonify({"ok": False, "error": _("Kompositions-Verzeichnis fehlt")}), 404
 
     # --- Sample-Unterverzeichnis anlegen (idempotent) -----------------------
     samples_verz = tmp_verz / "samples"
@@ -168,12 +170,13 @@ def upload_sample():
                     ziel_pfad.unlink(missing_ok=True)
                     return jsonify({
                         "ok":    False,
-                        "error": f"Datei ueberschreitet 20-MB-Limit ({groesse // 1_048_576} MB empfangen)",
+                        "error": _("Datei ueberschreitet 20-MB-Limit (%(mb)s MB empfangen)",
+                                   mb=groesse // 1_048_576),
                     }), 413
                 fh.write(chunk)
     except OSError as exc:
         current_app.logger.error("Sample-Datei konnte nicht gespeichert werden: %s", exc)
-        return jsonify({"ok": False, "error": "Datei konnte nicht gespeichert werden"}), 500
+        return jsonify({"ok": False, "error": _("Datei konnte nicht gespeichert werden")}), 500
 
     # --- Session-Zuweisung aktualisieren ------------------------------------
     zuweisungen: Dict[str, str] = session.get(f"samples_{audio_uuid}") or {}
