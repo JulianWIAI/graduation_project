@@ -123,6 +123,11 @@ These files are too large for Git and must be downloaded separately.
 See [`daw_light_version/soundfonts/README.txt`](daw_light_version/soundfonts/README.txt) for download links.
 Place downloaded `.sf2` files in `daw_light_version/soundfonts/`.
 
+The beat generator (Music Architect / Catalogue Manager) looks for its three fonts under
+`~/soundfonts/` on macOS and Linux, with exactly these file names: `FluidR3_GM.sf2`,
+`GeneralUser_GS.sf2` and `Arachno SoundFont - Version 1.0.sf2`. If one is missing it falls
+back to the font bundled with Homebrew's FluidSynth.
+
 #### Master Seed Corpus
 
 `music_architect_v7/seeds/master_seeds.json` (~961 MB) is excluded from the repository.
@@ -212,7 +217,7 @@ graduation_project/
 │   ├── auth/ beatgen/ catalog/ commerce/ groove/
 │   ├── db/                     # Schema and migrations
 │   ├── templates/ static/
-│   └── app.py
+│   └── main.py
 │
 ├── sample_architect/           # Sample library manager
 │   ├── src/
