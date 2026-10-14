@@ -75,7 +75,9 @@
 namespace py = pybind11;
 
 // Forward declarations for the split binding modules.
+#ifndef DAW_NO_SFIZZ
 void bind_sfz            (py::module_& m);
+#endif
 void bind_vst3_extensions(py::module_& m);
 void bind_ds             (py::module_& m);
 
@@ -1742,7 +1744,9 @@ PYBIND11_MODULE(daw_processors, m) {
              "Return the current audition mode as an integer.");
 
     // ── SFZ instrument engine (SfzParser + SfizzEngine) ──────────────────────
+#ifndef DAW_NO_SFIZZ
     bind_sfz(m);
+#endif
 
     // ── VST3 advanced hosting extensions ─────────────────────────────────────
     // (compiled as stubs when HAVE_VST3_SDK is not defined)

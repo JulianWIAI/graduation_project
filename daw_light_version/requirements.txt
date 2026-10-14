@@ -1,6 +1,6 @@
 PySide6>=6.6.0
 pyfluidsynth>=1.3.3
-pygame>=2.5.0
+# pygame>=2.5.0  -- no wheel available for Python 3.14; lazy imports handle absence gracefully
 mido>=1.3.2
 python-rtmidi>=1.5.8
 numpy>=1.26.0

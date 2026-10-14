@@ -25,70 +25,64 @@ except ImportError:
 
 from setuptools import Extension, setup
 
+import glob as _glob
+import shutil
+
 BASE = Path(__file__).parent
 
-# All C++ source files that make up the module.
-SOURCES = [
-    # Dynamics processors (original 6)
-    str(BASE / "src" / "BrickwallLimiter.cpp"),
-    str(BASE / "src" / "MultibandCompressor.cpp"),
-    str(BASE / "src" / "DynamicEQ.cpp"),
-    str(BASE / "src" / "DeEsser.cpp"),
-    str(BASE / "src" / "TransientShaper.cpp"),
-    str(BASE / "src" / "GateExpander.cpp"),
-    # Spatial / time-based effects (4)
-    str(BASE / "src" / "DelayEcho.cpp"),
-    str(BASE / "src" / "Flanger.cpp"),
-    str(BASE / "src" / "Phaser.cpp"),
-    str(BASE / "src" / "StereoImager.cpp"),
-    # Harmonic & character processors (4)
-    str(BASE / "src" / "Saturation.cpp"),
-    str(BASE / "src" / "Overdrive.cpp"),
-    str(BASE / "src" / "Bitcrusher.cpp"),
-    str(BASE / "src" / "Exciter.cpp"),
-    # Advanced utilities & specialty filters (3)
-    str(BASE / "src" / "PitchCorrector.cpp"),
-    str(BASE / "src" / "PitchShifter.cpp"),
-    str(BASE / "src" / "AutoFilter.cpp"),
-    # Sampler instrument engine
-    str(BASE / "src" / "Sampler.cpp"),
-    # Offline export mix bus + WAV writer
-    str(BASE / "src" / "OfflineExporter.cpp"),
-    # Real-time timeline / transport engine
-    str(BASE / "src" / "TimelineEngine.cpp"),
-    str(BASE / "src" / "TimelineEngine_MidiDrop.cpp"),
-    # Mastering flavor processor
-    str(BASE / "src" / "MasteringFlavorProcessor.cpp"),
-    # MIDI drag-and-drop importer
-    str(BASE / "src" / "MidiDropImporter.cpp"),
-    # Real-time audio telemetry analyzer (FFT, bands, chroma, HPSS)
-    str(BASE / "src" / "TelemetryAnalyzer.cpp"),
-    # pybind11 module entry point + split binding modules
-    str(BASE / "src" / "bindings.cpp"),
-    str(BASE / "src" / "bindings_flavor.cpp"),
-    str(BASE / "src" / "bindings_midi_drop.cpp"),
-    str(BASE / "src" / "bindings_telemetry.cpp"),
+# ---------------------------------------------------------------------------
+# Detect optional dependency: sfizz (SFZ instrument engine)
+# sfizz.h must be on the include path for SfizzEngine.cpp to compile.
+# We probe common install locations; if not found, the two sfizz-specific
+# files are excluded and DAW_NO_SFIZZ is defined so bindings.cpp skips them.
+# ---------------------------------------------------------------------------
+_SFIZZ_SEARCH = [
+    "/usr/include",
+    "/usr/local/include",
+    "/opt/homebrew/include",
+    "C:/sfizz/include",
+    "C:/tools/sfizz/include",
 ]
+
+def _sfizz_available():
+    for d in _SFIZZ_SEARCH:
+        if Path(d, "sfizz.h").exists():
+            return True
+    # Also accept if sfizz-config or pkg-config reports it
+    return shutil.which("sfizz-config") is not None
+
+HAVE_SFIZZ = _sfizz_available()
+if not HAVE_SFIZZ:
+    print("setup.py: sfizz not found -- building without SFZ engine (DAW_NO_SFIZZ)")
+
+# Auto-discover every .cpp in src/, then exclude sfizz files when unavailable.
+_SFIZZ_FILES = {"SfizzEngine.cpp", "bindings_sfz.cpp"}
+SOURCES = sorted(
+    f for f in _glob.glob(str(BASE / "src" / "*.cpp"))
+    if HAVE_SFIZZ or Path(f).name not in _SFIZZ_FILES
+)
 
 # Compiler-specific optimisation flags.
 if sys.platform == "win32":
-    # MSVC — /std:c++17 sets the language standard on MSVC.
     extra_args = [
         "/std:c++17",
-        "/O2",          # maximise speed
-        "/arch:AVX2",   # enable AVX2 SIMD (remove if CPU does not support it)
-        "/fp:fast",     # aggressive floating-point + flush-to-zero
-        "/DNOMINMAX",   # prevent Windows.h macros clobbering std::min/max
+        "/O2",
+        "/arch:AVX2",
+        "/fp:fast",
+        "/DNOMINMAX",
     ]
+    if not HAVE_SFIZZ:
+        extra_args.append("/DDAW_NO_SFIZZ")
     extra_link_args = []
 else:
-    # GCC / Clang
     extra_args = [
         "-O3",
         "-march=native",
         "-ffast-math",
         "-std=c++17",
     ]
+    if not HAVE_SFIZZ:
+        extra_args.append("-DDAW_NO_SFIZZ")
     extra_link_args = []
 
 ext = Extension(
