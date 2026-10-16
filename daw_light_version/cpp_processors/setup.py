@@ -77,9 +77,9 @@ if sys.platform == "win32":
 else:
     extra_args = [
         "-O3",
-        "-march=native",
         "-ffast-math",
         "-std=c++17",
+        "-mmacosx-version-min=10.15",
     ]
     if not HAVE_SFIZZ:
         extra_args.append("-DDAW_NO_SFIZZ")

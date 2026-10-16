@@ -11,6 +11,13 @@
 // Construction
 // ---------------------------------------------------------------------------
 
+PidController::PidController() noexcept
+    : params_()
+    , integral_(0.0f)
+    , prev_error_(0.0f)
+{
+}
+
 PidController::PidController(const Params& p) noexcept
     : params_(p)
     , integral_(0.0f)

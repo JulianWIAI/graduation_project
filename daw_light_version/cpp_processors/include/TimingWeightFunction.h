@@ -48,7 +48,8 @@ public:
     };
 
     // Construct with optional initial config.
-    explicit TimingWeightFunction(Config cfg = Config{});
+    TimingWeightFunction() noexcept;
+    explicit TimingWeightFunction(Config cfg);
 
     // Compute the velocity weight multiplier for a note at beat_position.
     //

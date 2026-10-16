@@ -56,6 +56,15 @@ def _patch_ctypes_for_homebrew() -> None:
                 "/usr/lib/libfluidsynth.so.3",              # Linux
                 "/usr/lib/x86_64-linux-gnu/libfluidsynth.so.3",
             ]
+            # When running as a frozen PyInstaller bundle, dylibs are
+            # extracted to sys._MEIPASS — check there first.
+            import sys
+            meipass = getattr(sys, "_MEIPASS", None)
+            if meipass:
+                candidates = [
+                    os.path.join(meipass, "libfluidsynth.dylib"),
+                    os.path.join(meipass, "libfluidsynth-3.dylib"),
+                ] + candidates
             for path in candidates:
                 if os.path.isfile(path):
                     return path
@@ -319,6 +328,7 @@ class AudioEngine:
         self._vst_players: Dict[int, object] = {}  # channel → VstRealTimePlayer
         self._sfz_players: Dict[int, object] = {}  # channel → SfzRealTimePlayer
         self._ds_players:  Dict[int, object] = {}  # channel → DsRealTimePlayer
+        self._claimed_channels: set = set()        # channels allocated by next_free_channel
 
         # Dedicated MIDI channel used exclusively for instrument auditioning.
         # Never registered in _instruments so it does not appear in the mixer.
@@ -429,9 +439,14 @@ class AudioEngine:
         """sounddevice callback: pull one block from FluidSynth and tap telemetry."""
         import numpy as np
         try:
-            raw = self._fs.get_samples(frames)   # int16, interleaved stereo, shape (frames*2,)
-            stereo = raw.astype(np.float32) * (1.0 / 32768.0)
-            stereo = stereo.reshape(frames, 2)
+            raw = self._fs.get_samples(frames)
+            arr = np.asarray(raw)
+            # Older pyfluidsynth returns int16; newer returns float32 in [-1, 1].
+            if arr.dtype == np.int16:
+                arr = arr.astype(np.float32) * (1.0 / 32768.0)
+            else:
+                arr = arr.astype(np.float32)
+            stereo = arr.reshape(frames, 2)
         except Exception:
             outdata.fill(0.0)
             return
@@ -524,6 +539,7 @@ class AudioEngine:
             if plugin and self._fs and plugin._sfid != -1:
                 self._fs.sfunload(plugin._sfid)
                 logger.info("Unloaded instrument '%s'", plugin.name)
+        self._claimed_channels.discard(channel)
 
     # ── VST real-time player registration ─────────────────────────────────
 
@@ -534,6 +550,7 @@ class AudioEngine:
     def unregister_vst_player(self, channel: int) -> None:
         """Remove VST routing for *channel* (FluidSynth takes over again)."""
         self._vst_players.pop(channel, None)
+        self._claimed_channels.discard(channel)
 
     # ── SFZ real-time player registration ─────────────────────────────────
 
@@ -544,6 +561,7 @@ class AudioEngine:
     def unregister_sfz_player(self, channel: int) -> None:
         """Remove SFZ routing for *channel*.  Caller must stop the player."""
         self._sfz_players.pop(channel, None)
+        self._claimed_channels.discard(channel)
 
     # ── Decent Sampler real-time player registration ──────────────────────
 
@@ -561,6 +579,7 @@ class AudioEngine:
         The caller is responsible for stopping the player before calling this.
         """
         self._ds_players.pop(channel, None)
+        self._claimed_channels.discard(channel)
 
     def get_instruments(self) -> List[InstrumentPlugin]:
         """Return a snapshot of all registered instruments."""
@@ -583,15 +602,17 @@ class AudioEngine:
             return 9  # GM standard: drums live on channel 9
 
         # Walk channels 0-15, skipping 9 and any already occupied.
-        # _vst_players holds VST channels that don't register FluidSynth instruments,
-        # so they must be excluded here to prevent channel collisions.
-        # Collect all occupied channels across every backend.
-        occupied = (set(self._instruments.keys())
+        # _claimed_channels tracks every channel returned by this method so that
+        # allocations remain unique even when FluidSynth is in silent mode and
+        # _instruments is empty.
+        occupied = (self._claimed_channels
+                    | set(self._instruments.keys())
                     | set(self._vst_players.keys())
                     | set(self._sfz_players.keys())
                     | set(self._ds_players.keys()))
         for candidate in list(range(0, 9)) + list(range(10, 16)):
             if candidate not in occupied:
+                self._claimed_channels.add(candidate)
                 return candidate
         return -1  # all melodic channels full
 

@@ -37,6 +37,10 @@ static constexpr double FP_EPS = 1e-9;
 // Construction / configuration
 // ---------------------------------------------------------------------------
 
+TimingWeightFunction::TimingWeightFunction() noexcept
+    : cfg_()
+{}
+
 TimingWeightFunction::TimingWeightFunction(Config cfg)
     : cfg_(cfg)
 {}

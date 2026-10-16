@@ -57,7 +57,8 @@ public:
     };
 
     // Construct with optional initial parameters.
-    explicit VelocityHumanizer(Params p = Params{});
+    VelocityHumanizer() noexcept;
+    explicit VelocityHumanizer(Params p);
 
     // Humanize a single MIDI note velocity.
     //

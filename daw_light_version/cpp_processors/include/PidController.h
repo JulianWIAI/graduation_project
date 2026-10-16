@@ -32,7 +32,8 @@ public:
         float integral_max = 20.0f;   // anti-windup integral accumulator clamp
     };
 
-    explicit PidController(const Params& p = Params{}) noexcept;
+    PidController() noexcept;
+    explicit PidController(const Params& p) noexcept;
 
     // Replace all parameters; call reset() separately if desired.
     void set_params(const Params& p) noexcept;

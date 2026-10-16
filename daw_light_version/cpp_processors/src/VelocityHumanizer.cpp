@@ -21,6 +21,12 @@ static inline double clamp_d(double v, double lo, double hi) {
 // Construction
 // ---------------------------------------------------------------------------
 
+VelocityHumanizer::VelocityHumanizer() noexcept
+    : params_()
+    , rng_(0xDEADBEEFCAFEBABEULL)
+    , timing_()
+{}
+
 VelocityHumanizer::VelocityHumanizer(Params p)
     : params_(p)
     , rng_(p.seed != 0 ? p.seed : 0xDEADBEEFCAFEBABEULL)
