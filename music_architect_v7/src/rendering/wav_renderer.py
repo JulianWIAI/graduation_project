@@ -46,7 +46,8 @@ class WAVRenderer:
         return ''
 
     def render_composition_to_wav(
-        self, composition: dict, wav_path: str, progress_callback=None
+        self, composition: dict, wav_path: str, progress_callback=None,
+        sample_assignments=None, instrument_params=None,
     ) -> str:
         """
         Render a composition dict directly to WAV using the built-in synthesiser.
