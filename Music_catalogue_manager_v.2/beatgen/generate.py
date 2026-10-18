@@ -105,6 +105,33 @@ def _ensure_ma_path():
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# SoundFonts
+# ---------------------------------------------------------------------------
+# Fehlt ein vorgesehener SoundFont (z.B. Arachno fuer Cinematic/Classical), traegt
+# der Motor den kleinen SoundFont ein, den FluidSynth mitbringt ("Vintage Dreams
+# Waves", 307 KB). Der klingt durchgehend nach Synthesizer -- deshalb ersetzt ihn
+# der Katalog durch einen echten installierten SoundFont, bevorzugt GeneralUser GS.
+_FALLBACK_SF2 = "VintageDreamsWaves"
+
+
+def _installed_soundfonts():
+    """(Bibliothek, {key: pfad}) -- nur echte SoundFonts, ohne den Ersatz von FluidSynth."""
+    _ensure_ma_path()
+    from rendering.soundfont_library import SoundFontLibrary
+    lib = SoundFontLibrary()
+    return lib, {k: p for k, p in lib._available.items() if _FALLBACK_SF2 not in p}
+
+
+def _genre_soundfont(genre: str):
+    """SoundFont fuer ein Genre; statt des synthetischen Ersatzes ein echter, falls vorhanden."""
+    lib, real = _installed_soundfonts()
+    path = lib.select(genre)
+    if path and _FALLBACK_SF2 in path and real:
+        path = real.get("generaluser") or next(iter(real.values()))
+    return path
+
+
 # Kontingent (Monatslimit) -- einzige Quelle ist commerce/quota.py
 # ---------------------------------------------------------------------------
 
@@ -468,11 +495,9 @@ def generate_track():
                 from rendering.soundfont_library import SoundFontLibrary
                 _lib = SoundFontLibrary()
                 if sf2_key:
-                    # Explizite Nutzerauswahl — direkt aus der Bibliothek laden.
-                    _sf2_path = _lib._available.get(sf2_key)
-                else:
-                    # Kein SF2 ausgewaehlt → Genre-Standard verwenden (wie MA V7).
-                    _sf2_path = _lib.select(genre)
+                    _sf2_path = _installed_soundfonts()[1].get(sf2_key)
+                if not _sf2_path:
+                    _sf2_path = _genre_soundfont(genre)
             except Exception:
                 pass
 
@@ -822,10 +847,7 @@ def rerender_track():
         sf2_path = session.get(f"sf2_{sf2_uuid}")
     elif sf2_key:
         try:
-            _ensure_ma_path()
-            from rendering.soundfont_library import SoundFontLibrary
-            _lib = SoundFontLibrary()
-            sf2_path = _lib._available.get(sf2_key)
+            sf2_path = _installed_soundfonts()[1].get(sf2_key)
         except Exception:
             pass
 
@@ -837,9 +859,7 @@ def rerender_track():
         # Genre-Standard SF2 als Fallback wenn kein SF2 explizit ausgewaehlt.
         if not sf2_path:
             try:
-                _ensure_ma_path()
-                from rendering.soundfont_library import SoundFontLibrary
-                sf2_path = SoundFontLibrary().select(comp_data.get("genre", ""))
+                sf2_path = _genre_soundfont(comp_data.get("genre", ""))
             except Exception:
                 pass
 
@@ -1144,7 +1164,8 @@ def available_soundfonts_route():
     """Gibt installierte SF2-Soundfonts und FluidSynth-Status zurueck."""
     _ensure_ma_path()
     try:
-        from rendering.soundfont_library import SoundFontLibrary, _SF2_DISPLAY
+        _, real = _installed_soundfonts()
+        from rendering.soundfont_library import _SF2_DISPLAY
         from rendering.fluidsynth_renderer import _FLUIDSYNTH_EXE
         lib    = SoundFontLibrary()
         fonts  = [{"key": k, "label": _SF2_DISPLAY.get(k, k), "path": p}

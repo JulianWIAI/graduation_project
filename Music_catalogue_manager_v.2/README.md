@@ -62,7 +62,7 @@ Der Music Architect V7 muss sich im übergeordneten Verzeichnis befinden:
 |---|---|---|
 | FluidSynth (`brew install fluid-synth`) | SoundFont-Rendering, schnelles Generieren | langsamer eingebauter Synthesizer |
 | ffmpeg (`brew install ffmpeg`) | Export als MP3 / FLAC / OGG | nur WAV-Export |
-| SoundFonts in `~/soundfonts/` | Klang je Genre: `FluidR3_GM.sf2`, `GeneralUser_GS.sf2`, `Arachno SoundFont - Version 1.0.sf2` | Ausweich-SoundFont von FluidSynth |
+| SoundFonts in `~/soundfonts/` | Klang je Genre: `FluidR3_GM.sf2`, `GeneralUser_GS.sf2`, `Arachno SoundFont - Version 1.0.sf2` | ein anderer installierter SoundFont (bevorzugt GeneralUser GS); erst wenn keiner da ist, der synthetisch klingende Ersatz von FluidSynth |
 | `../music_architect_v7/seeds/master_seeds.json` | gelernte Rhythmus-, Lead- und Übergangsmuster | Komposition nur aus den Genre-Matrizen |
 
 Die C++-Erweiterung `synth_core` des Motors ist optional; ohne sie nutzt der
