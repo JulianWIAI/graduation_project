@@ -3,6 +3,9 @@
 {% block content %}
 <div class="row-actions" style="margin-bottom:16px;">
   <button class="btn btn-ghost" onclick="window.print()">{{ _('Drucken') }}</button>
+  {% if ctx.kind == 'tokens' %}
+  <a class="btn btn-primary" href="{{ url_for('generate.generate_page') }}">{{ _('Zurück zum Generator') }}</a>
+  {% endif %}
 </div>
 
 <div class="panel" style="max-width:640px;">

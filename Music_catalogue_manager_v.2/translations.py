@@ -536,6 +536,15 @@ _T = {
     "Objekt": ("Object", "Objet"),
     "Details": ("Details", "Détails"),
     "Noch keine Ereignisse protokolliert.": ("No events logged yet.", "Aucun événement enregistré pour l'instant."),
+    "Suchbegriffe, z. B. Token": ("Search terms, e.g. token", "Mots-clés, p. ex. jeton"),
+    "Protokoll durchsuchen": ("Search the audit log", "Rechercher dans le journal"),
+    "Suchen": ("Search", "Rechercher"),
+    "Suche zurücksetzen": ("Clear search", "Effacer la recherche"),
+    "%(n)s Einträge für „%(q)s“ (die neuesten zuerst, höchstens 500).": (
+        "%(n)s entries for “%(q)s” (newest first, at most 500).",
+        "%(n)s entrées pour « %(q)s » (les plus récentes d'abord, 500 au maximum)."),
+    "Keine Einträge für „%(q)s“ gefunden.": ("No entries found for “%(q)s”.", "Aucune entrée trouvée pour « %(q)s »."),
+    "Zurück zum Generator": ("Back to the generator", "Retour au générateur"),
 
     # --- Generator: Server-Meldungen ----------------------------------------
     "Seed %(seed)s wurde bereits exklusiv verkauft und kann nicht erneut generiert werden.": (
@@ -908,6 +917,7 @@ _JS = {
     "Fehler beim Exportieren.": ("Error while exporting.", "Erreur lors de l'export."),
     "⬇ AUDIO HERUNTERLADEN": ("⬇ DOWNLOAD AUDIO", "⬇ TÉLÉCHARGER L'AUDIO"),
     "Tokens kaufen →": ("Buy tokens →", "Acheter des jetons →"),
+    "(dein Beat bleibt erhalten)": ("(your beat will be kept)", "(votre beat est conservé)"),
     "MIDI-Export fehlgeschlagen.": ("MIDI export failed.", "Échec de l'export MIDI."),
     "JSON-Export fehlgeschlagen.": ("JSON export failed.", "Échec de l'export JSON."),
     "PDF-Export fehlgeschlagen.": ("PDF export failed.", "Échec de l'export PDF."),

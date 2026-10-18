@@ -1510,9 +1510,30 @@ async function generateBeat() {
     const data=await res.json();
     if(!res.ok||data.error){showError(data.error||t('Generierung fehlgeschlagen.'));return;}
     onSuccess(data);
+    rememberBeat(data);
   } catch(e){showError(t('Netzwerkfehler: ')+e.message);}
   finally{setGenerating(false);}
 }
+
+// ── Letzten Beat merken ───────────────────────────────────────
+// Der Beat liegt auf dem Server (Sitzung, 1 Stunde). Die Seite selbst vergisst ihn
+// aber, sobald man sie verlaesst -- z.B. fuer den Token-Kauf. Deshalb merkt sich
+// der Browser das Ergebnis pro Tab und stellt es beim Zurueckkommen wieder her.
+const LAST_BEAT_KEY = 'sbs_last_beat';
+function rememberBeat(data) {
+  try { sessionStorage.setItem(LAST_BEAT_KEY, JSON.stringify(data)); } catch (e) { /* Speicher voll/gesperrt */ }
+}
+async function restoreBeat() {
+  let data = null;
+  try { data = JSON.parse(sessionStorage.getItem(LAST_BEAT_KEY) || 'null'); } catch (e) {}
+  if (!data || !data.audio_url) return;
+  try {
+    const r = await fetch(data.audio_url, { method: 'HEAD' });   // noch auf dem Server?
+    if (!r.ok) { sessionStorage.removeItem(LAST_BEAT_KEY); return; }
+  } catch (e) { return; }
+  onSuccess(data);
+}
+window.addEventListener('load', restoreBeat);
 
 // ── Ergebnis verarbeiten ───────────────────────────────────────
 function onSuccess(data) {
@@ -3247,7 +3268,9 @@ function showExportError(errEl, d, fallback) {
     if (d.buy_url) {
       const a = document.createElement('a');
       a.href = d.buy_url; a.textContent = t('Tokens kaufen →');
+      errEl.appendChild(document.createTextNode(' '));
       errEl.appendChild(a);
+      errEl.appendChild(document.createTextNode(' ' + t('(dein Beat bleibt erhalten)')));
     }
     refreshQuota();
   }

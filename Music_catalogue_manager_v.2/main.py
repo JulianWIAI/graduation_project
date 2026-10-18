@@ -493,15 +493,15 @@ def generate_track():
 @login_required
 @require_admin
 def audit():
-    rows = db.get_audit_log()
-    return render_template("audit.html", rows=rows)
+    q = request.args.get("q", "").strip()
+    return render_template("audit.html", rows=db.get_audit_log(query=q), q=q)
 
 
 @app.route("/audit.csv")
 @login_required
 @require_admin
 def audit_csv():
-    rows = db.get_audit_log(limit=100000)
+    rows = db.get_audit_log(limit=100000, query=request.args.get("q", "").strip())
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(["id", "zeitstempel", "ereignis", "objekt", "objekt_id", "details"])

@@ -290,10 +290,21 @@ def log_event(event, entity=None, entity_id=None, details=None):
     conn.close()
 
 
-def get_audit_log(limit=500):
+def get_audit_log(limit=500, query=""):
+    """
+    Neueste Protokoll-Eintraege. 'query' filtert nach Suchbegriffen: Jeder durch
+    Leerzeichen getrennte Begriff muss in Zeitstempel, Ereignis, Objekt oder Details
+    vorkommen (Gross-/Kleinschreibung egal), z.B. "token" oder "token 2026-10".
+    """
+    words = (query or "").split()
+    text = ("ts || ' ' || event || ' ' || COALESCE(entity, '') || ' ' || "
+            "COALESCE(entity_id, '') || ' ' || COALESCE(details, '')")
+    where = " AND ".join([f"{text} LIKE ?"] * len(words))
     conn = get_conn()
     rows = conn.execute(
-        "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,)
+        "SELECT * FROM audit_log " + (f"WHERE {where} " if where else "") +
+        "ORDER BY id DESC LIMIT ?",
+        [f"%{w}%" for w in words] + [limit],
     ).fetchall()
     conn.close()
     return rows

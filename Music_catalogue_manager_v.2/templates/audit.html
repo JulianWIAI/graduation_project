@@ -4,9 +4,16 @@
 <h1>{{ _('Audit-Protokoll') }}</h1>
 <p class="subtitle">{{ _('Revisionssichere Aufzeichnung aller geschäftsrelevanten Aktionen.') }}</p>
 
-<div class="row-actions" style="margin-bottom:16px;">
-  <a class="btn btn-ghost" href="{{ url_for('audit_csv') }}">{{ _('↓ Als CSV exportieren') }}</a>
-</div>
+<form method="get" action="{{ url_for('audit') }}" class="row-actions" style="margin-bottom:16px;">
+  <input type="search" name="q" value="{{ q }}" placeholder="{{ _('Suchbegriffe, z. B. Token') }}"
+         aria-label="{{ _('Protokoll durchsuchen') }}" style="width:320px;padding:8px 10px;">
+  <button class="btn btn-primary" type="submit">{{ _('Suchen') }}</button>
+  {% if q %}<a class="btn btn-ghost" href="{{ url_for('audit') }}">{{ _('Suche zurücksetzen') }}</a>{% endif %}
+  <a class="btn btn-ghost" href="{{ url_for('audit_csv', q=q) if q else url_for('audit_csv') }}">{{ _('↓ Als CSV exportieren') }}</a>
+</form>
+{% if q %}
+<p class="muted small" style="margin:-4px 0 12px;">{{ _('%(n)s Einträge für „%(q)s“ (die neuesten zuerst, höchstens 500).', n=rows|length, q=q) }}</p>
+{% endif %}
 
 <div class="panel">
   {% if rows %}
@@ -24,6 +31,8 @@
       {% endfor %}
     </tbody>
   </table>
+  {% elif q %}
+  <p class="muted">{{ _('Keine Einträge für „%(q)s“ gefunden.', q=q) }}</p>
   {% else %}
   <p class="muted">{{ _('Noch keine Ereignisse protokolliert.') }}</p>
   {% endif %}

@@ -244,6 +244,25 @@ def test_watermark_checksum_is_really_verified():
     assert stored and not watermark_reader.hash_matches(renamed, stored)
 
 
+def test_audit_log_search():
+    db.log_event("TOKENS_PAID", "token_purchase", 1, {"quantity": 5})
+    db.log_event("LICENSE_SOLD", "license", 2, {"title": "Sommerbeat"})
+    db.log_event("TOKEN_CONSUMED", "user", 3, {"reference": "export:suchtest"})
+
+    events = lambda q: {r["event"] for r in db.get_audit_log(query=q)}
+    assert {"TOKENS_PAID", "TOKEN_CONSUMED"} <= events("token")         # Gross-/Kleinschreibung egal
+    assert "LICENSE_SOLD" not in events("token")
+    assert events("sommerbeat") == {"LICENSE_SOLD"}                      # sucht auch in den Details
+    assert events("token suchtest") == {"TOKEN_CONSUMED"}                # alle Begriffe muessen passen
+    assert events("gibt-es-nicht") == set()
+
+    client = main.app.test_client()
+    client.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    page = client.get("/audit?q=Sommerbeat").get_data(as_text=True)
+    assert "LICENSE_SOLD" in page and "TOKENS_PAID" not in page
+    assert "LICENSE_SOLD" in client.get("/audit.csv?q=Sommerbeat").get_data(as_text=True)
+
+
 def test_language_switch():
     client = main.app.test_client()
     assert "Anmelden" in client.get("/login").get_data(as_text=True)          # Standard: Deutsch
