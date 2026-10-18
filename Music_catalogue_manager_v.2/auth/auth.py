@@ -7,7 +7,7 @@ Flask-Login-Mixins ohne ORM funktionieren.
 """
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_login import UserMixin, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from commerce import quota

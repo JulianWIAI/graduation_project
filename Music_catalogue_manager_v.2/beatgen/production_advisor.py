@@ -16,12 +16,12 @@ from __future__ import annotations
 
 import json
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
+import config
 
 # Pfad zu den Produktionsleitfaden-JSONs.
 _GUIDE_DIR = (
-    pathlib.Path(__file__).parent.parent.parent
-    / "music_architect_v7"
+    pathlib.Path(config.MA_ROOT)
     / "data"
     / "production_guide"
     / "json"

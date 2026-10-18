@@ -44,6 +44,7 @@ from appdata import instrument_data as _instr_data
 from beatgen import piano_roll_extractor
 from beatgen import production_advisor
 from appdata import prompt_data
+import config
 
 generate_bp = Blueprint("generate", __name__)
 
@@ -88,7 +89,7 @@ def _set_volume(cfg, track: str, value):
 # Music-Architect-Pfad — relativ zu dieser Datei aufgeloest, damit die App
 # unabhaengig vom Startverzeichnis funktioniert.
 # ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "music_architect_v7"
+_MA_ROOT = pathlib.Path(config.MA_ROOT)
 _MA_SRC  = _MA_ROOT / "src"
 
 
@@ -104,7 +105,6 @@ def _ensure_ma_path():
     synth_core_fix.ensure_python_fallback()
 
 
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # SoundFonts
 # ---------------------------------------------------------------------------
@@ -132,6 +132,7 @@ def _genre_soundfont(genre: str):
     return path
 
 
+# ---------------------------------------------------------------------------
 # Kontingent (Monatslimit) -- einzige Quelle ist commerce/quota.py
 # ---------------------------------------------------------------------------
 
@@ -492,8 +493,7 @@ def generate_track():
             _sf2_path = session.get(f"sf2_{sf2_uuid}")
         else:
             try:
-                from rendering.soundfont_library import SoundFontLibrary
-                _lib = SoundFontLibrary()
+                # Explizite Nutzerauswahl, sonst Genre-Standard (wie MA V7).
                 if sf2_key:
                     _sf2_path = _installed_soundfonts()[1].get(sf2_key)
                 if not _sf2_path:
@@ -783,7 +783,6 @@ def render_solo(audio_uuid: str, track_name: str):
     try:
         comp_data   = json.loads(comp_path.read_text(encoding="utf-8"))
         composition = comp_data["composition"]
-        bpm_val     = comp_data.get("bpm", 120.0)
 
         _ensure_ma_path()
         from rendering.wav_renderer import WAVRenderer
@@ -1161,15 +1160,13 @@ def export_formats_route():
 @generate_bp.route("/available_soundfonts")
 @login_required
 def available_soundfonts_route():
-    """Gibt installierte SF2-Soundfonts und FluidSynth-Status zurueck."""
-    _ensure_ma_path()
+    """Gibt die echten installierten SF2-Soundfonts und den FluidSynth-Status zurueck."""
     try:
         _, real = _installed_soundfonts()
         from rendering.soundfont_library import _SF2_DISPLAY
         from rendering.fluidsynth_renderer import _FLUIDSYNTH_EXE
-        lib    = SoundFontLibrary()
         fonts  = [{"key": k, "label": _SF2_DISPLAY.get(k, k), "path": p}
-                  for k, p in lib._available.items()]
+                  for k, p in real.items()]
         fs_ok  = _FLUIDSYNTH_EXE is not None
     except Exception:
         fonts = []

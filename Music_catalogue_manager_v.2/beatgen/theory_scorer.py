@@ -18,9 +18,10 @@ from __future__ import annotations
 import pathlib
 import sys
 from typing import Any, Dict
+import config
 
 # Pfad zum MA-V7-Quellverzeichnis (relativ zu dieser Datei berechnet).
-_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "music_architect_v7"
+_MA_ROOT = pathlib.Path(config.MA_ROOT)
 _MA_SRC  = _MA_ROOT / "src"
 
 

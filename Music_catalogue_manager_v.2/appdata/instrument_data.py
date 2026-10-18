@@ -13,11 +13,11 @@ from __future__ import annotations
 import json
 import pathlib
 from typing import List, Tuple
+import config
 
 # Pfad zur JSON-Datei — relativ zu dieser Datei berechnet (plattformunabhaengig).
 _JSON_PATH = (
-    pathlib.Path(__file__).parent.parent.parent
-    / "music_architect_v7"
+    pathlib.Path(config.MA_ROOT)
     / "data"
     / "production_guide"
     / "json"

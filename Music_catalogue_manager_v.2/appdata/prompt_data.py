@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import pathlib
 import sys
-from typing import Dict, Any, Optional
+from typing import Dict, Any
+import config
 
 # ---------------------------------------------------------------------------
 # MUSIC_ARCHITECT_V7-Pfad — relativ zu dieser Datei berechnet.
 # ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "music_architect_v7"
+_MA_ROOT = pathlib.Path(config.MA_ROOT)
 _MA_SRC  = _MA_ROOT / "src"
 
 
@@ -73,44 +74,3 @@ def decode_prompt(text: str) -> Dict[str, Any]:
         }
     except Exception:
         return {}
-
-
-def apply_to_config(decoded: Dict[str, Any], cfg) -> None:
-    """
-    Wendet die dekodierten Parameter auf ein CompositionConfig-Objekt an.
-    Nur Felder, die nicht None sind, werden ueberschrieben.
-
-    Parameter
-    ---------
-    decoded : Rueckgabewert von decode_prompt()
-    cfg     : CompositionConfig-Objekt (wird in-place veraendert)
-    """
-    if not decoded:
-        return
-
-    genre = decoded.get("genre")
-    if genre:
-        cfg.genre = genre
-
-    bpm = decoded.get("bpm")
-    if bpm is not None:
-        cfg.bpm = float(bpm)
-
-    scale = decoded.get("scale_hint")
-    if scale:
-        # scale_hint wird als Tonartteil an cfg.key angehaengt
-        # (Note bleibt unveraendert, falls bereits gesetzt).
-        if cfg.key:
-            parts = cfg.key.split()
-            note  = parts[0] if parts else "C"
-            cfg.key = f"{note} {scale}"
-        else:
-            cfg.key = scale
-
-    tension = decoded.get("tension_multiplier")
-    if tension is not None:
-        cfg.tension_multiplier = float(tension)
-
-    complexity = decoded.get("complexity")
-    if complexity is not None:
-        cfg.complexity = int(complexity)

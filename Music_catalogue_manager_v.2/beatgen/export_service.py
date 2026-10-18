@@ -16,7 +16,7 @@ import io
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Dict
+from typing import Dict
 
 import mido  # in requirements.txt enthalten
 

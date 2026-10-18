@@ -8,7 +8,6 @@ Benoetigt keinen MA V7-Motor — laeuft plattformunabhaengig in reinem Python.
 from __future__ import annotations
 
 import copy
-import math
 import random
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 

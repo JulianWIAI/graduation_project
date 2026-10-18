@@ -12,7 +12,7 @@ Zentrale Regel (Exklusiv-Sperre):
 Jede erfolgreiche Transaktion wird im Audit-Protokoll festgehalten.
 """
 
-from datetime import date, datetime
+from datetime import datetime
 
 import config
 from db import database as db
@@ -68,9 +68,7 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
                 buyer_name = buyer["name"]
             if not buyer_email:
                 buyer_email = buyer["email"] or ""
-            active = bool(buyer["is_subscriber"]) and (
-                not buyer["sub_end"] or buyer["sub_end"] >= date.today().isoformat())
-            if active:
+            if quota.is_active_subscriber(buyer):
                 try:
                     discount_pct = float(db.get_setting("discount_pct", "5"))
                 except ValueError:

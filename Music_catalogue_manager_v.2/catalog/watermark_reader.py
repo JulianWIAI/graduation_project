@@ -85,8 +85,3 @@ def hash_matches(midi_path, stored_hash):
         return False
     expected = hashlib.sha256(os.path.basename(midi_path).encode("utf-8")).hexdigest()
     return expected.startswith(stored_hash.lower())
-
-
-def has_watermark(midi_path):
-    wm = read_watermark(midi_path)
-    return bool(wm["tag"] or wm["hash"])

@@ -364,7 +364,6 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 | `fusion_data.py` | Fusion-Presets (Genre-Kombinationen) |
 | `groove_data.py` | Groove- und Feel-Preset-Bibliothek |
 | `gm_desc_data.py` | GM-Programm-Beschreibungen |
-| `mixer_data.py` | Mixer-Voreinstellungen |
 | `prompt_data.py` | Prompt-Dekodierung (Freitext → Parameter) |
 
 ### Katalog & Verwaltung

@@ -15,7 +15,6 @@ from datetime import datetime
 
 import config
 from db import database as db
-from catalog import watermark_reader
 from catalog.watermark_reader import read_watermark
 from i18n import _
 

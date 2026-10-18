@@ -13,6 +13,9 @@ import os
 # Basisverzeichnis dieses Moduls
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+# Music Architect V7 (Beat-Motor) liegt im Gesamtprojekt neben diesem Modul.
+MA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "music_architect_v7")
+
 # SQLite-Datei (eine einzige Datei, kein Server, keine Einrichtung).
 DB_PATH = os.path.join(BASE_DIR, "instance", "catalog.db")
 

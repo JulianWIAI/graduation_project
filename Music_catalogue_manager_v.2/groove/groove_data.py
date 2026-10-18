@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import pathlib
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+import config
 
 # ---------------------------------------------------------------------------
 # MUSIC_ARCHITECT_V7-Pfad — relativ zu dieser Datei berechnet.
 # ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(__file__).parent.parent.parent / "music_architect_v7"
+_MA_ROOT = pathlib.Path(config.MA_ROOT)
 _MA_SRC  = _MA_ROOT / "src"
 
 
@@ -76,19 +77,6 @@ def get_groove_preset(genre: str) -> Dict[str, Dict[str, Any]]:
 
     except Exception:
         return {}
-
-
-def get_all_presets() -> Dict[str, Dict[str, Dict[str, Any]]]:
-    """
-    Laedt alle Genre-Voreinstellungen auf einmal (fuer die UI-Initialisierung).
-    Rueckgabe: {genre: {track_key: settings}}
-    """
-    result: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    for genre in AVAILABLE_GENRES:
-        preset = get_groove_preset(genre)
-        if preset:
-            result[genre] = preset
-    return result
 
 
 # ---------------------------------------------------------------------------
