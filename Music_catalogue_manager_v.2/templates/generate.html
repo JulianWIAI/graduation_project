@@ -117,12 +117,12 @@
       <summary>{{ _('Generierungsmodus') }}</summary>
       <div class="section-body">
         <div class="mode-chips" id="genMode" data-value="full"
-             data-tooltip="{{ _('Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = ohne Lead/Pad/Arp — Platz fuer Gesang&#10;Beide = zwei separate Dateien werden generiert') }}">
+             data-tooltip="{{ _('Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = Melodie und Arpeggio weichen in Strophe und Refrain eine Oktave nach unten aus — Platz fuer Gesang&#10;Beide = derselbe Beat als Full Beat und als Vocal-Ready') }}">
           <button type="button" class="chip chip-active" data-v="full">Full Beat</button>
           <button type="button" class="chip" data-v="vocal_ready">Vocal-Ready</button>
           <button type="button" class="chip" data-v="both">{{ _('Beide') }}</button>
         </div>
-        <p class="hint">{{ _('<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = ohne Lead/Pad/Arp · <strong>Beide</strong> = zwei Dateien') }}</p>
+        <p class="hint">{{ _('<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = Melodie tiefer, Platz fuer Gesang · <strong>Beide</strong> = beide Fassungen desselben Beats') }}</p>
       </div>
     </details>
 
@@ -1539,6 +1539,7 @@ window.addEventListener('load', restoreBeat);
 function onSuccess(data) {
   G.currentUuid=data.uuid; G.vocalUuid=data.vocal_uuid;
   G.pianoRollData=data.piano_roll; G.lastData=data;
+  if (data.fx_variant) setPaletteVariant(data.fx_variant);
 
   // Original-URL einfrieren — wird nie durch einen Re-Render ueberschrieben
   G.originalAudioUrl = data.audio_url;
@@ -2399,6 +2400,7 @@ async function applyGrooveAndRerender() {
       instrument_params: collectTimbreParams(),
       sf2_key:           $('sf2PresetSelect')?.value || null,
       sf2_uuid:          G.sf2Uuid || null,
+      fx_variant:        G.currentFxVariant || null,   // SHINE / STREET / MURK im Groove-Panel
     }),
     });
     const data=await res.json();

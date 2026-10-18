@@ -645,13 +645,12 @@ _T = {
         "Coloration sonore par des chaînes d'effets.&#10;Bright = clair, incisif, aigus accentués&#10;Neutral = équilibré, sans coloration&#10;Dark = sourd, percutant, graves accentués"),
     "FX-Kette": ("FX chain", "Chaîne FX"),
     "Generierungsmodus": ("Generation mode", "Mode de génération"),
-    "Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = ohne Lead/Pad/Arp — Platz fuer Gesang&#10;Beide = zwei separate Dateien werden generiert": (
-        "Full Beat = complete beat with all tracks&#10;Vocal-Ready = without lead/pad/arp — room for vocals&#10;Both = two separate files are generated",
-        "Full Beat = beat complet avec toutes les pistes&#10;Vocal-Ready = sans lead/pad/arp — place pour le chant&#10;Les deux = deux fichiers distincts sont générés"),
-    "Beide": ("Both", "Les deux"),
-    "<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = ohne Lead/Pad/Arp · <strong>Beide</strong> = zwei Dateien": (
-        "<strong>Full Beat</strong> = complete composition · <strong>Vocal-Ready</strong> = without lead/pad/arp · <strong>Both</strong> = two files",
-        "<strong>Full Beat</strong> = composition complète · <strong>Vocal-Ready</strong> = sans lead/pad/arp · <strong>Les deux</strong> = deux fichiers"),
+    "Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = Melodie und Arpeggio weichen in Strophe und Refrain eine Oktave nach unten aus — Platz fuer Gesang&#10;Beide = derselbe Beat als Full Beat und als Vocal-Ready": (
+        "Full Beat = complete beat with all tracks&#10;Vocal-Ready = melody and arpeggio move an octave down in verses and choruses — room for vocals&#10;Both = the same beat as Full Beat and as Vocal-Ready",
+        "Full Beat = beat complet avec toutes les pistes&#10;Vocal-Ready = la mélodie et l'arpège descendent d'une octave dans les couplets et refrains — place pour le chant&#10;Les deux = le même beat en Full Beat et en Vocal-Ready"),
+    "<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = Melodie tiefer, Platz fuer Gesang · <strong>Beide</strong> = beide Fassungen desselben Beats": (
+        "<strong>Full Beat</strong> = complete composition · <strong>Vocal-Ready</strong> = lower melody, room for vocals · <strong>Both</strong> = both versions of the same beat",
+        "<strong>Full Beat</strong> = composition complète · <strong>Vocal-Ready</strong> = mélodie plus grave, place pour le chant · <strong>Les deux</strong> = les deux versions du même beat"),
     "Fusion-Modus": ("Fusion mode", "Mode fusion"),
     "Fusion kombiniert zwei Genres zu einem hybriden Beat.&#10;Aus = normales Genre-Modus&#10;Preset = vordefinierte Genre-Kombination&#10;Custom-Mix = freie Auswahl und Verhaeltnis zweier Genres": (
         "Fusion combines two genres into a hybrid beat.&#10;Off = normal genre mode&#10;Preset = predefined genre combination&#10;Custom mix = free choice and ratio of two genres",

@@ -10,6 +10,7 @@ Das Monatskontingent wird NUR beim ersten Export eines Beats verbraucht, niemals
 dessen 1 gekaufter Token abgebucht (siehe _gate_quota / commerce/tokens.py).
 """
 
+import copy
 import io as _io
 import json
 import pathlib
@@ -121,6 +122,23 @@ def _installed_soundfonts():
     from rendering.soundfont_library import SoundFontLibrary
     lib = SoundFontLibrary()
     return lib, {k: p for k, p in lib._available.items() if _FALLBACK_SF2 not in p}
+
+
+_FX_VARIANTS = ("bright", "neutral", "dark")     # FX-Kette: Bright / Neutral / Dark
+
+
+def _sf2_renderer(sf2_path, genre: str, fx_variant: str):
+    """
+    WAVRenderer fuer SoundFont-Rendering -- mit Genre und FX-Kette, wie im
+    Desktop-Programm. Daraus waehlt der Motor Hall, Chorus, Lautstaerke und
+    Mastering (bright/neutral/dark je Genre); ohne beides klingt jeder Beat
+    nach demselben neutralen Einheitsprofil.
+    """
+    from rendering.wav_renderer import WAVRenderer
+    renderer = WAVRenderer(soundfont_path=str(sf2_path))
+    renderer.fluidsynth.set_genre(genre)
+    renderer.fluidsynth.set_variant(fx_variant)
+    return renderer
 
 
 def _genre_soundfont(genre: str):
@@ -329,6 +347,8 @@ def generate_track():
     humanize   = data.get("humanize",      0.6)
     tension    = data.get("tension",       0.0)
     fx_variant = data.get("fx_variant",   "neutral")
+    if fx_variant not in _FX_VARIANTS:
+        fx_variant = "neutral"
 
     # --- Generierungsmodus ---
     # 'full' | 'vocal_ready' | 'both'
@@ -392,7 +412,9 @@ def generate_track():
           key_scale if key_scale else None)
 
     # Ob ein stummes Beat-Rendering ohne Lead-/Pad-/Arp-Stimmen gewuenscht ist.
-    vocal_mask = gen_mode in ("vocal_ready", "both")
+    # Bei 'both' wird die Hauptversion VOLL komponiert; die Vocal-Version entsteht
+    # weiter unten als zweite Komposition mit demselben Seed.
+    vocal_mask = gen_mode == "vocal_ready"
 
     # --- Seed festlegen -------------------------------------------------------
     # Jeder Beat bekommt einen Seed. Ohne Eingabe wird einer gewuerfelt, denn der
@@ -474,6 +496,8 @@ def generate_track():
 
         # Absoluten Seeds-Pfad uebergeben, damit die Web-App die 129.963 Seeds findet.
         engine      = CompositionEngine(seeds_dir=str(_MA_ROOT / "seeds"))
+        # Kopie VOR dem Komponieren: compose() veraendert die Config (z.B. BPM).
+        cfg_vocal   = copy.deepcopy(cfg) if gen_mode == "both" else None
         composition = engine.compose(cfg)
 
         tmp_dir  = pathlib.Path(tempfile.mkdtemp())
@@ -504,28 +528,26 @@ def generate_track():
         # Builtin-Renderer immer bereitstellen — auch als Fallback und fuer Vocal-Modus.
         renderer = WAVRenderer()
 
-        # Mit SF2 (FluidSynth) rendern falls verfuegbar, sonst Builtin-Synthesizer.
-        _rendered_with_sf2 = False
-        if _sf2_path and pathlib.Path(_sf2_path).exists():
-            try:
-                # Serialisierbares Dict verwenden, damit export_midi dasselbe Format
-                # erhaelt wie beim Re-Render (dort wird aus JSON geladen).
-                midi_bytes   = export_service.export_midi(_comp_dict, _saved_bpm)
-                midi_tmp     = tmp_dir / "render.mid"
-                midi_tmp.write_bytes(midi_bytes)
-                renderer_sf2 = WAVRenderer(soundfont_path=str(_sf2_path))
-                result_sf2   = renderer_sf2.render_midi_to_wav(str(midi_tmp), str(wav_path))
-                # result_sf2 kann ein Pfad-String oder True sein — WAV muss existieren.
-                if result_sf2 and wav_path.exists() and wav_path.stat().st_size > 0:
-                    _rendered_with_sf2 = True
-                else:
+        def _render(comp_raw, comp_dict, out_path, midi_name):
+            """Mit SF2 (FluidSynth) rendern falls verfuegbar, sonst Builtin-Synthesizer."""
+            if _sf2_path and pathlib.Path(_sf2_path).exists():
+                try:
+                    # Serialisierbares Dict verwenden, damit export_midi dasselbe Format
+                    # erhaelt wie beim Re-Render (dort wird aus JSON geladen).
+                    midi_tmp = tmp_dir / midi_name
+                    midi_tmp.write_bytes(export_service.export_midi(comp_dict, _saved_bpm))
+                    result = _sf2_renderer(_sf2_path, genre, fx_variant).render_midi_to_wav(
+                        str(midi_tmp), str(out_path))
+                    # result kann ein Pfad-String oder True sein — WAV muss existieren.
+                    if result and out_path.exists() and out_path.stat().st_size > 0:
+                        return
                     current_app.logger.warning(
                         "SF2-Rendering lieferte leere oder fehlende WAV, Fallback auf Builtin.")
-            except Exception as _sf2e:
-                current_app.logger.warning("SF2-Rendering fehlgeschlagen, Fallback: %s", _sf2e)
+                except Exception as _sf2e:
+                    current_app.logger.warning("SF2-Rendering fehlgeschlagen, Fallback: %s", _sf2e)
+            renderer.render_composition_to_wav(comp_raw, str(out_path))
 
-        if not _rendered_with_sf2:
-            renderer.render_composition_to_wav(composition, str(wav_path))
+        _render(composition, _comp_dict, wav_path, "render.mid")
 
         # Sicherstellen, dass die WAV-Datei tatsaechlich erstellt wurde.
         if not wav_path.exists() or wav_path.stat().st_size == 0:
@@ -540,6 +562,7 @@ def generate_track():
                 "composition": _comp_dict,
                 "bpm":         _saved_bpm,
                 "genre":       genre,
+                "fx_variant":  fx_variant,
             }, ensure_ascii=False)
             (tmp_dir / "composition.json").write_text(comp_json, encoding="utf-8")
         except Exception as _je:
@@ -562,16 +585,17 @@ def generate_track():
         except Exception as _ae:
             current_app.logger.warning("Advisor-JSON konnte nicht gespeichert werden: %s", _ae)
 
-        # Bei Modus 'both': zweite Version mit vocal_mask=True rendern.
+        # Bei Modus 'both': zweite Komposition mit Vocal-Maske und demselben Seed.
+        # Gleicher Seed -> gleicher Beat; die Maske verschiebt nur Melodie/Arp in
+        # den Gesangsteilen (Strophe, Hook) eine Oktave tiefer. Gerendert wird wie
+        # die Hauptversion (SoundFont, Genre, FX-Kette).
         vocal_wav_path = None
-        if gen_mode == "both":
-            cfg_vocal             = CompositionConfig(**vars(cfg) if hasattr(cfg, '__dict__') else {})
-            # Schnellere Alternative: vocal_mask direkt am selben Config aktivieren.
-            cfg.vocal_mask        = True
-            vocal_wav_path_tmp    = tmp_dir / "beat_vocal.wav"
-            # Builtin-Renderer fuer Vocal-Version verwenden (SF2 kein vocal_mask-Unterstuetzung).
-            renderer.render_composition_to_wav(composition, str(vocal_wav_path_tmp))
-            vocal_wav_path = vocal_wav_path_tmp
+        if cfg_vocal is not None:
+            cfg_vocal.vocal_mask = True
+            comp_vocal     = engine.compose(cfg_vocal)
+            vocal_wav_path = tmp_dir / "beat_vocal.wav"
+            _render(comp_vocal, groove_processor.jsonify_composition(comp_vocal),
+                    vocal_wav_path, "render_vocal.mid")
 
     except Exception as exc:
         current_app.logger.error("Generierung fehlgeschlagen: %s", exc)
@@ -679,6 +703,7 @@ def generate_track():
         "duration":        audio_duration,
         "uuid":            audio_uuid,
         "seed":            seed_int,
+        "fx_variant":      fx_variant,
         "vocal_uuid":      vocal_uuid,
         "piano_roll":      roll_data,
         "prompt_decoded":  decoded_prompt,
@@ -853,6 +878,10 @@ def rerender_track():
     try:
         # Metadaten (BPM, Genre) immer aus composition.json lesen.
         comp_data = json.loads(comp_path.read_text(encoding="utf-8"))
+        # FX-Kette: Auswahl im Groove-Panel, sonst die beim Generieren gewaehlte.
+        fx_variant = data.get("fx_variant") or comp_data.get("fx_variant", "neutral")
+        if fx_variant not in _FX_VARIANTS:
+            fx_variant = "neutral"
         bpm_val   = float(comp_data.get("bpm", 120.0))
 
         # Genre-Standard SF2 als Fallback wenn kein SF2 explizit ausgewaehlt.
@@ -921,7 +950,7 @@ def rerender_track():
                 midi_bytes  = export_service.export_midi(modified, bpm_val)
                 midi_tmp    = rr_dir / "render.mid"
                 midi_tmp.write_bytes(midi_bytes)
-                renderer_sf2 = WAVRenderer(soundfont_path=str(sf2_path))
+                renderer_sf2 = _sf2_renderer(sf2_path, comp_data.get("genre", ""), fx_variant)
                 result_sf2   = renderer_sf2.render_midi_to_wav(str(midi_tmp), str(rr_path))
                 if result_sf2:
                     rendered_with_sf2 = True
@@ -953,7 +982,7 @@ def rerender_track():
 
         # Groovte Komposition als composition.json in rr_dir speichern,
         # damit export_midi_route und export_json_route die bearbeitete Version liefern.
-        rr_comp_data = {**comp_data, "composition": modified}
+        rr_comp_data = {**comp_data, "composition": modified, "fx_variant": fx_variant}
         (rr_dir / "composition.json").write_text(
             json.dumps(rr_comp_data, ensure_ascii=False), encoding="utf-8")
 
