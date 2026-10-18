@@ -80,7 +80,11 @@ Der Kern der Anwendung. Ein Beat wird durch folgende Parameter gesteuert:
 - **Genre** — trap, phonk, hiphop, techno, house, edm, pop, cinematic, jpop u. a.
 - **BPM** — manuell oder automatisch durch den Generator.
 - **Komplexität** (1–10) — Dichte der Patterns.
-- **Seed** — reproduzierbare Ergebnisse bei gleichem Seed.
+- **Seed** — reproduzierbare Ergebnisse bei gleichem Seed. Ohne Eingabe wird einer
+  gewürfelt; er wird angezeigt und beim Export im Katalog gespeichert.
+- **FX-Kette** (Bright / Neutral / Dark) — Hall, Chorus, Lautstärke und Mastering
+  je Genre: Bright klingt trocken und direkt, Dark räumlich und dumpf. Wirkt beim
+  Rendern mit SoundFont; im Groove-Panel (SHINE / STREET / MURK) auch beim Re-Render.
 
 **Tonart & Struktur**
 - Ton (C, C#, D … B), Tonleiter (major, minor, dorian, phrygian, blues …)
@@ -98,7 +102,10 @@ Der Kern der Anwendung. Ein Beat wird durch folgende Parameter gesteuert:
 - **Builtin-Synthesizer** — plattformunabhängig, kein externes Tool nötig.
 - **SF2 / FluidSynth** — hochwertigere Ausgabe mit SoundFont-Bibliothek; Genre-Standard
   wird automatisch gewählt, eigene `.sf2`-Datei kann hochgeladen werden.
-- **Modus „Beide"** — erzeugt gleichzeitig eine instrumentale und eine Vocal-Mask-Version.
+- **Modus „Vocal-Ready"** — Melodie und Arpeggio weichen in Strophe und Refrain eine
+  Oktave nach unten aus (unter C4), damit der Gesangsbereich frei bleibt.
+- **Modus „Beide"** — derselbe Beat (gleicher Seed) als Full Beat und als Vocal-Ready,
+  beide gleich gerendert.
 
 ---
 
@@ -173,7 +180,8 @@ Per-Instrument-Klangsynthese-Parameter für vier Rollen:
 
 - Jede Rolle bietet ein **Preset-Dropdown** mit vordefinierten Klangcharakteren.
 - Einzelne Schieberegler können nach dem Laden eines Presets feineingestellt werden.
-- Alle Werte fließen beim Re-Render in den eingebauten Synthesizer ein.
+- Die Werte gelten nur für den eingebauten Synthesizer, also nicht, wenn mit
+  SoundFont gerendert wird (siehe *Bekannte Einschränkungen*).
 
 ---
 
@@ -309,7 +317,10 @@ Jede relevante Aktion (Generierung, Lizenzverkauf, Zahlung, Einstellungsänderun
 wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 
 - Einsehbar unter `/audit`.
-- Export als CSV (`/audit.csv`) für die Projektdokumentation.
+- **Suche**: Jeder Suchbegriff muss in Zeitstempel, Ereignis, Objekt oder Details
+  vorkommen (z. B. `token` oder `token 2026-10`), Groß-/Kleinschreibung egal.
+- Export als CSV (`/audit.csv`) für die Projektdokumentation; bei aktiver Suche
+  nur die gefundenen Einträge.
 
 ---
 
@@ -432,3 +443,13 @@ Danach **Scannen** — alle vorhandenen Tracks werden in den Katalog übernommen
   Genres und Einstellungen gesperrt, auch für den Käufer selbst.
 - **Zahlungen sind simuliert**: Abo, Tokens und Lizenzen werden per Knopfdruck
   „bezahlt"; ein Zahlungsdienstleister ist nicht angebunden.
+- **Beat-Wiederherstellung nur im selben Tab**: Verlässt der Kunde den Generator
+  (z. B. für den Token-Kauf), stellt die Seite den letzten Beat bei der Rückkehr
+  wieder her — im selben Browser-Tab und bis eine Stunde nach dem Generieren.
+  Ein Re-Render und die Mixer-Einstellungen werden nicht wiederhergestellt.
+- **Re-Render braucht die neuere Fassung von Music Architect**: Der Katalog nutzt
+  beim Re-Render die Groove-Verarbeitung des Motors (`composition_groover.py`,
+  genretypisches Mikro-Timing), die Sample-Engine und die Timbre-Verarbeitung im
+  Renderer. Diese fehlen in `music_architect_v7` des Gesamtprojekts noch. Bis dahin
+  übernimmt der Katalog Groove und Mixer selbst (Log-Warnung „CompositionGroover-
+  Schritt fehlgeschlagen“), eigene Samples und Timbre-Werte bleiben ohne Wirkung.
