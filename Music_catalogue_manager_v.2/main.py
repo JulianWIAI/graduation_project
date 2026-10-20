@@ -169,13 +169,25 @@ def track_detail(track_id):
     lics = conn.execute(
         "SELECT * FROM licenses WHERE track_id = ? ORDER BY id DESC", (track_id,)
     ).fetchall()
+    # Beats aus dem Web-Generator (nur sie haben user_id) gehen beim ersten Export
+    # an den Kunden -- ohne Lizenz. Wer, und ob Kontingent oder Token: Protokoll.
+    customer = None
+    if track["user_id"]:
+        customer = conn.execute(
+            "SELECT u.email, u.name, ("
+            "  SELECT json_extract(e.details, '$.used_token') FROM audit_log s"
+            "  JOIN audit_log e ON e.event = 'EXPORT'"
+            "   AND e.entity_id = json_extract(s.details, '$.audio_uuid')"
+            "  WHERE s.event = 'EXPORT_SAVE' AND s.entity = 'track' AND s.entity_id = ?"
+            ") AS used_token FROM users u WHERE u.id = ?",
+            (str(track_id), track["user_id"])).fetchone()
     conn.close()
     # Preise fuer die Verkaufsmaske.
     tiers = {k: {**v, "price": licensing.get_price(k)}
              for k, v in config.DEFAULT_TIERS.items()}
     users = quota.list_users()
     return render_template("track_detail.html", track=track, exports=exports,
-                           licenses=lics, tiers=tiers, users=users)
+                           licenses=lics, tiers=tiers, users=users, customer=customer)
 
 
 # --- Lizenz verkaufen -------------------------------------------------------
@@ -544,6 +556,16 @@ def euro(value):
         return f"{float(value):,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
     except (TypeError, ValueError):
         return "–"
+
+
+@app.template_filter("datum")
+def datum(value):
+    """ISO-Zeitpunkt -> '16.10.2026, 12:25' (nur Datum, wenn keine Uhrzeit)."""
+    text = str(value or "")
+    if len(text) < 10:
+        return text or "–"
+    out = f"{text[8:10]}.{text[5:7]}.{text[:4]}"
+    return f"{out}, {text[11:16]}" if len(text) >= 16 else out
 
 
 if __name__ == "__main__":

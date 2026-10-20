@@ -215,6 +215,27 @@ def test_composition_json_costs_like_any_export():
     _remove_exports(uid)
 
 
+def test_generator_beat_shows_customer_instead_of_license():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    _use_quota(uid, 3)
+    tokens.admin_adjust(uid, 1)
+    _fake_beat(client, "k")
+    assert client.get("/export_audio/k?format=wav_cd").status_code == 200   # kostet den Token
+    conn = db.get_conn()
+    track_id = conn.execute("SELECT id FROM tracks WHERE user_id = ?", (uid,)).fetchone()["id"]
+    email = conn.execute("SELECT email FROM users WHERE id = ?", (uid,)).fetchone()["email"]
+    conn.close()
+
+    admin = main.app.test_client()
+    admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    page = admin.get(f"/track/{track_id}").get_data(as_text=True)
+    assert "an Kunden vergeben" in page and email in page and "bezahlt mit 1 Token" in page
+    assert "Noch keine Lizenz verkauft" not in page and ">None<" not in page
+    assert "an Kunden vergeben" in admin.get("/catalog").get_data(as_text=True)
+    _remove_exports(uid)
+
+
 def test_old_work_folders_are_cleaned_up():
     from beatgen import generate
     old, new = generate._new_tmp_dir(), generate._new_tmp_dir()

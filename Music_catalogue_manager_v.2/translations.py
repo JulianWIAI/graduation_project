@@ -320,6 +320,19 @@ _T = {
     "Preis": ("Price", "Prix"),
     "Checkout →": ("Checkout →", "Paiement →"),
     "Noch keine Lizenz verkauft.": ("No license sold yet.", "Aucune licence vendue pour l'instant."),
+    "an Kunden vergeben": ("assigned to customer", "attribué à un client"),
+    "Im Web-Generator erzeugt: kein MIDI-Wasserzeichen und keine Quelldatei. Der Seed oben macht den Beat nachvollziehbar.": (
+        "Created in the web generator: no MIDI watermark and no source file. The seed above makes the beat traceable.",
+        "Créé dans le générateur web : pas de filigrane MIDI ni de fichier source. Le seed ci-dessus rend le beat traçable."),
+    "Dieser Beat wurde einem Kunden über den Generator vergeben und ist gesperrt. Eine Lizenzierung ist nicht möglich (Exklusiv-Schutz).": (
+        "This beat was assigned to a customer via the generator and is locked. It cannot be licensed (exclusive protection).",
+        "Ce beat a été attribué à un client via le générateur et est verrouillé. Aucune licence n'est possible (protection exclusive)."),
+    "Am %(date)s von %(customer)s im Generator heruntergeladen": (
+        "Downloaded in the generator by %(customer)s on %(date)s",
+        "Téléchargé dans le générateur par %(customer)s le %(date)s"),
+    "einem gelöschten Kunden": ("a deleted customer", "un client supprimé"),
+    "bezahlt mit 1 Token": ("paid with 1 token", "payé avec 1 jeton"),
+    "bezahlt mit Kontingent": ("paid from quota", "payé sur le quota"),
     "← zurück zum Katalog": ("← back to catalog", "← retour au catalogue"),
     "Track nicht gefunden.": ("Track not found.", "Morceau introuvable."),
     "Promo (MP3)": ("Promo (MP3)", "Promo (MP3)"),

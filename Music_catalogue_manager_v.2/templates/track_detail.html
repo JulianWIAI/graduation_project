@@ -3,10 +3,11 @@
 {% block content %}
 <h1>{{ track.title }}
   <span class="badge badge-{{ track.status }}" style="vertical-align:middle;margin-left:8px;">
-    {{ _({'available':'verfügbar','leased':'geleast','exclusive_sold':'exklusiv verkauft'}[track.status]) }}
+    {% if track.user_id %}{{ _('an Kunden vergeben') }}
+    {% else %}{{ _({'available':'verfügbar','leased':'geleast','exclusive_sold':'exklusiv verkauft'}[track.status]) }}{% endif %}
   </span>
 </h1>
-<p class="subtitle">{{ _('Genre:') }} {{ track.genre }} {{ _('· angelegt am') }} {{ track.created_at }}</p>
+<p class="subtitle">{{ _('Genre:') }} {{ track.genre }} {{ _('· angelegt am') }} {{ track.created_at|datum }}</p>
 
 <div class="grid grid-2">
   <div class="panel">
@@ -14,11 +15,15 @@
     <label>{{ _('Katalog-Tag (copyright)') }}</label>
     <div class="mono small">{{ track.watermark_tag or _('– keiner gelesen –') }}</div>
     <div class="spacer"></div>
+    {% if track.user_id %}
+    <p class="muted small">{{ _('Im Web-Generator erzeugt: kein MIDI-Wasserzeichen und keine Quelldatei. Der Seed oben macht den Beat nachvollziehbar.') }}</p>
+    {% else %}
     <label>{{ _('SHA-256-Fingerprint') }}</label>
     <div class="hash">{{ track.watermark_hash or _('– kein Hash gelesen –') }}</div>
     <div class="spacer"></div>
     <label>{{ _('Quelldatei (MIDI)') }}</label>
-    <div class="hash">{{ track.source_midi }}</div>
+    <div class="hash">{{ track.source_midi or '–' }}</div>
+    {% endif %}
   </div>
 
   <div class="panel">
@@ -44,7 +49,9 @@
 
 <div class="panel">
   <h2>{{ _('Lizenz verkaufen') }}</h2>
-  {% if track.status == 'exclusive_sold' %}
+  {% if track.user_id %}
+    <div class="hint-box">{{ _('Dieser Beat wurde einem Kunden über den Generator vergeben und ist gesperrt. Eine Lizenzierung ist nicht möglich (Exklusiv-Schutz).') }}</div>
+  {% elif track.status == 'exclusive_sold' %}
     <div class="hint-box">{{ _('Dieser Track wurde exklusiv verkauft und ist gesperrt. Eine weitere Lizenzierung ist nicht mehr möglich (Exklusiv-Schutz).') }}</div>
   {% else %}
   <form method="post" action="{{ url_for('sell') }}">
@@ -88,6 +95,10 @@
 
 <div class="panel">
   <h2>{{ _('Lizenz-Historie') }}</h2>
+  {% if track.user_id %}
+  <p>{{ _('Am %(date)s von %(customer)s im Generator heruntergeladen', date=track.created_at|datum,
+          customer=customer.email or customer.name if customer else _('einem gelöschten Kunden')) }}{% if customer and customer.used_token is not none %} · {{ _('bezahlt mit 1 Token') if customer.used_token else _('bezahlt mit Kontingent') }}{% endif %}.</p>
+  {% endif %}
   {% if licenses %}
   <table>
     <thead><tr><th>{{ _('Datum') }}</th><th>{{ _('Stufe') }}</th><th>{{ _('Typ') }}</th><th>{{ _('Käufer') }}</th><th class="num">{{ _('Rabatt') }}</th><th class="num">{{ _('Preis') }}</th><th>{{ _('Status') }}</th><th></th></tr></thead>
@@ -118,7 +129,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}
+  {% elif not track.user_id %}
   <p class="muted">{{ _('Noch keine Lizenz verkauft.') }}</p>
   {% endif %}
 </div>
