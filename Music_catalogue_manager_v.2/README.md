@@ -88,11 +88,20 @@ Der Kern der Anwendung. Ein Beat wird durch folgende Parameter gesteuert:
 
 **Tonart & Struktur**
 - Ton (C, C#, D … B), Tonleiter (major, minor, dorian, phrygian, blues …)
-- Takte, Bars, Strukturvariante.
+- **Länge** 1:30 bis 3:00 (Standard 2:00). Der Motor wertet eine Taktzahl nicht
+  aus; der Katalog komponiert deshalb einmal, passt die Abschnitte anteilig an
+  (Wiederholungen in der Mitte fallen zuerst weg, Intro/Outro bleiben) und
+  komponiert mit demselben Seed und Tempo neu. Genau auf etwa einen Takt; dazu
+  kommen 1,5 s Ausklang (unhörbare Stille am Ende wird abgeschnitten).
 
-**Instrumente (manuell ändern vor Re-Rendering)**
+**Instrumente & Mixer**
 - Pro Spur (Drums, Bass, Lead, Chords, Pad, Arp, Stabs, Texture, FX) kann das
-  GM-Programm manuell überschrieben werden.
+  GM-Programm manuell überschrieben werden; bei Drums ist es das Drum-Kit.
+- Lautstärke und Instrument von Drums, Perkussion, Stabs, Textur und FX wertet
+  der Motor nicht aus — der Katalog setzt sie nach dem Komponieren. 0 % schaltet
+  eine Spur ab; Stabs, Textur und FX stehen standardmäßig auf 0 %.
+- Die Perkussions-Auswahl bleibt ohne Wirkung: Die Spur enthält Schlagzeug-Noten,
+  die angebotenen Melodie-Instrumente passen nicht dazu.
 - Ein **Theory-Score** (0–100) bewertet die Instrumentkombination nach den fünf
   psychoakustischen BDRA-Prinzipien von MA V7 (P1 Sub-Bass, P2 Register,
   P3 Attack-Kontrast, P4 Dichte, P5 Helligkeit). Note: EXZELLENT / GUT /
