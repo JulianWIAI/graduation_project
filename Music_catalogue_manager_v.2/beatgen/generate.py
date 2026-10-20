@@ -88,6 +88,79 @@ def _set_volume(cfg, track: str, value):
         pass
 
 
+# Spuren, deren Mixer-Werte der Motor nicht auswertet: Er erzeugt sie mit festem
+# Instrument und Pegel. Der Katalog setzt sie nach dem Komponieren selbst.
+# Bezugswert = bisheriger Regler-Standard, bei dem der Motor-Pegel unveraendert bleibt.
+_LAYER_TRACKS = {
+    "drums":      ("01_Kick", 0.85),
+    "percussion": ("02_Percussion", 0.65),
+    "stabs":      ("08_Stabs", 0.55),
+    "texture":    ("09_Texture", 0.40),
+    "fx":         ("10_FX", 0.35),
+}
+
+
+def _apply_layer_mixer(composition, data):
+    """
+    Lautstaerke (0 = Spur aus) und Instrument fuer Schlagzeug, Perkussion, Stabs,
+    Textur und FX anwenden. Das Drum-Kit gilt fuer Kick und Perkussion (beide
+    auf dem Schlagzeug-Kanal). Die Perkussions-Auswahl bleibt ohne Wirkung: Ihre
+    Melodie-Instrumente passen nicht zu Schlagzeug-Noten.
+    """
+    tracks, info = composition["tracks"], composition.get("track_info", {})
+    for key, (name, ref) in _LAYER_TRACKS.items():
+        try:
+            vol = max(0.0, min(1.0, float(data.get(f"vol_{key}"))))
+        except (TypeError, ValueError):
+            continue
+        if name in tracks and vol != ref:
+            tracks[name] = [] if vol == 0 else [
+                (n[0], n[1], n[2], max(1, min(127, round(n[3] * vol / ref)))) + tuple(n[4:])
+                for n in tracks[name]]
+    for key, names in (("drums", ("01_Kick", "02_Percussion")),
+                       ("stabs", ("08_Stabs",)), ("texture", ("09_Texture",)), ("fx", ("10_FX",))):
+        value = str(data.get(f"instr_{key}") or "").strip()
+        if value.isdigit():
+            for name in names:
+                if name in info:
+                    info[name]["program"] = int(value)
+
+
+_LENGTH_RANGE = (90, 180)        # Sekunden, waehlbar im Generator
+_LENGTH_DEFAULT = 120
+
+
+def _fit_structure(structure, bpm, seconds):
+    """
+    Passt die Abschnittsfolge des Motors an eine Ziellaenge an. Die Abschnitte
+    werden anteilig in 2-Takt-Schritten gekuerzt oder verlaengert (mindestens
+    4 Takte je Abschnitt); reicht das nicht, fallen zuerst Wiederholungen in
+    der Mitte weg. Intro und Outro bleiben. Genauigkeit: etwa ein Takt.
+    """
+    target_units = max(2, round(seconds * bpm / 240 / 2))         # 1 Einheit = 2 Takte
+    parts = [(str(t), int(b)) for t, b in structure]
+    while len(parts) > 3 and 2 * len(parts) > target_units:
+        middle = range(len(parts) - 2, 0, -1)
+        seen = [t for t, _ in parts]
+        drop = next((i for i in middle if parts[i][0] in seen[:i]),
+                    min(middle, key=lambda i: parts[i][1]))
+        del parts[drop]
+    total = sum(b for _, b in parts)
+    share = [b / total * target_units for _, b in parts]
+    units = [max(2, int(x)) for x in share]
+    # Restliche Einheiten nach groesstem Nachkommarest verteilen (bzw. abziehen).
+    order = sorted(range(len(parts)), key=lambda i: share[i] - int(share[i]), reverse=True)
+    i = 0
+    while sum(units) != target_units and i < 4 * len(parts):
+        j = order[i % len(parts)]
+        if sum(units) < target_units:
+            units[j] += 1
+        elif units[j] > 2:
+            units[j] -= 1
+        i += 1
+    return [(t, 2 * u) for (t, _), u in zip(parts, units)]
+
+
 # ---------------------------------------------------------------------------
 # Music-Architect-Pfad — relativ zu dieser Datei aufgeloest, damit die App
 # unabhaengig vom Startverzeichnis funktioniert.
@@ -156,6 +229,7 @@ def _render_wav(comp_raw, comp_dict, out_path, midi_path, sf2_path, genre, fx_va
                 str(midi_path), str(out_path))
             # result kann ein Pfad-String oder True sein — WAV muss existieren.
             if result and out_path.exists() and out_path.stat().st_size > 0:
+                _trim_silence(out_path)
                 return
             current_app.logger.warning(
                 "SF2-Rendering lieferte leere oder fehlende WAV, Fallback auf Builtin.")
@@ -163,6 +237,28 @@ def _render_wav(comp_raw, comp_dict, out_path, midi_path, sf2_path, genre, fx_va
             current_app.logger.warning("SF2-Rendering fehlgeschlagen, Fallback: %s", _sf2e)
     from rendering.wav_renderer import WAVRenderer
     WAVRenderer().render_composition_to_wav(comp_raw, str(out_path))
+    _trim_silence(out_path)
+
+
+def _trim_silence(wav_path, keep_s=1.5, floor_db=-60.0):
+    """
+    Schneidet unhoerbare Stille am Ende ab. FluidSynth rendert, bis jede Stimme
+    verklungen ist -- auch weit unter der Hoerschwelle, bei Pop bis zu 20 s.
+    Nach dem letzten hoerbaren Moment bleiben keep_s Sekunden Ausklang stehen.
+    """
+    import numpy as np
+    import soundfile as sf
+    try:
+        audio, rate = sf.read(str(wav_path), always_2d=True)
+        level = np.abs(audio).max(axis=1)
+        if not level.size or level.max() == 0:
+            return
+        loud = np.nonzero(level > level.max() * 10 ** (floor_db / 20))[0]
+        end = min(len(audio), int(loud[-1] + keep_s * rate))
+        if end < len(audio):
+            sf.write(str(wav_path), audio[:end], rate, subtype=sf.info(str(wav_path)).subtype)
+    except (OSError, RuntimeError, ValueError) as exc:
+        current_app.logger.warning("Stille am Ende nicht entfernt (%s): %s", wav_path, exc)
 
 
 def _genre_soundfont(genre: str):
@@ -417,7 +513,11 @@ def generate_track():
     # --- Kompositions-Parameter ---
     key_note   = data.get("key_note",      "")
     key_scale  = data.get("key_scale",     "")
-    duration   = data.get("duration_bars", 0)
+    try:
+        length_s = int(float(data.get("length_seconds") or _LENGTH_DEFAULT))
+    except (TypeError, ValueError):
+        length_s = _LENGTH_DEFAULT
+    length_s = max(_LENGTH_RANGE[0], min(_LENGTH_RANGE[1], length_s))
     mutation   = data.get("mutation",      0.0)
     humanize   = data.get("humanize",      0.6)
     tension    = data.get("tension",       0.0)
@@ -453,23 +553,13 @@ def generate_track():
     instr_lead       = data.get("instr_lead",       None)
     instr_pad        = data.get("instr_pad",        None)
     instr_arp        = data.get("instr_arp",        None)
-    instr_drums      = data.get("instr_drums",      None)
-    instr_stabs      = data.get("instr_stabs",      None)
-    instr_texture    = data.get("instr_texture",    None)
-    instr_fx         = data.get("instr_fx",         None)
-    instr_percussion = data.get("instr_percussion", None)
 
     # --- Lautstaerke pro Spur (0.0–1.0) ---
-    vol_drums      = data.get("vol_drums",      None)
-    vol_percussion = data.get("vol_percussion", None)
     vol_bass       = data.get("vol_bass",       None)
     vol_chords     = data.get("vol_chords",     None)
     vol_lead       = data.get("vol_lead",       None)
     vol_pad        = data.get("vol_pad",        None)
     vol_arp        = data.get("vol_arp",        None)
-    vol_stabs      = data.get("vol_stabs",      None)
-    vol_texture    = data.get("vol_texture",    None)
-    vol_fx         = data.get("vol_fx",         None)
 
     # --- Fusion-Parameter ---
     fusion_mode   = data.get("fusion_mode",   "off")     # 'off' | 'preset' | 'custom'
@@ -526,7 +616,6 @@ def generate_track():
             complexity        = comp,
             seed_value        = seed_int,
             key               = key,
-            duration_bars     = int(duration) if duration else 0,
             mutation          = float(mutation),
             humanize_amount   = float(humanize),
             tension_multiplier= float(tension),
@@ -539,23 +628,13 @@ def generate_track():
         _set_instr(cfg, "lead",       instr_lead)
         _set_instr(cfg, "pad",        instr_pad)
         _set_instr(cfg, "arp",        instr_arp)
-        _set_instr(cfg, "drums",      instr_drums)
-        _set_instr(cfg, "stabs",      instr_stabs)
-        _set_instr(cfg, "texture",    instr_texture)
-        _set_instr(cfg, "fx",         instr_fx)
-        _set_instr(cfg, "percussion", instr_percussion)
 
         # Lautstaerke pro Spur setzen.
-        _set_volume(cfg, "drums",      vol_drums)
-        _set_volume(cfg, "percussion", vol_percussion)
         _set_volume(cfg, "bass",       vol_bass)
         _set_volume(cfg, "chords",     vol_chords)
         _set_volume(cfg, "lead",       vol_lead)
         _set_volume(cfg, "pad",        vol_pad)
         _set_volume(cfg, "arp",        vol_arp)
-        _set_volume(cfg, "stabs",      vol_stabs)
-        _set_volume(cfg, "texture",    vol_texture)
-        _set_volume(cfg, "fx",         vol_fx)
 
         # Fusion-Modus: Preset oder Custom-Mix setzen (kein dict -- waere AttributeError).
         fusion_cfg = fusion_data.build_fusion_config(
@@ -571,8 +650,16 @@ def generate_track():
         # Absoluten Seeds-Pfad uebergeben, damit die Web-App die 129.963 Seeds findet.
         engine      = CompositionEngine(seeds_dir=str(_MA_ROOT / "seeds"))
         # Kopie VOR dem Komponieren: compose() veraendert die Config (z.B. BPM).
+        # Laenge: Der Motor ignoriert duration_bars, beachtet aber eine
+        # vorgegebene Abschnittsfolge. Also einmal komponieren, Abschnitte auf
+        # die Ziellaenge bringen und mit demselben Seed und Tempo neu komponieren.
+        # compose() veraendert die Konfiguration -- daher immer eine Kopie.
+        draft  = engine.compose(copy.deepcopy(cfg))
+        cfg.bpm = draft["config"]["bpm"]
+        cfg.structure_override = _fit_structure(draft["structure"], cfg.bpm, length_s)
         cfg_vocal   = copy.deepcopy(cfg) if gen_mode == "both" else None
         composition = engine.compose(cfg)
+        _apply_layer_mixer(composition, data)
 
         tmp_dir  = _new_tmp_dir()
         wav_path = tmp_dir / "beat.wav"
@@ -650,6 +737,7 @@ def generate_track():
         if cfg_vocal is not None:
             cfg_vocal.vocal_mask = True
             comp_vocal     = engine.compose(cfg_vocal)
+            _apply_layer_mixer(comp_vocal, data)
             vocal_wav_path = tmp_dir / "beat_vocal.wav"
             _render(comp_vocal, groove_processor.jsonify_composition(comp_vocal),
                     vocal_wav_path, "render_vocal.mid")
@@ -1055,6 +1143,7 @@ def rerender_track():
                 sample_assignments=ma_samples or None,
                 instrument_params=instr_params_obj or None,
             )
+        _trim_silence(rr_path)
 
         # Groovte Komposition als composition.json in rr_dir speichern,
         # damit export_midi_route und export_json_route die bearbeitete Version liefern.

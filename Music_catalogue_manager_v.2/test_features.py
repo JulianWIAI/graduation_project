@@ -236,6 +236,34 @@ def test_generator_beat_shows_customer_instead_of_license():
     _remove_exports(uid)
 
 
+def test_length_is_fitted_to_target():
+    from beatgen import generate
+    cinematic = [("intro", 16), ("build", 20), ("climax", 16), ("break", 8), ("tension", 20),
+                 ("build", 12), ("climax", 16), ("resolution", 16), ("outro", 20)]   # ~443 s
+    trap = [("intro", 8), ("build", 8), ("drop", 24), ("outro", 8)]                    # ~79 s
+    for structure, bpm in ((cinematic, 78.1), (trap, 145.8)):
+        for seconds in (90, 120, 180):
+            fit = generate._fit_structure(structure, bpm, seconds)
+            assert abs(sum(b for _, b in fit) * 240 / bpm - seconds) <= 240 / bpm   # <= 1 Takt
+            assert fit[0][0] == "intro" and fit[-1][0] == "outro"
+            assert min(b for _, b in fit) >= 4
+
+
+def test_mixer_reaches_tracks_the_engine_ignores():
+    from beatgen import generate
+    comp = {"tracks": {"01_Kick": [(0, 1, 36, 100)], "02_Percussion": [(0, 1, 38, 80)],
+                       "08_Stabs": [(0, 1, 60, 100)], "09_Texture": [(0, 1, 60, 50)]},
+            "track_info": {"01_Kick": {"program": 0}, "02_Percussion": {"program": 0},
+                           "08_Stabs": {"program": 55}}}
+    generate._apply_layer_mixer(comp, {"vol_stabs": "0", "vol_drums": "0.425", "vol_texture": "0.40",
+                                       "instr_drums": "25", "instr_stabs": "48"})
+    assert comp["tracks"]["08_Stabs"] == []                      # 0 = Spur aus
+    assert comp["tracks"]["01_Kick"][0][3] == 50                 # halber Bezugswert
+    assert comp["tracks"]["09_Texture"][0][3] == 50              # Bezugswert: unveraendert
+    assert comp["track_info"]["01_Kick"]["program"] == 25 == comp["track_info"]["02_Percussion"]["program"]
+    assert comp["track_info"]["08_Stabs"]["program"] == 48
+
+
 def test_old_work_folders_are_cleaned_up():
     from beatgen import generate
     old, new = generate._new_tmp_dir(), generate._new_tmp_dir()

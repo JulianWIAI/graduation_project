@@ -83,8 +83,8 @@
             </select>
           </label>
         </div>
-        <label class="field-label" data-tooltip="{{ _('Laenge des Beats in Takten (Bars).&#10;0 = automatisch (Genre-abhaengig, meist 8-16 Takte).&#10;1 Takt = 4 Viertelschlaege bei 4/4-Takt.') }}">{{ _('Dauer (Takte, 0 = auto)') }}
-          <input type="number" id="durationBars" min="0" max="128" value="0" class="gen-input">
+        <label class="field-label" data-tooltip="{{ _('Gewuenschte Laenge des Beats (90 bis 180 Sekunden).&#10;Intro, Strophen, Refrains und Outro werden anteilig angepasst.&#10;Genau auf etwa einen Takt (2-3 Sekunden).') }}">{{ _('Länge') }}
+          <div class="slider-row"><input type="range" id="lengthSeconds" min="90" max="180" step="15" value="120"><span class="slider-val" id="lengthSecondsVal">2:00</span></div>
         </label>
       </div>
     </details>
@@ -182,7 +182,7 @@
           ("texture",    "Textur",    _instruments.texture),
           ("fx",         "FX",        _instruments.fx),
         ] %}
-        {% set dvols = {"drums":0.85,"percussion":0.65,"bass":0.80,"chords":0.70,"lead":0.75,"pad":0.60,"arp":0.50,"stabs":0.55,"texture":0.40,"fx":0.35} %}
+        {% set dvols = {"drums":0.85,"percussion":0.65,"bass":0.80,"chords":0.70,"lead":0.75,"pad":0.60,"arp":0.50,"stabs":0.0,"texture":0.0,"fx":0.0} %}
         {% for key, label, options in tracks_def %}
         <div class="mixer-row mixer-row--{{ key }}">
           <span class="mixer-label">{{ label }}</span>
@@ -1477,7 +1477,7 @@ async function generateBeat() {
     genre:$('genre')?.value, bpm:$('bpm')?.value||null,
     complexity:$('complexity')?.value, seed:$('seed')?.value||null,
     key_note:$('keyNote')?.value, key_scale:$('keyScale')?.value,
-    duration_bars:$('durationBars')?.value,
+    length_seconds:$('lengthSeconds')?.value,
     humanize:$('humanize')?.value, mutation:$('mutation')?.value, tension:$('tension')?.value,
     fx_variant:chipVal('fxVariant'), generation_mode:chipVal('genMode'),
     prompt:$('promptText')?.value||'',
@@ -2886,6 +2886,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   bindSlider('complexity','complexityVal',v=>Math.round(v));
   bindSlider('humanize','humanizeVal',v=>parseFloat(v).toFixed(2));
+  bindSlider('lengthSeconds','lengthSecondsVal',v=>`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`);
   bindSlider('mutation','mutationVal',v=>parseFloat(v).toFixed(2));
   bindSlider('tension','tensionVal',v=>parseFloat(v).toFixed(2));
   bindSlider('fusionRatio','fusionRatioVal',v=>{const a=Math.round(parseFloat(v)*100);return a+' / '+(100-a);});

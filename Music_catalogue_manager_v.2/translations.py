@@ -640,10 +640,10 @@ _T = {
         "The scale determines the emotional character.&#10;Major = cheerful · Minor = melancholic&#10;Dorian = jazzy · Phrygian = Spanish/dark&#10;Pentatonic = catchy melodies.",
         "La gamme détermine le caractère émotionnel.&#10;Major = joyeux · Minor = mélancolique&#10;Dorian = jazzy · Phrygian = espagnol/sombre&#10;Pentatonique = mélodies accrocheuses."),
     "Tonleiter": ("Scale", "Gamme"),
-    "Laenge des Beats in Takten (Bars).&#10;0 = automatisch (Genre-abhaengig, meist 8-16 Takte).&#10;1 Takt = 4 Viertelschlaege bei 4/4-Takt.": (
-        "Length of the beat in bars.&#10;0 = automatic (depends on genre, usually 8-16 bars).&#10;1 bar = 4 quarter beats in 4/4 time.",
-        "Longueur du beat en mesures.&#10;0 = automatique (selon le genre, généralement 8-16 mesures).&#10;1 mesure = 4 temps en 4/4."),
-    "Dauer (Takte, 0 = auto)": ("Length (bars, 0 = auto)", "Durée (mesures, 0 = auto)"),
+    "Gewuenschte Laenge des Beats (90 bis 180 Sekunden).&#10;Intro, Strophen, Refrains und Outro werden anteilig angepasst.&#10;Genau auf etwa einen Takt (2-3 Sekunden).": (
+        "Desired length of the beat (90 to 180 seconds).&#10;Intro, verses, choruses and outro are adjusted proportionally.&#10;Accurate to about one bar (2-3 seconds).",
+        "Durée souhaitée du beat (90 à 180 secondes).&#10;Intro, couplets, refrains et outro sont ajustés proportionnellement.&#10;Précis à environ une mesure (2-3 secondes)."),
+    "Länge": ("Length", "Durée"),
     "Klang &amp; Ausdruck": ("Sound &amp; expression", "Son &amp; expression"),
     "Macht Noten lebendig durch zufaellige Timing- und Lautstaerkeschwankungen.&#10;0 = Maschinen-perfekt (quantisiert)&#10;0.6 = natuerlich gespielt&#10;1 = stark unpraeziese (Jazz/Live-Feeling)": (
         "Brings notes to life with random timing and volume variations.&#10;0 = machine-perfect (quantized)&#10;0.6 = naturally played&#10;1 = very loose (jazz/live feel)",
