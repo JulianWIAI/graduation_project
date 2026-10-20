@@ -228,7 +228,9 @@ Nach dem Generieren oder Re-Rendern stehen folgende Exportformate zur Verfügung
 | MIDI | rohe Notendaten für die DAW |
 
 Das Kontingent wird **nur beim ersten Export eines Beats** verbraucht, nicht beim Vorhören.
-Weitere Exporte desselben Beats (anderes Format, Re-Render, MIDI) sind frei.
+Als Export zählen Audio, MIDI und die Komposition (.json) — die JSON enthält alle Noten.
+Weitere Exporte desselben Beats (anderes Format, Re-Render, MIDI, JSON) sind frei;
+nur der Berater (.pdf) ist immer kostenlos.
 Ist es aufgebraucht, wird stattdessen **1 Token** abgebucht (siehe *Abo-/Freemium-Modell*).
 
 ---
@@ -432,10 +434,13 @@ Danach **Scannen** — alle vorhandenen Tracks werden in den Katalog übernommen
 
 ## Bekannte Einschränkungen
 
-- **Vorschau in voller Qualität**: Zum Vorhören liefert der Generator die fertige
-  WAV-Datei an den Browser. Ein angemeldeter Nutzer kann sie dort abgreifen, ohne
-  zu exportieren — also ohne Kontingent oder Token zu verbrauchen. Abhilfe wäre
-  eine Vorschau in reduzierter Qualität; das ist bewusst nicht umgesetzt.
+- **Vorschau abgreifbar**: Zum Vorhören bekommt der Browser eine MP3 mit
+  128 kbps (die Studio-WAV nur über den Export). Diese MP3 kann ein angemeldeter
+  Nutzer weiterhin speichern, ohne Kontingent zu verbrauchen — aber nur in
+  reduzierter Qualität. Ohne ffmpeg wird zum Vorhören die WAV geliefert.
+- **Arbeitsdateien**: Beats, Solos und Re-Renders liegen in `sbs_*`-Ordnern im
+  System-Temp. Ordner, die älter als eine Sitzung (8 h) sind, löscht die nächste
+  Generierung.
 - **Kein Wasserzeichen in Kunden-Exporten**: Exportierte Audio- und MIDI-Dateien
   werden nicht markiert. Nachvollziehbar ist nur über den Katalog, welcher Nutzer
   welchen Seed bezogen hat.

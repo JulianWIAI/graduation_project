@@ -11,6 +11,7 @@ import os
 import re
 import sqlite3
 import tempfile
+import time
 import wave
 from datetime import date, timedelta
 
@@ -162,6 +163,7 @@ def _fake_beat(client, name):
         w.setnchannels(1), w.setsampwidth(2), w.setframerate(8000), w.writeframes(b"\0\0")
     with client.session_transaction() as sess:
         sess[f"temp_{name}"] = tmp
+    return tmp
 
 
 def _remove_exports(user_id):
@@ -195,6 +197,33 @@ def test_token_is_consumed_when_quota_is_exhausted():
     assert export("b").status_code == 200            # derselbe Beat noch einmal: frei
     assert export("c").status_code == 429            # neuer Beat: Token ist wirklich weg
     _remove_exports(uid)
+
+
+def test_composition_json_costs_like_any_export():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    _use_quota(uid, 3)                               # kein Kontingent, keine Tokens
+    folder = os.path.dirname(_fake_beat(client, "j"))
+    with open(os.path.join(folder, "composition.json"), "w") as fh:
+        fh.write('{"composition": {"tracks": {}}, "genre": "trap"}')
+    with client.session_transaction() as sess:
+        sess["temp_dir_j"] = folder
+    assert client.get("/export_json/j").status_code == 429     # Noten nicht gratis
+    tokens.admin_adjust(uid, 1)
+    assert client.get("/export_json/j").status_code == 200
+    assert tokens.balance(uid) == 0
+    _remove_exports(uid)
+
+
+def test_old_work_folders_are_cleaned_up():
+    from beatgen import generate
+    old, new = generate._new_tmp_dir(), generate._new_tmp_dir()
+    stale = time.time() - main.app.permanent_session_lifetime.total_seconds() - 60
+    os.utime(old, (stale, stale))
+    with main.app.app_context():
+        generate._cleanup_tmp_dirs()
+    assert not old.exists() and new.exists()
+    new.rmdir()
 
 
 def test_exported_beat_keeps_its_seed_and_locks_it():

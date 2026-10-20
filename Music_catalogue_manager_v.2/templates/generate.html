@@ -3322,7 +3322,7 @@ async function doExportJSON() {
     const res = await fetch(`/export_json/${uuid}`);
     if (!res.ok) {
       const d = await res.json().catch(()=>({}));
-      if(errEl){errEl.textContent='⚠ '+(d.error||t('JSON-Export fehlgeschlagen.'));errEl.hidden=false;}
+      showExportError(errEl, d, t('JSON-Export fehlgeschlagen.'));
       return;
     }
     const blob = await res.blob();
@@ -3333,6 +3333,7 @@ async function doExportJSON() {
     document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),5000);
     if(errEl) errEl.hidden=true;
+    refreshQuota();
   } catch(e){ if(errEl){errEl.textContent='⚠ '+e.message;errEl.hidden=false;} }
 }
 

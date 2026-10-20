@@ -13,9 +13,11 @@ dessen 1 gekaufter Token abgebucht (siehe _gate_quota / commerce/tokens.py).
 import copy
 import io as _io
 import json
+import os
 import pathlib
 import secrets
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -141,6 +143,28 @@ def _sf2_renderer(sf2_path, genre: str, fx_variant: str):
     return renderer
 
 
+def _render_wav(comp_raw, comp_dict, out_path, midi_path, sf2_path, genre, fx_variant, bpm):
+    """
+    Mit SF2 (FluidSynth, Genre und FX-Kette) rendern, falls verfuegbar, sonst mit
+    dem Builtin-Synthesizer. comp_dict ist die serialisierbare Fassung fuer den
+    MIDI-Export (dasselbe Format wie beim Re-Render, der aus JSON laedt).
+    """
+    if sf2_path and pathlib.Path(sf2_path).exists():
+        try:
+            midi_path.write_bytes(export_service.export_midi(comp_dict, bpm))
+            result = _sf2_renderer(sf2_path, genre, fx_variant).render_midi_to_wav(
+                str(midi_path), str(out_path))
+            # result kann ein Pfad-String oder True sein — WAV muss existieren.
+            if result and out_path.exists() and out_path.stat().st_size > 0:
+                return
+            current_app.logger.warning(
+                "SF2-Rendering lieferte leere oder fehlende WAV, Fallback auf Builtin.")
+        except Exception as _sf2e:
+            current_app.logger.warning("SF2-Rendering fehlgeschlagen, Fallback: %s", _sf2e)
+    from rendering.wav_renderer import WAVRenderer
+    WAVRenderer().render_composition_to_wav(comp_raw, str(out_path))
+
+
 def _genre_soundfont(genre: str):
     """SoundFont fuer ein Genre; statt des synthetischen Ersatzes ein echter, falls vorhanden."""
     lib, real = _installed_soundfonts()
@@ -153,6 +177,28 @@ def _genre_soundfont(genre: str):
 # ---------------------------------------------------------------------------
 # Kontingent (Monatslimit) -- einzige Quelle ist commerce/quota.py
 # ---------------------------------------------------------------------------
+
+_TMP_PREFIX = "sbs_"
+
+
+def _new_tmp_dir() -> pathlib.Path:
+    """Arbeitsordner fuer Beats, Solos, Re-Renders, Exporte und SF2-Uploads."""
+    return pathlib.Path(tempfile.mkdtemp(prefix=_TMP_PREFIX))
+
+
+def _cleanup_tmp_dirs() -> None:
+    """
+    Loescht Arbeitsordner, die aelter als eine Sitzung sind. Danach verweist
+    keine Session mehr auf sie -- ohne Aufraeumen bleiben je Beat 30-130 MB liegen.
+    """
+    cutoff = time.time() - current_app.permanent_session_lifetime.total_seconds()
+    for path in pathlib.Path(tempfile.gettempdir()).glob(_TMP_PREFIX + "*"):
+        try:
+            if path.is_dir() and path.stat().st_mtime < cutoff:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+
 
 def _quota_status():
     """Monatskontingent des eingeloggten Nutzers: limit / used / remaining / tokens."""
@@ -190,6 +236,34 @@ def _gate_quota(reference: str):
         "token_price":   offer["unit_price"],
         "buy_url":       url_for("tokens.shop"),
     }), 429), False
+
+
+def _charge_export(audio_uuid: str, kind: str, **details):
+    """
+    Kontingent-Abbuchung beim ersten Export eines Beats (Audio, MIDI oder JSON).
+
+    Alle Varianten (Original, Re-Render, Vocal) und Formate teilen sich ueber
+    die Ursprungs-UUID denselben Schluessel: ein Beat kostet genau einmal.
+    Gibt die 429-Antwort zurueck, wenn weder Kontingent noch Token frei sind,
+    sonst None.
+    """
+    origin_uuid  = session.get(f"origin_uuid_{audio_uuid}", audio_uuid)
+    exported_key = f"exported_{origin_uuid}"
+    if session.get(exported_key):
+        return None
+    blocked, used_token = _gate_quota(reference=f"export:{origin_uuid}")
+    if blocked:
+        return blocked
+    _persist_track(audio_uuid, current_user.id)
+    db.increment_quota(current_user.id, date.today().isoformat())
+    db.log_event("EXPORT", kind, audio_uuid, {
+        "user_id":    current_user.id,
+        "used_token": used_token,
+        "genre":      session.get(f"temp_genre_{audio_uuid}", "beat"),
+        **details,
+    })
+    session[exported_key] = True
+    return None
 
 
 def _read_seed_from_session(audio_uuid: str) -> int | None:
@@ -331,6 +405,7 @@ def generate_track():
     Beat aus dem Music-Architect-Motor erzeugen und temporaere Audio-URL zurueckgeben.
     Kein Kontingent wird hier verbraucht — erst der erste Export zaehlt.
     """
+    _cleanup_tmp_dirs()
     data = request.get_json(silent=True) or request.form
 
     # --- Basis-Parameter ---
@@ -444,7 +519,6 @@ def generate_track():
         _ensure_ma_path()
         from composition.composition_engine import CompositionEngine
         from composition.composition_config import CompositionConfig
-        from rendering.wav_renderer import WAVRenderer
 
         cfg = CompositionConfig(
             genre             = genre,
@@ -500,7 +574,7 @@ def generate_track():
         cfg_vocal   = copy.deepcopy(cfg) if gen_mode == "both" else None
         composition = engine.compose(cfg)
 
-        tmp_dir  = pathlib.Path(tempfile.mkdtemp())
+        tmp_dir  = _new_tmp_dir()
         wav_path = tmp_dir / "beat.wav"
 
         # BPM fruehzeitig berechnen — wird fuer MIDI-Export und JSON benoetigt.
@@ -525,27 +599,9 @@ def generate_track():
             except Exception:
                 pass
 
-        # Builtin-Renderer immer bereitstellen — auch als Fallback und fuer Vocal-Modus.
-        renderer = WAVRenderer()
-
         def _render(comp_raw, comp_dict, out_path, midi_name):
-            """Mit SF2 (FluidSynth) rendern falls verfuegbar, sonst Builtin-Synthesizer."""
-            if _sf2_path and pathlib.Path(_sf2_path).exists():
-                try:
-                    # Serialisierbares Dict verwenden, damit export_midi dasselbe Format
-                    # erhaelt wie beim Re-Render (dort wird aus JSON geladen).
-                    midi_tmp = tmp_dir / midi_name
-                    midi_tmp.write_bytes(export_service.export_midi(comp_dict, _saved_bpm))
-                    result = _sf2_renderer(_sf2_path, genre, fx_variant).render_midi_to_wav(
-                        str(midi_tmp), str(out_path))
-                    # result kann ein Pfad-String oder True sein — WAV muss existieren.
-                    if result and out_path.exists() and out_path.stat().st_size > 0:
-                        return
-                    current_app.logger.warning(
-                        "SF2-Rendering lieferte leere oder fehlende WAV, Fallback auf Builtin.")
-                except Exception as _sf2e:
-                    current_app.logger.warning("SF2-Rendering fehlgeschlagen, Fallback: %s", _sf2e)
-            renderer.render_composition_to_wav(comp_raw, str(out_path))
+            _render_wav(comp_raw, comp_dict, out_path, tmp_dir / midi_name,
+                        _sf2_path, genre, fx_variant, _saved_bpm)
 
         _render(composition, _comp_dict, wav_path, "render.mid")
 
@@ -563,6 +619,7 @@ def generate_track():
                 "bpm":         _saved_bpm,
                 "genre":       genre,
                 "fx_variant":  fx_variant,
+                "sf2_path":    _sf2_path,      # Solo-Vorschau klingt wie der Mix
             }, ensure_ascii=False)
             (tmp_dir / "composition.json").write_text(comp_json, encoding="utf-8")
         except Exception as _je:
@@ -716,7 +773,7 @@ def generate_track():
 @generate_bp.route("/temp_audio/<audio_uuid>")
 @login_required
 def temp_audio(audio_uuid: str):
-    """Temporaere WAV-Datei ausliefern. Dateien aelter als 1 Stunde werden geloescht."""
+    """Vorschau eines temporaeren Beats ausliefern. Dateien aelter als 1 Stunde werden geloescht."""
     wav_str = session.get(f"temp_{audio_uuid}")
     if not wav_str:
         return jsonify({"error": "not_found"}), 404
@@ -734,6 +791,19 @@ def temp_audio(audio_uuid: str):
             pass
         return jsonify({"error": "expired"}), 404
 
+    # Vorhoeren nur als MP3 128 kbps -- die Studio-WAV gibt es erst ueber den
+    # (kostenpflichtigen) Export. Ohne ffmpeg bleibt es bei der WAV.
+    preview = wav_path.with_name(wav_path.stem + "_preview.mp3")
+    if not preview.exists() and export_service.ffmpeg_available():
+        try:
+            # Erst unter Zufallsnamen schreiben: parallele Abrufe sehen nie eine halbe Datei.
+            part = export_service.export_audio(
+                str(wav_path), "mp3_128", str(preview.with_name(uuid.uuid4().hex)))
+            os.replace(part, preview)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            current_app.logger.warning("MP3-Vorschau fehlgeschlagen, sende WAV: %s", exc)
+    if preview.exists():
+        return send_file(str(preview), mimetype="audio/mpeg")
     return send_file(str(wav_path), mimetype="audio/wav")
 
 
@@ -808,16 +878,22 @@ def render_solo(audio_uuid: str, track_name: str):
     try:
         comp_data   = json.loads(comp_path.read_text(encoding="utf-8"))
         composition = comp_data["composition"]
+        genre       = comp_data.get("genre", "")
 
         _ensure_ma_path()
-        from rendering.wav_renderer import WAVRenderer
-
         solo_comp   = groove_processor.build_solo_composition(composition, track_name)
-        solo_dir    = pathlib.Path(tempfile.mkdtemp())
-        solo_path   = solo_dir / f"solo_{track_name}.wav"
+        solo_dir    = _new_tmp_dir()
+        solo_path   = solo_dir / "solo.wav"
 
-        renderer = WAVRenderer()
-        renderer.render_composition_to_wav(solo_comp, str(solo_path))
+        # Gleicher SoundFont und gleiche FX-Kette wie der Beat, sonst klingt die
+        # Spur solo anders als im Mix (aeltere Beats: Genre-Standard).
+        if "sf2_path" in comp_data:
+            sf2_path = comp_data["sf2_path"]
+        else:
+            sf2_path = _genre_soundfont(genre)
+        _render_wav(solo_comp, solo_comp, solo_path, solo_dir / "solo.mid", sf2_path,
+                    genre, comp_data.get("fx_variant", "neutral"),
+                    float(comp_data.get("bpm", 120.0)))
 
         solo_uuid = str(uuid.uuid4())
         session[f"temp_{solo_uuid}"] = str(solo_path)
@@ -931,7 +1007,7 @@ def rerender_track():
         _ensure_ma_path()
         from rendering.wav_renderer import WAVRenderer
 
-        rr_dir  = pathlib.Path(tempfile.mkdtemp())
+        rr_dir  = _new_tmp_dir()
         rr_path = rr_dir / "rerendered.wav"
 
         # Sample-Zuweisungen aus der Session lesen (Web-Keys → MA-V7-Keys umwandeln).
@@ -982,7 +1058,8 @@ def rerender_track():
 
         # Groovte Komposition als composition.json in rr_dir speichern,
         # damit export_midi_route und export_json_route die bearbeitete Version liefern.
-        rr_comp_data = {**comp_data, "composition": modified, "fx_variant": fx_variant}
+        rr_comp_data = {**comp_data, "composition": modified, "fx_variant": fx_variant,
+                        "sf2_path": sf2_path if rendered_with_sf2 else None}
         (rr_dir / "composition.json").write_text(
             json.dumps(rr_comp_data, ensure_ascii=False), encoding="utf-8")
 
@@ -1018,33 +1095,16 @@ def export_audio_route(audio_uuid: str):
     if not wav_path.exists():
         return jsonify({"error": "not_found"}), 404
 
-    # --- Kontingent beim ersten Export dekrementieren ----------------------
-    # Alle Varianten (Re-Render, Vocal, Original) teilen denselben Gate-Key,
-    # damit ein Download pro Beat genuegt, unabhaengig vom Quellformat.
-    origin_uuid  = session.get(f"origin_uuid_{audio_uuid}", audio_uuid)
-    exported_key = f"exported_{origin_uuid}"
-    if not session.get(exported_key):
-        today = date.today().isoformat()
-        blocked, used_token = _gate_quota(reference=f"export:{origin_uuid}")
-        if blocked:
-            return blocked
-
-        _persist_track(audio_uuid, current_user.id)
-        db.increment_quota(current_user.id, today)
-        db.log_event("EXPORT", "audio", audio_uuid, {
-            "user_id":    current_user.id,
-            "used_token": used_token,
-            "format":     fmt_key,
-            "genre":   session.get(f"temp_genre_{audio_uuid}", "beat"),
-        })
-        session[exported_key] = True
+    blocked = _charge_export(audio_uuid, "audio", format=fmt_key)
+    if blocked:
+        return blocked
 
     try:
         fmt_info = export_service.AUDIO_FORMATS.get(
             fmt_key, export_service.AUDIO_FORMATS["wav_cd"])
         ext = fmt_info["ext"]
 
-        out_dir  = pathlib.Path(tempfile.mkdtemp())
+        out_dir  = _new_tmp_dir()
         out_path = out_dir / f"export.{ext}"
         result   = export_service.export_audio(str(wav_path), fmt_key, str(out_path))
 
@@ -1075,25 +1135,9 @@ def export_midi_route(audio_uuid: str):
     if not comp_path.exists():
         return jsonify({"error": "composition_not_found"}), 404
 
-    # --- Gemeinsames Kontingent-Gate (Audio und MIDI teilen denselben Schluessel) ---
-    # Alle Varianten (Re-Render, Vocal, MIDI, Audio) werden auf die Ursprungs-UUID
-    # zurueckgefuehrt, sodass nur ein Token pro Beat-Generierung verbraucht wird.
-    origin_uuid  = session.get(f"origin_uuid_{audio_uuid}", audio_uuid)
-    exported_key = f"exported_{origin_uuid}"
-    if not session.get(exported_key):
-        today = date.today().isoformat()
-        blocked, used_token = _gate_quota(reference=f"export:{origin_uuid}")
-        if blocked:
-            return blocked
-
-        _persist_track(audio_uuid, current_user.id)
-        db.increment_quota(current_user.id, today)
-        db.log_event("EXPORT", "midi", audio_uuid, {
-            "user_id":    current_user.id,
-            "used_token": used_token,
-            "genre":   session.get(f"temp_genre_{audio_uuid}", "beat"),
-        })
-        session[exported_key] = True
+    blocked = _charge_export(audio_uuid, "midi")
+    if blocked:
+        return blocked
 
     try:
         comp_data   = json.loads(comp_path.read_text(encoding="utf-8"))
@@ -1125,6 +1169,11 @@ def export_json_route(audio_uuid: str):
     comp_path = pathlib.Path(tmp_dir_str) / "composition.json"
     if not comp_path.exists():
         return jsonify({"error": "composition_not_found"}), 404
+
+    # Die Komposition enthaelt alle Noten -- sie kostet wie ein MIDI-Export.
+    blocked = _charge_export(audio_uuid, "json")
+    if blocked:
+        return blocked
 
     try:
         comp_data = json.loads(comp_path.read_text(encoding="utf-8"))
@@ -1213,7 +1262,7 @@ def upload_soundfont_route():
     if not f.filename.lower().endswith(".sf2"):
         return jsonify({"error": _("Nur .sf2-Dateien erlaubt.")}), 400
     safe_name = pathlib.Path(f.filename).name
-    sf2_dir   = pathlib.Path(tempfile.mkdtemp())
+    sf2_dir   = _new_tmp_dir()
     sf2_path  = sf2_dir / safe_name
     f.save(str(sf2_path))
     sf2_uuid  = str(uuid.uuid4())
