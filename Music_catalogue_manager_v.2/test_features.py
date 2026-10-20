@@ -9,6 +9,7 @@ Arbeitet auf einer temporaeren Datenbank -- instance/catalog.db bleibt unberuehr
 
 import os
 import re
+import sqlite3
 import tempfile
 import wave
 from datetime import date, timedelta
@@ -261,6 +262,39 @@ def test_audit_log_search():
     page = client.get("/audit?q=Sommerbeat").get_data(as_text=True)
     assert "LICENSE_SOLD" in page and "TOKENS_PAID" not in page
     assert "LICENSE_SOLD" in client.get("/audit.csv?q=Sommerbeat").get_data(as_text=True)
+
+
+def test_settings_reject_invalid_numbers():
+    admin = main.app.test_client()
+    admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    for form in ({"limit_free": ""}, {"limit_subscriber": "2.5"}, {"vat_pct": "-19"},
+                 {"discount_pct": "150"}, {"sub_price_month": "nan"}):
+        page = admin.post("/settings", data=form, follow_redirects=True).get_data(as_text=True)
+        assert "nicht gespeichert" in page, form
+    assert db.get_setting("limit_free") == "3"
+    admin.post("/settings", data={"vat_pct": "19,5"})            # Komma wird zum Punkt
+    assert db.get_setting("vat_pct") == "19.5"
+    admin.post("/settings", data={"vat_pct": "19"})
+
+
+def test_login_redirects_only_within_the_site():
+    client = main.app.test_client()
+    _register(client)
+    email = db.get_conn().execute("SELECT email FROM users ORDER BY id DESC").fetchone()["email"]
+    for target, expected in (("https://boese.example/x", "/generate"), ("//boese.example", "/generate"),
+                             ("/\\boese.example", "/generate"), ("/tokens", "/tokens")):
+        client.get("/logout")
+        resp = client.post(f"/login?next={target}", data={"email": email, "password": "geheim"})
+        assert resp.headers["Location"] == expected, target
+
+
+def test_unclosed_connection_does_not_lock_the_database():
+    with main.app.app_context():                 # wie eine Anfrage, die vor close() abbricht
+        db.get_conn().execute("UPDATE settings SET value = value")
+    other = sqlite3.connect(config.DB_PATH, timeout=0.2)
+    other.execute("UPDATE settings SET value = value")         # waere sonst "database is locked"
+    other.commit()
+    other.close()
 
 
 def test_language_switch():

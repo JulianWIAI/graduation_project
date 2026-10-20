@@ -89,6 +89,9 @@ def login():
 
         login_user(User(row))
         next_page = request.args.get("next")
+        # Nur Pfade dieser Seite zulassen -- "//x" und "/\x" fuehren Browser auf fremde Hosts.
+        if next_page and (not next_page.startswith("/") or next_page[1:2] in ("/", "\\")):
+            next_page = None
         # Laeuft das Abo bald aus oder ist es gerade abgelaufen, fuehrt der Login
         # zuerst auf die Tarifseite -- dort kann der Kunde verlaengern oder weitergehen.
         if not next_page and quota.subscription_notice(row):

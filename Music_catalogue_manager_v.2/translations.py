@@ -507,6 +507,9 @@ _T = {
     "Protokoll als CSV": ("Audit log as CSV", "Journal en CSV"),
     "Einstellungen gespeichert.": ("Settings saved.", "Paramètres enregistrés."),
     "Einstellungen wurden nicht gespeichert.": ("Settings were not saved.", "Les paramètres n'ont pas été enregistrés."),
+    "Bitte alle Zahlenfelder ausfüllen: Werte ab 0, Prozente höchstens 100, Limits als ganze Zahl.": (
+        "Please fill in all number fields: values from 0, percentages at most 100, limits as whole numbers.",
+        "Veuillez remplir tous les champs numériques : valeurs à partir de 0, pourcentages au plus 100, limites en nombres entiers."),
     "Katalog gescannt: %(added)s neu, %(updated)s aktualisiert (%(scanned)s Dateien).": (
         "Catalog scanned: %(added)s new, %(updated)s updated (%(scanned)s files).",
         "Catalogue scanné : %(added)s nouveaux, %(updated)s mis à jour (%(scanned)s fichiers)."),

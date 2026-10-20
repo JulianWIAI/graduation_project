@@ -12,6 +12,7 @@ import secrets
 import sqlite3
 from datetime import datetime
 
+from flask import g, has_app_context
 from werkzeug.security import generate_password_hash
 
 import config
@@ -155,7 +156,18 @@ def get_conn():
     conn = sqlite3.connect(config.DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    # Innerhalb einer Anfrage merken: bricht der Aufrufer mit einem Fehler ab,
+    # bevor er close() erreicht, schliesst close_request_conns() die Verbindung.
+    # Sonst haelt die offene Schreib-Transaktion die Datenbank gesperrt.
+    if has_app_context():
+        g.setdefault("_db_conns", []).append(conn)
     return conn
+
+
+def close_request_conns(_exc=None):
+    """Teardown: alle Verbindungen der Anfrage schliessen (Offenes wird verworfen)."""
+    for conn in g.pop("_db_conns", []):
+        conn.close()
 
 
 def init_db():

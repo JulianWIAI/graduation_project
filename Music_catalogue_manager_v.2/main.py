@@ -11,6 +11,7 @@ Start:  python main.py     ->  http://127.0.0.1:5000
 
 import csv
 import io
+import math
 import os
 import pathlib
 import secrets
@@ -101,6 +102,7 @@ i18n.init_app(app)                       # Sprachumschaltung DE / EN / FR
 
 # Datenbank beim Import initialisieren (idempotent).
 db.init_db()
+app.teardown_appcontext(db.close_request_conns)   # haengende Verbindungen schliessen
 
 
 # --- Root redirect ----------------------------------------------------------
@@ -284,6 +286,24 @@ def settings_view():
                 "seller_name", "vat_pct", "sub_price_month",
                 "token_price_basic", "token_price_subscriber"]
         keys += [f"price_{k}" for k in config.DEFAULT_TIERS]
+        # Zahlenfelder pruefen: ein leeres Limit legt sonst Generator und Tarifseite lahm.
+        clean = {}
+        numeric = ["dev_hours", "hourly_rate", "tooling_cost", "cost_per_track",
+                   "sub_price_month"] + [f"price_{k}" for k in config.DEFAULT_TIERS]
+        for key in numeric + ["limit_free", "limit_subscriber", "discount_pct", "vat_pct"]:
+            if key not in request.form:
+                continue
+            try:
+                value = float(request.form[key].replace(",", "."))
+            except ValueError:
+                value = -1
+            if (not math.isfinite(value) or value < 0 or (key.startswith("limit_") and value != int(value))
+                    or (key.endswith("_pct") and value > 100)):
+                flash(_("Bitte alle Zahlenfelder ausfüllen: Werte ab 0, Prozente höchstens "
+                        "100, Limits als ganze Zahl.") + " "
+                      + _("Einstellungen wurden nicht gespeichert."), "error")
+                return redirect(url_for("settings_view"))
+            clean[key] = request.form[key].replace(",", ".")
         # Token-Preise vor dem Speichern pruefen: Abo muss guenstiger sein.
         if "token_price_basic" in request.form or "token_price_subscriber" in request.form:
             current = tokens.get_prices()
@@ -296,8 +316,9 @@ def settings_view():
         changed = {}
         for key in keys:
             if key in request.form:
-                db.set_setting(key, request.form[key])
-                changed[key] = request.form[key]
+                value = clean.get(key, request.form[key])
+                db.set_setting(key, value)
+                changed[key] = value
         db.log_event("SETTINGS_CHANGED", "settings", None, changed)
         flash(_("Einstellungen gespeichert."), "success")
         return redirect(url_for("settings_view"))
