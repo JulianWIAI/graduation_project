@@ -148,6 +148,10 @@ class AdvisorActionsBar(tk.Frame):
         save_pdf_fn:        Optional[Callable[[], None]] = None,
         export_audio_fn:    Optional[Callable[[str], None]] = None,
         get_muted_tracks_fn: Optional[Callable[[], set]] = None,
+        apply_groove_fn:    Optional[Callable] = None,
+        get_sample_assignments_fn: Optional[Callable[[], dict]] = None,
+        on_wav_ready_fn:    Optional[Callable[[str], None]] = None,
+        get_instrument_params_fn: Optional[Callable[[], dict]] = None,
     ) -> None:
         super().__init__(parent, bg=styles.BG2)
 
@@ -165,6 +169,21 @@ class AdvisorActionsBar(tk.Frame):
         self._export_audio       = export_audio_fn
         # Returns set of track keys to silence in the next preview render.
         self._get_muted_tracks   = get_muted_tracks_fn or (lambda: set())
+        # Called after compose+export to apply current groove/mixer gains to
+        # both the composition dict (built-in synth) and the MIDI (FluidSynth).
+        # Signature: fn(comp: dict, mid_path: str, genre: str, bpm: float) -> str
+        # Returns (possibly modified) mid_path.
+        self._apply_groove_fn    = apply_groove_fn
+        # Returns {builder_key: file_path} for sample-based track substitution.
+        # Must be called on the main thread; the result is captured in _on_preview()
+        # before the worker thread starts so GUI widgets are never accessed off-thread.
+        self._get_sample_assignments = get_sample_assignments_fn or (lambda: {})
+        # Called on the main thread with the WAV path after a successful render.
+        # App injects this to update the waveform widget and current_wav_path.
+        self._on_wav_ready           = on_wav_ready_fn
+        # Returns {role: PercussionParams/MelodicParams} for param-driven synthesis.
+        # Must be called on the main thread; result captured before worker starts.
+        self._get_instrument_params  = get_instrument_params_fn or (lambda: {})
 
         # Seed cached by App.set_seed() after every generation.
         # None → a fresh random seed is used for that preview session.
@@ -174,6 +193,9 @@ class AdvisorActionsBar(tk.Frame):
         self._wav_path:        Optional[str] = None
         self._midi_path:       Optional[str] = None   # full-beat MIDI
         self._vocal_midi_path: Optional[str] = None
+        # Path to the most recent groove-transformed MIDI (set by app via
+        # set_grooved_midi(); None until Apply Groove & Re-Render succeeds).
+        self._grooved_midi_path: Optional[str] = None
 
         self._build_ui()
 
@@ -296,6 +318,11 @@ class AdvisorActionsBar(tk.Frame):
         self._btn_midi.pack(side='left', padx=(0, 3))
         ToolTip(self._btn_midi, TOOLTIPS['advisor_save_midi'])
 
+        # ⬇ GROOVED MIDI — enabled when Apply Groove & Re-Render has been run
+        self._btn_groove_midi = _btn('midi', '⬇  GROOVED MIDI', self._on_save_grooved_midi, disabled=True)
+        self._btn_groove_midi.pack(side='left', padx=(0, 3))
+        ToolTip(self._btn_groove_midi, TOOLTIPS.get('advisor_groove_midi', 'Export the groove-transformed MIDI'))
+
         # ⬇ VOCAL MIDI — enabled when vocal-ready was included in the preview
         self._btn_vocal = _btn('vocal', '⬇  VOCAL MIDI', self._on_save_vocal_midi, disabled=True)
         self._btn_vocal.pack(side='left', padx=(0, 3))
@@ -318,6 +345,20 @@ class AdvisorActionsBar(tk.Frame):
         identical (chord progression, rhythm, structure) — only timbres differ.
         """
         self._seed = seed
+
+    def set_grooved_midi(self, path: Optional[str]) -> None:
+        """
+        Called by app.py after Apply Groove & Re-Render completes.
+
+        path — absolute path to the groove-transformed MIDI, or None to clear.
+        Enables the GROOVED MIDI button when a valid file is provided;
+        disables it when path is None or the file does not exist.
+        """
+        self._grooved_midi_path = path
+        if path and os.path.exists(path):
+            self._enable_btn(self._btn_groove_midi)
+        else:
+            self._disable_btn(self._btn_groove_midi)
 
     # ── Button callbacks ──────────────────────────────────────────────────────
 
@@ -369,15 +410,23 @@ class AdvisorActionsBar(tk.Frame):
                 if cfg_key in config.tracks:
                     config.tracks[cfg_key]['enabled'] = False
 
+        # Capture sample assignments here on the main thread — the worker thread
+        # must not access Tkinter widgets (SampleAssignmentPanel is a tk.Frame).
+        sample_assignments = self._get_sample_assignments()
+
+        # Capture timbre params on the main thread for the same reason.
+        instrument_params = self._get_instrument_params()
+
         self._log(f"Advisor preview: composing (seed={seed}, genre={config.genre})…")
 
         threading.Thread(
             target=self._render_worker,
-            args=(engine, config, want_vocal),
+            args=(engine, config, want_vocal, sample_assignments, instrument_params),
             daemon=True,
         ).start()
 
-    def _render_worker(self, engine, config, want_vocal: bool) -> None:
+    def _render_worker(self, engine, config, want_vocal: bool, sample_assignments: dict,
+                       instrument_params: dict = None) -> None:
         """
         Background thread: compose → export MIDI → FluidSynth WAV render.
 
@@ -409,6 +458,17 @@ class AdvisorActionsBar(tk.Frame):
             mid_path = str(temp_dir / "advisor_preview.mid")
             engine.export_midi(comp, mid_path)
 
+            # Apply the current Groove & Mixer settings so the advisor preview
+            # reflects any gain/mute changes the user made in that panel.
+            # _apply_groove_fn injects gains into comp (built-in synth path)
+            # and re-processes the MIDI with GrooveProcessor (FluidSynth path).
+            if self._apply_groove_fn is not None:
+                try:
+                    _bpm = float(comp.get('config', {}).get('bpm', 120.0))
+                    mid_path = self._apply_groove_fn(comp, mid_path, genre, _bpm)
+                except Exception:
+                    pass   # non-fatal — render continues with ungrooved MIDI
+
             # Verify the MIDI file was actually written
             midi_ok = os.path.exists(mid_path) and os.path.getsize(mid_path) > 0
             if not midi_ok:
@@ -426,9 +486,18 @@ class AdvisorActionsBar(tk.Frame):
             # Enable MIDI download immediately — before the (slower) WAV render
             self.after(0, self._on_midi_ready, mid_path)
 
-            # ── Phase 2: FluidSynth WAV render ─────────────────────────────
+            # ── Phase 2: WAV render ────────────────────────────────────────
+            # FluidSynth renders from MIDI via SoundFonts and cannot play
+            # custom audio samples.  When the user has assigned samples, skip
+            # FluidSynth entirely and go straight to the built-in synthesiser
+            # which routes each track through SamplePlayer when a sample is loaded.
             wav_path: Optional[str] = None
-            if self._renderer is not None and self._renderer.is_available():
+            _use_fluidsynth = (
+                not bool(sample_assignments)
+                and self._renderer is not None
+                and self._renderer.is_available()
+            )
+            if _use_fluidsynth:
                 # Log the active SF2 so the user can confirm the SoundFont
                 # picker selection is being honoured (shows filename, not path).
                 active = self._renderer.active_sf2(genre)
@@ -440,23 +509,22 @@ class AdvisorActionsBar(tk.Frame):
                     wav_path = _wav_out
                     self.after(0, self._log, "  [2/3] WAV render complete.")
                 else:
-                    # FluidSynth failed — log it; MIDI fallback will be used
                     self.after(
                         0, self._log,
                         "  [2/3] FluidSynth WAV render failed "
                         "(returncode ≠ 0 or output missing). "
-                        "Falling back to MIDI playback.",
+                        "Falling back to built-in synth.",
                     )
+            elif bool(sample_assignments):
+                self.after(0, self._log,
+                           "  [2/3] Samples assigned — using built-in synth for sample playback.")
             else:
                 self.after(0, self._log,
-                           "  [2/3] FluidSynth not available — using MIDI playback.")
+                           "  [2/3] FluidSynth not available — using built-in synth.")
 
-            # ── Phase 2b: built-in synth fallback ──────────────────────────
-            # When FluidSynth is unavailable or failed, render via the
-            # built-in synthesiser so the ⬇ EXPORT AUDIO button is enabled
-            # and playback is deterministic (same seed → same audio every time).
-            # Progress is logged every 500 events so the user sees activity
-            # during the (potentially slow) pure-Python synthesis pass.
+            # ── Phase 2b: built-in synth (primary when samples assigned) ───
+            # Always used when sample_assignments is non-empty.
+            # Also used as fallback when FluidSynth is unavailable or failed.
             if wav_path is None:
                 self.after(0, self._log,
                            "  [2/3] Built-in synth fallback — rendering WAV "
@@ -473,7 +541,10 @@ class AdvisorActionsBar(tk.Frame):
 
                 try:
                     _WAVRenderer().render_composition_to_wav(
-                        comp, _builtin_wav, progress_callback=_adv_progress)
+                        comp, _builtin_wav,
+                        progress_callback=_adv_progress,
+                        sample_assignments=sample_assignments,
+                        instrument_params=instrument_params or {})
                     wav_path = _builtin_wav
                     self.after(0, self._log,
                                "  [2/3] Built-in synth WAV ready.")
@@ -535,9 +606,11 @@ class AdvisorActionsBar(tk.Frame):
 
         self._enable_btn(self._btn_preview)
 
-        # WAV path is set → FluidSynth succeeded
+        # WAV path is set → render succeeded
         if wav_path and os.path.exists(wav_path):
             self._enable_btn(self._btn_export)
+            if self._on_wav_ready is not None:
+                self._on_wav_ready(wav_path)
             self._player.play_wav(wav_path)
             self._status("ADVISOR PREVIEW  ▶  PLAYING (WAV)", self._S.CYAN)
 
@@ -634,3 +707,17 @@ class AdvisorActionsBar(tk.Frame):
             shutil.copy2(self._vocal_midi_path, dest)
             self._log(f"Advisor Vocal MIDI → {dest}")
             self._status("VOCAL MIDI SAVED", self._S.GREEN)
+
+    def _on_save_grooved_midi(self) -> None:
+        """Save the groove-transformed MIDI to a user-chosen path."""
+        if not self._grooved_midi_path or not os.path.exists(self._grooved_midi_path):
+            return
+        dest = filedialog.asksaveasfilename(
+            defaultextension=".mid",
+            filetypes=[("MIDI", "*.mid")],
+            initialfile="grooved.mid",
+        )
+        if dest:
+            shutil.copy2(self._grooved_midi_path, dest)
+            self._log(f"Grooved MIDI → {dest}")
+            self._status("GROOVED MIDI SAVED", self._S.PURPLE)

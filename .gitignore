@@ -23,6 +23,11 @@ ENV/
 # master_seeds.json is ~961 MB — distribute separately (see README)
 music_architect_v7/seeds/master_seeds.json
 
+# ─── DAW Light Installers ────────────────────────────────────
+# .dmg / .exe exceed GitHub's 100 MB limit — share via Google Drive
+downloads/*.dmg
+downloads/*.exe
+
 # ─── SoundFont Files (.sf2 / .sf3) ───────────────────────────
 # Large binary assets — download instructions in
 # daw_light_version/soundfonts/README.txt

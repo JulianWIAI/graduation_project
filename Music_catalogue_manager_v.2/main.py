@@ -18,7 +18,7 @@ import secrets
 from datetime import timedelta
 
 from flask import (Flask, abort, flash, redirect, render_template, request,
-                   Response, url_for)
+                   Response, send_file, url_for)
 from flask_login import LoginManager, login_required, current_user
 from flask_session import Session
 
@@ -546,6 +546,34 @@ def audit_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=audit_protokoll.csv"},
     )
+
+
+# --- DAW-Light Download -----------------------------------------------------
+
+@app.route("/download")
+@login_required
+def download_page():
+    dmg_available = pathlib.Path(config.DOWNLOADS_DIR, config.DAW_LIGHT_DMG).is_file()
+    exe_available = pathlib.Path(config.DOWNLOADS_DIR, config.DAW_LIGHT_EXE).is_file()
+    return render_template("download.html",
+                           dmg_available=dmg_available,
+                           exe_available=exe_available)
+
+
+@app.route("/download/<platform>")
+@login_required
+def download_file(platform):
+    if platform == "mac":
+        filename = config.DAW_LIGHT_DMG
+    elif platform == "windows":
+        filename = config.DAW_LIGHT_EXE
+    else:
+        abort(404)
+    filepath = pathlib.Path(config.DOWNLOADS_DIR, filename)
+    if not filepath.is_file():
+        flash(_("Datei nicht gefunden. Bitte wende dich an den Administrator."), "error")
+        return redirect(url_for("download_page"))
+    return send_file(filepath, as_attachment=True, download_name=filename)
 
 
 # --- Jinja-Filter -----------------------------------------------------------

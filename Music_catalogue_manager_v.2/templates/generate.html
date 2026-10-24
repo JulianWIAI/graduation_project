@@ -2855,6 +2855,12 @@ function setGenerating(a) {
   if(b){ b.disabled=a; b.innerHTML=a?'&#8230;':t('&#9654; Beat generieren'); }
   // style.display direkt setzen, damit kein CSS-display-Konflikt mit hidden entsteht
   if(sp) sp.style.display = a ? 'flex' : 'none';
+  // Neuer Beat wird generiert: laufende Wiedergabe stoppen und Play-Button zuruecksetzen
+  if(a) {
+    const ap=$('audioPlayer');
+    if(ap && !ap.paused){ ap.pause(); }
+    const pb=$('btnPlayerPlay'); if(pb) pb.textContent='▶';
+  }
 }
 function showError(m){
   const e=$('genError'); if(!e) return;

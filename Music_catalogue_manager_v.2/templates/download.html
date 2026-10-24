@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ _('DAW Light herunterladen') }} · SBS Catalog{% endblock %}
+{% block content %}
+<h1>{{ _('DAW Light herunterladen') }}</h1>
+<p class="subtitle">
+  {{ _('SBS-Synth Master ist das Produktionswerkzeug zum Katalog. Lade es für dein Betriebssystem herunter.') }}
+</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:1.5rem;">
+
+  <!-- macOS -->
+  <div class="plan-card" style="flex:1; min-width:220px;">
+    <div class="plan-name">macOS</div>
+    <div class="plan-desc" style="margin:.6rem 0 1rem;">
+      {{ _('SBS-Synth Master für Mac (.dmg)') }}
+    </div>
+    {% if dmg_available %}
+      <a href="{{ url_for('download_file', platform='mac') }}" class="btn-primary">
+        &#8659; {{ _('Download .dmg') }}
+      </a>
+    {% else %}
+      <span class="badge" style="opacity:.55;">{{ _('Noch nicht verfügbar') }}</span>
+    {% endif %}
+  </div>
+
+  <!-- Windows -->
+  <div class="plan-card" style="flex:1; min-width:220px;">
+    <div class="plan-name">Windows</div>
+    <div class="plan-desc" style="margin:.6rem 0 1rem;">
+      {{ _('SBS-Synth Master für Windows (.exe)') }}
+    </div>
+    {% if exe_available %}
+      <a href="{{ url_for('download_file', platform='windows') }}" class="btn-primary">
+        &#8659; {{ _('Download .exe') }}
+      </a>
+    {% else %}
+      <span class="badge" style="opacity:.55;">{{ _('Noch nicht verfügbar') }}</span>
+    {% endif %}
+  </div>
+
+</div>
+
+<p style="margin-top:2rem; font-size:.82rem; color:var(--tx3);">
+  {{ _('Nur für registrierte Nutzer. Die Dateien werden vom Administrator bereitgestellt.') }}
+</p>
+{% endblock %}

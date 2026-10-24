@@ -50,25 +50,27 @@ _DRUM_KITS: List[Tuple[int, str]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Perkussion: GM-Programme fuer rhythmische Melodie-Perkussion
-# (auf normalen MIDI-Kanaelen, nicht Kanal 10).
+# Perkussion: Die Percussion-Spur traegt Schlagzeug-Noten auf MIDI-Kanal 10.
+# Melodie-Instrumente (Marimba, Glockenspiel usw.) haben hier keine Wirkung,
+# weil der Kanal 10-Standard sie ignoriert. Stattdessen werden dieselben
+# Drum-Kits wie fuer die Drums-Spur angeboten.
 # ---------------------------------------------------------------------------
-_PERCUSSION_INSTRUMENTS: List[Tuple[int, str]] = [
-    (9,  "Glockenspiel"),
-    (11, "Vibraphone"),
-    (12, "Marimba"),
-    (13, "Xylophone"),
-    (14, "Tubular Bells"),
-    (47, "Timpani"),
-    (112,"Tinkle Bell"),
-    (113,"Agogo"),
-    (114,"Steel Drums"),
-    (115,"Woodblock"),
-    (116,"Taiko Drum"),
-    (117,"Melodic Tom"),
-    (118,"Synth Drum"),
-    (119,"Reverse Cymbal"),
-]
+# _PERCUSSION_INSTRUMENTS: List[Tuple[int, str]] = [
+#     (9,  "Glockenspiel"),
+#     (11, "Vibraphone"),
+#     (12, "Marimba"),
+#     (13, "Xylophone"),
+#     (14, "Tubular Bells"),
+#     (47, "Timpani"),
+#     (112,"Tinkle Bell"),
+#     (113,"Agogo"),
+#     (114,"Steel Drums"),
+#     (115,"Woodblock"),
+#     (116,"Taiko Drum"),
+#     (117,"Melodic Tom"),
+#     (118,"Synth Drum"),
+#     (119,"Reverse Cymbal"),
+# ]
 
 # ---------------------------------------------------------------------------
 # Textur-Pads: Atmosphaerische GM-Pads und Streicher.
@@ -187,7 +189,7 @@ def load() -> InstrumentData:
         arp        = json_lists["arp"],
         stabs      = json_lists["stabs"],
         drums      = _DRUM_KITS,
-        percussion = _PERCUSSION_INSTRUMENTS,
+        percussion = _DRUM_KITS,   # Percussion-Spur = MIDI-Kanal 10 → Drum-Kits
         texture    = _TEXTURE_INSTRUMENTS,
         fx         = _FX_INSTRUMENTS,
     )

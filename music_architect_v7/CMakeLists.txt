@@ -49,6 +49,10 @@ set(SYNTH_SOURCES
     src/synth_core/src/instrument_timbres.cpp
     src/synth_core/src/drum_synthesizer.cpp
     src/synth_core/src/synth_core.cpp
+    # DSP processors added for the groove/saturation pipeline
+    src/synth_core/src/saturation.cpp
+    # Sidechain envelope follower for kick/808-triggered gain reduction
+    src/synth_core/src/sidechain.cpp
     src/synth_core/src/bindings.cpp
 )
 

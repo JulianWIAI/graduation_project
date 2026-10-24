@@ -103,6 +103,17 @@ DEFAULT_BILLING = {
     "sub_price_month": "9.99",               # Abo-Preis pro Monat (EUR)
 }
 
+# ---------------------------------------------------------------------------
+# DAW-Light-Downloads (SBS-Synth Master Installer)
+# ---------------------------------------------------------------------------
+# Ablageordner fuer die verteilten Installer-Dateien.
+# Kollegen legen die Dateien manuell dort ab (z. B. per Google Drive Sync).
+DOWNLOADS_DIR = os.path.join(os.path.dirname(BASE_DIR), "downloads")
+
+# Dateinamen der Installer — anpassen wenn sich der Name aendert.
+DAW_LIGHT_DMG = "SBS-Synth-Master.dmg"
+DAW_LIGHT_EXE = "SBS-Synth-Master.exe"
+
 # Waehlbare Abo-Laufzeiten (Monate) fuer den Checkout.
 SUBSCRIPTION_TERMS = [1, 3, 12]
 

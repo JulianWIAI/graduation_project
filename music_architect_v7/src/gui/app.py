@@ -155,6 +155,45 @@ except ImportError:
     SongGrooveSettings = None       # type: ignore
     GROOVE_AVAILABLE = False
 
+try:
+    from src.gui.timbre_editor_panel import TimbreEditorPanel
+    TIMBRE_EDITOR_AVAILABLE = True
+except ImportError:
+    TimbreEditorPanel = None        # type: ignore
+    TIMBRE_EDITOR_AVAILABLE = False
+
+
+from src.gui.fader_utils import (
+    _pos_to_db, _db_to_pos, gain_db_to_volume,
+    _GAIN_STEPS, _GAIN_INF_FLOOR,
+)
+
+# Composition track name → groove settings key (same mapping as groove_processor._MIDI_NAME_TO_KEY)
+_COMP_TRACK_TO_GROOVE_KEY = {
+    '01_Kick':       'drums',
+    '02_Percussion': 'percussion',
+    '03_Bass':       'bass',
+    '04_Melody':     'lead',
+    '05_Chords':     'chords',
+    '06_Pad':        'pad',
+    '07_Arp':        'arp',
+    '08_Stabs':      'stabs',
+    '09_Texture':    'texture',
+    '10_FX':         'fx',
+}
+
+
+def _inject_track_gains(composition: dict, groove_settings) -> None:
+    """Write per-track linear gain into track_info so BuiltinSynthesizer can apply it."""
+    if groove_settings is None:
+        return
+    ti = composition.get('track_info', {})
+    for midi_name, groove_key in _COMP_TRACK_TO_GROOVE_KEY.items():
+        if midi_name in ti:
+            gdb = groove_settings.get(groove_key).gain_db
+            # Treat ≤ -59.9 dB as -∞ (linear gain 0 = silence)
+            ti[midi_name]['gain'] = 0.0 if gdb <= -59.9 else 10.0 ** (gdb / 20.0)
+
 
 class SeedComposerApp:
     def __init__(self, root: tk.Tk):
@@ -168,6 +207,11 @@ class SeedComposerApp:
         self.current_composition = None
         self.current_midi_path = None
         self.current_wav_path = None
+        # The WAV produced by the initial generation — never overwritten by
+        # groove re-renders or advisor previews.  "Play Full Beat" always plays
+        # this so the button consistently showcases the AI's output at its best
+        # quality (FluidSynth + soundfont when available).
+        self._original_wav_path = None
         # FX chain variant: 'bright', 'neutral', or 'dark'.
         # Updated from the composition seed after generation.
         self._current_variant_id = 'neutral'
@@ -195,6 +239,10 @@ class SeedComposerApp:
         # Groove & Mixer panel — built inside _build_advisor_tab; None until then.
         # Declared here so _on_genre_change is safe to call at any point during init.
         self._mixer_panel = None
+        # Timbre editor panel — built inside _build_advisor_tab; None until then.
+        self._timbre_editor = None
+        # Piano roll widget — built inside _build_output_panel; None until then.
+        self._piano_roll = None
 
         self._build_gui()
         self._init_engine()
@@ -674,13 +722,30 @@ class SeedComposerApp:
             en_cb.pack(side='left')
             self._tip(en_cb, 'track_enabled')
 
+            # Volume fader — same log taper as the Groove & Mixer panel.
+            # Drums default to 0 dB (unity); melodic tracks to −3 dB.
             tk.Label(row, text="Vol:", font=S.FN_X, fg=S.TXT_DIM, bg=S.BG2).pack(side='left')
-            vol = tk.Scale(row, from_=0, to=100, orient='horizontal', font=S.FN_X,
+            _default_db   = 0.0 if track == 'drums' else (-6.0 if track in ('arp', 'lead', 'chords') else -3.0)
+            _vol_pos_var  = tk.IntVar(value=int(_db_to_pos(_default_db) * _GAIN_STEPS))
+            vol = tk.Scale(row, variable=_vol_pos_var, from_=0, to=_GAIN_STEPS,
+                           resolution=1, orient='horizontal', font=S.FN_X,
                            fg=color, bg=S.BG2, troughcolor=S.BG_INPUT,
                            highlightthickness=0, length=80, showvalue=0)
-            vol.set(80 if track != 'arp' else 50)
             vol.pack(side='left', padx=2)
             self._tip(vol, 'track_volume')
+            # Live dB readout label + double-click reset to 0 dB
+            _vol_lbl = tk.Label(row, text='', font=S.FN_X, fg=S.TXT, bg=S.BG2, width=7)
+            _vol_lbl.pack(side='left')
+            def _make_vol_updater(pv=_vol_pos_var, lbl=_vol_lbl):
+                def _upd(*_):
+                    db = _pos_to_db(pv.get() / _GAIN_STEPS)
+                    lbl.configure(text='-∞ dB' if db <= _GAIN_INF_FLOOR else f'{db:+.1f} dB')
+                return _upd
+            _vu = _make_vol_updater()
+            _vol_pos_var.trace_add('write', _vu)
+            vol.bind('<Double-Button-1>',
+                     lambda e, pv=_vol_pos_var: pv.set(int(_db_to_pos(0.0) * _GAIN_STEPS)))
+            _vu()  # set initial label text
 
             if track == 'drums':
                 kit_values = [f"{k}: {v}" for k, v in sorted(DRUM_KITS.items())]
@@ -718,14 +783,14 @@ class SeedComposerApp:
         # reusable class.  'percussion' is mode='percussion' — it shares the drum
         # channel (ch 9) so it has no program selector.
         _extended_tracks = [
-            #  track key     mode          default  default  default
-            #                              enabled  volume   program
-            ('stabs',      'pitched',    True,    70,      55),   # Orchestra Hit default
-            ('texture',    'pitched',    True,    60,      88),   # New Age Pad default
-            ('fx',         'fx_sounds',  True,    50,      96),   # Rain FX default
-            ('percussion', 'percussion', True,    60,      None), # no program — drum ch
+            #  track key     mode          default   default    default
+            #                              enabled   gain_db    program
+            ('stabs',      'pitched',    True,    -3.0,      55),   # Orchestra Hit default
+            ('texture',    'pitched',    True,    -4.0,      88),   # New Age Pad default
+            ('fx',         'fx_sounds',  True,    -6.0,      96),   # Rain FX default
+            ('percussion', 'percussion', True,    -4.0,      None), # no program — drum ch
         ]
-        for _track, _mode, _enabled, _vol, _prog in _extended_tracks:
+        for _track, _mode, _enabled, _gain_db, _prog in _extended_tracks:
             _color = S.TRACK_CLR.get(_track, S.CYAN)
             _row = TrackInstrumentRow(
                 frame,
@@ -733,7 +798,7 @@ class SeedComposerApp:
                 mode=_mode,
                 color=_color,
                 default_enabled=_enabled,
-                default_volume=_vol,
+                default_gain_db=_gain_db,
                 default_program=_prog,
                 log_fn=self._log,
                 tip_fn=self._tip,
@@ -877,6 +942,18 @@ class SeedComposerApp:
                                  scrollbar_bg=S.BG3, scrollbar_width=12)
         adv_sf.pack(fill='both', expand=True)
         self._build_advisor_tab(adv_sf.inner)
+
+        # ── Tab 3: PIANO ROLL ──
+        pr_tab = tk.Frame(self._out_nb, bg=S.BG2)
+        self._out_nb.add(pr_tab, text=' PIANO ROLL ')
+        try:
+            from src.gui.piano_roll import PianoRollWidget
+            self._piano_roll = PianoRollWidget(pr_tab)
+            self._piano_roll.frame.pack(fill='both', expand=True)
+        except Exception as _exc:
+            print(f'[PianoRoll] failed to load: {_exc}')
+            self._piano_roll = None
+            tk.Label(pr_tab, text='Piano roll unavailable', fg=S.TXT_DIM, bg=S.BG2).pack(expand=True)
 
         bf = tk.Frame(parent, bg=S.BG2); bf.pack(fill='x', padx=6, pady=4)
         btn_play = self._cbtn(bf, "PLAY  Full Beat", self._play_preview, S.GREEN, wide=True)
@@ -1027,6 +1104,7 @@ class SeedComposerApp:
                 styles=S,
             )
             self._instrument_builder.pack(fill='x', padx=4, pady=(0, 2))
+            self._instrument_builder.set_play_fn(self.player.play_wav)
         else:
             self._instrument_builder = None
 
@@ -1039,12 +1117,27 @@ class SeedComposerApp:
                 self._mixer_panel = MixerPanel(
                     parent,
                     on_apply_fn=self._apply_groove_and_rerender,
+                    get_composition_fn=lambda: self.current_composition,
                 )
             except Exception as _exc:
                 print(f'[GroovePanel] Construction failed: {_exc}')
                 self._mixer_panel = None
         else:
             self._mixer_panel = None
+
+        # ── Timbre editor panel ──────────────────────────────────────────────
+        # Per-instrument preset + slider panel for kick, snare, hi-hat, melodic.
+        # Parameters are collected via get_instrument_params() and injected into
+        # the built-in synthesiser before every WAV render.
+        if TIMBRE_EDITOR_AVAILABLE:
+            try:
+                self._timbre_editor = TimbreEditorPanel(parent, styles=S)
+                self._timbre_editor.pack(fill='x', padx=4, pady=(0, 2))
+            except Exception as _exc:
+                print(f'[TimbreEditorPanel] Construction failed: {_exc}')
+                self._timbre_editor = None
+        else:
+            self._timbre_editor = None
 
         # ── SoundFont picker ─────────────────────────────────────────────────
         # Always shown so users can configure a SoundFont path even when
@@ -1080,6 +1173,13 @@ class SeedComposerApp:
                     self._instrument_builder.get_muted_tracks
                     if self._instrument_builder is not None else None
                 ),
+                apply_groove_fn      = self._advisor_apply_groove,
+                get_sample_assignments_fn = (
+                    self._instrument_builder.get_sample_assignments
+                    if self._instrument_builder is not None else None
+                ),
+                on_wav_ready_fn      = self._on_advisor_wav_ready,
+                get_instrument_params_fn = self._get_instrument_params,
             )
             self._advisor_actions.pack(fill='x', padx=4)
         else:
@@ -1930,7 +2030,10 @@ class SeedComposerApp:
             if track_name not in config.tracks:
                 config.tracks[track_name] = {'enabled': True, 'volume': 0.8, 'instrument': None}
             config.tracks[track_name]['enabled'] = vd['enabled'].get()
-            config.tracks[track_name]['volume'] = vd['volume'].get() / 100.0
+            # Convert fader position (0–_GAIN_STEPS) to linear volume (0–1)
+            # using the same log taper as the Groove & Mixer panel.
+            _vol_db = _pos_to_db(vd['volume'].get() / float(_GAIN_STEPS))
+            config.tracks[track_name]['volume'] = gain_db_to_volume(_vol_db)
             if vd['instrument'] is not None:
                 try:
                     config.tracks[track_name]['instrument'] = int(vd['instrument'].get().split(':')[0])
@@ -2004,6 +2107,26 @@ class SeedComposerApp:
             config.seed_value = random.randint(1, 999999)
         self._last_gen_seed = config.seed_value   # cached for advisor re-render
 
+        # Capture groove settings here on the main thread — GUI widgets must
+        # not be accessed from inside the worker thread.
+        _auto_groove_settings = None
+        if GROOVE_AVAILABLE and self._mixer_panel is not None:
+            try:
+                _auto_groove_settings = self._mixer_panel.get_settings(
+                    genre=getattr(config, 'genre', '') or ''
+                )
+            except Exception:
+                _auto_groove_settings = None
+
+        # Capture sample assignments on the main thread (GUI widget access).
+        _sample_assignments = (
+            self._instrument_builder.get_sample_assignments()
+            if self._instrument_builder is not None else {}
+        )
+
+        # Capture timbre params on the main thread.
+        _instrument_params = self._get_instrument_params()
+
         def _worker():
             try:
                 temp_dir = Path(APP_DIR) / "temp_output"
@@ -2017,6 +2140,7 @@ class SeedComposerApp:
                     self.msg_queue.put(('gen_progress', 10, "Composing full beat..."))
                     config.vocal_mask = False
                     composition = self.engine.compose(config)
+                    _inject_track_gains(composition, _auto_groove_settings)
                     self.msg_queue.put(('gen_progress', 60, "Exporting full beat MIDI..."))
                     midi_path = str(temp_dir / f"preview_{gen_id}.mid")
                     self.engine.export_midi(composition, midi_path)
@@ -2025,6 +2149,7 @@ class SeedComposerApp:
                     self.msg_queue.put(('gen_progress', 10, "Composing..."))
                     config.vocal_mask = False
                     composition = self.engine.compose(config)
+                    _inject_track_gains(composition, _auto_groove_settings)
 
                 # ── Vocal-Ready Beat ───────────────────────────────────
                 vocal_midi_path = None
@@ -2034,6 +2159,7 @@ class SeedComposerApp:
                     self.msg_queue.put(('gen_progress', 65, "Composing vocal-ready version..."))
                     config.vocal_mask = True
                     vr_composition = self.engine.compose(config)
+                    _inject_track_gains(vr_composition, _auto_groove_settings)
                     config.vocal_mask = False   # restore
                     vocal_midi_path = str(temp_dir / f"preview_{gen_id}_vocal.mid")
                     self.engine.export_midi(vr_composition, vocal_midi_path)
@@ -2044,14 +2170,42 @@ class SeedComposerApp:
                         try: old.unlink()
                         except: pass
 
+                # ── Auto-apply groove to MIDI before render ────────────
+                # Groove is applied to a separate grooved copy so that
+                # current_midi_path always stores the clean original MIDI.
+                # That way "Apply Groove & Re-Render" still works correctly
+                # and never double-processes an already-grooved file.
+                _render_midi_path = midi_path   # default: original (no groove)
+                if (want_full and midi_path
+                        and GROOVE_AVAILABLE
+                        and _auto_groove_settings is not None
+                        and _auto_groove_settings.has_any_effect()):
+                    try:
+                        _bpm_for_groove = float(
+                            composition.get('config', {}).get('bpm', 120.0))
+                        _grooved_midi = str(temp_dir / f"preview_{gen_id}_grooved.mid")
+                        if GrooveProcessor().process(
+                                midi_path, _grooved_midi,
+                                _auto_groove_settings, _bpm_for_groove):
+                            _render_midi_path = _grooved_midi
+                    except Exception:
+                        pass   # fallback: render from original MIDI
+
                 # ── FluidSynth WAV render ──────────────────────────────
-                if FLUIDSYNTH_AVAILABLE and _FLUID_RENDERER is not None:
+                # Skip FluidSynth when samples are assigned: FluidSynth renders
+                # from MIDI/SoundFont and cannot apply custom audio samples.
+                _use_fluid = (
+                    not bool(_sample_assignments)
+                    and FLUIDSYNTH_AVAILABLE
+                    and _FLUID_RENDERER is not None
+                )
+                if _use_fluid:
                     _sf_name = _FLUID_RENDERER._library.display_name(_genre)
                     if want_full and midi_path:
                         self.msg_queue.put(('gen_progress', 75,
                                             f'Rendering full beat [{_sf_name}]...'))
                         _wav_out = str(temp_dir / f'preview_{gen_id}.wav')
-                        if _FLUID_RENDERER.render(midi_path, _wav_out, genre=_genre):
+                        if _FLUID_RENDERER.render(_render_midi_path, _wav_out, genre=_genre):
                             _wav_path = _wav_out
                     if want_vocal and vocal_midi_path:
                         self.msg_queue.put(('gen_progress', 90,
@@ -2061,11 +2215,6 @@ class SeedComposerApp:
                             vocal_wav_path = _vr_wav_out
 
                 # ── Builtin-synth WAV fallback (macOS / no FluidSynth) ─────
-                # When FluidSynth is unavailable or failed, render via the
-                # built-in synthesiser so the waveform, export, and advisor
-                # export button all work correctly on every platform.
-                # Progress is forwarded to the UI so the bar moves during
-                # the (potentially slow) pure-Python synthesis pass.
                 if want_full and _wav_path is None and composition is not None:
                     self.msg_queue.put(('gen_progress', 75,
                                         'Rendering audio (built-in synth — may take ~30 s)…'))
@@ -2081,7 +2230,10 @@ class SeedComposerApp:
                     try:
                         WAVRenderer().render_composition_to_wav(
                             composition, _builtin_wav,
-                            progress_callback=_full_progress)
+                            progress_callback=_full_progress,
+                            sample_assignments=_sample_assignments,
+                            instrument_params=_instrument_params,
+                            groove_settings=_auto_groove_settings)
                         _wav_path = _builtin_wav
                     except Exception as _e:
                         self.msg_queue.put(('gen_progress', 75,
@@ -2093,7 +2245,10 @@ class SeedComposerApp:
                     _vr_builtin_wav = str(temp_dir / f'preview_{gen_id}_vocal.wav')
                     try:
                         WAVRenderer().render_composition_to_wav(
-                            vr_composition, _vr_builtin_wav)
+                            vr_composition, _vr_builtin_wav,
+                            sample_assignments=_sample_assignments,
+                            instrument_params=_instrument_params,
+                            groove_settings=_auto_groove_settings)
                         vocal_wav_path = _vr_builtin_wav
                     except Exception as _e:
                         self.msg_queue.put(('gen_progress', 95,
@@ -2187,9 +2342,19 @@ class SeedComposerApp:
         if not self.current_midi_path or not os.path.exists(self.current_midi_path):
             messagebox.showinfo("No Preview", "Generate a song first!")
             return
-        # Prefer WAV if already rendered (better quality), otherwise play MIDI directly
-        if self.current_wav_path and os.path.exists(self.current_wav_path):
-            success = self.player.play_wav(self.current_wav_path, start_sec=0.0)
+        # Always play the original generated WAV — groove re-renders and advisor
+        # previews update current_wav_path but must not affect this button so the
+        # showcase consistently presents the AI's output at its best quality
+        # (FluidSynth + soundfont when available, built-in synth otherwise).
+        # Fall back through: original WAV → current WAV → raw MIDI.
+        play_wav = None
+        if self._original_wav_path and os.path.exists(self._original_wav_path):
+            play_wav = self._original_wav_path
+        elif self.current_wav_path and os.path.exists(self.current_wav_path):
+            play_wav = self.current_wav_path
+
+        if play_wav:
+            success = self.player.play_wav(play_wav, start_sec=0.0)
         else:
             success = self.player.play_midi(self.current_midi_path)
         if success:
@@ -2245,7 +2410,60 @@ class SeedComposerApp:
         self.player.stop()
         self._set_status("STOPPED", S.YELLOW)
 
-    # ── Groove re-render ──────────────────────────────────────────────────────
+    # ── Advisor WAV callback ──────────────────────────────────────────────────
+
+    def _on_advisor_wav_ready(self, wav_path: str) -> None:
+        """Update waveform widget and current_wav_path after an advisor preview render."""
+        self.current_wav_path = wav_path
+        if PLAYER_WIDGETS_AVAILABLE and self._waveform_widget is not None:
+            self._waveform_widget.load_wav(wav_path)
+
+    def _get_instrument_params(self) -> dict:
+        """
+        Return the current timbre parameters from the TimbreEditorPanel.
+
+        Returns an empty dict when the panel is not available so all callers
+        can treat the result as a plain dict without None-guards.
+        """
+        if self._timbre_editor is None:
+            return {}
+        try:
+            raw = self._timbre_editor.get_instrument_params()
+            # Filter out None entries so callers can do a plain dict.get()
+            return {k: v for k, v in raw.items() if v is not None}
+        except Exception:
+            return {}
+
+    # ── Groove helpers ────────────────────────────────────────────────────────
+
+    def _advisor_apply_groove(
+        self, comp: dict, mid_path: str, genre: str, bpm: float
+    ) -> str:
+        """
+        Apply current Groove & Mixer settings to an advisor preview composition.
+
+        Called by AdvisorActionsBar after composing so the advisor preview
+        reflects any gain/mute changes the user made in the Groove section.
+
+        Modifies *comp* in-place (injects 'gain' into track_info for the
+        built-in synth path) and returns a (possibly grooved) MIDI path
+        for the FluidSynth path.
+        """
+        if self._mixer_panel is None:
+            return mid_path
+        groove_settings = self._mixer_panel.get_settings(genre=genre)
+        groove_settings.apply_enabled = True
+        # Inject gains into composition dict so built-in synth respects them.
+        _inject_track_gains(comp, groove_settings)
+        # Process MIDI with GrooveProcessor for FluidSynth CC7/CC10.
+        if GROOVE_AVAILABLE and groove_settings.has_any_effect():
+            grooved = str(Path(APP_DIR) / 'temp_output' / 'advisor_grooved.mid')
+            try:
+                if GrooveProcessor().process(mid_path, grooved, groove_settings, bpm):
+                    return grooved
+            except Exception:
+                pass
+        return mid_path
 
     def _apply_groove_and_rerender(self) -> None:
         """
@@ -2272,11 +2490,34 @@ class SeedComposerApp:
             return
 
         # Capture settings on the main thread before the worker starts.
-        groove_settings = self._mixer_panel.get_settings()
+        # genre is read first so it can be forwarded into SongGrooveSettings
+        # for MicroTimingEngine genre-aware grid generation in GrooveProcessor.
+        genre = self.genre_var.get()
+        groove_settings = self._mixer_panel.get_settings(genre=genre)
+        # Force processing even if the "Apply groove" checkbox is unchecked —
+        # the user explicitly clicked the button, so their gain/pan/swing
+        # changes should always take effect.
+        groove_settings.apply_enabled = True
         bpm = 120.0
         if self.current_composition:
             bpm = float(self.current_composition.get('config', {}).get('bpm', 120.0))
-        genre = self.genre_var.get()
+
+        # Capture sample assignments on the main thread before the worker starts.
+        _groove_sample_assignments = (
+            self._instrument_builder.get_sample_assignments()
+            if self._instrument_builder is not None else {}
+        )
+
+        # Capture timbre params on the main thread.
+        _groove_instrument_params = self._get_instrument_params()
+
+        # Deep-copy the composition on the main thread before the worker starts.
+        # This ensures the worker operates on a private snapshot — _inject_track_gains
+        # can then mutate it freely without touching the shared current_composition.
+        # It also guarantees that a second Apply Groove always starts from the same
+        # original events regardless of what the previous run modified.
+        import copy as _copy
+        _groove_comp = _copy.deepcopy(self.current_composition) if self.current_composition else None
 
         self.is_generating = True
         self._mixer_panel.set_busy(True)
@@ -2289,6 +2530,7 @@ class SeedComposerApp:
                 temp_dir.mkdir(exist_ok=True)
 
                 midi_to_render = self.current_midi_path
+                _produced_grooved_midi: str | None = None
 
                 # Apply groove transforms if any settings differ from identity.
                 if groove_settings.has_any_effect():
@@ -2298,26 +2540,33 @@ class SeedComposerApp:
                     )
                     if ok:
                         midi_to_render = grooved_mid
+                        _produced_grooved_midi = grooved_mid
 
-                # Render with FluidSynth (preferred) or built-in synth fallback.
-                wav_out = str(temp_dir / "groove_preview.wav")
+                # Render: skip FluidSynth when samples are assigned so that
+                # SampleEngine can substitute audio on the built-in synth path.
+                wav_out  = str(temp_dir / "groove_preview.wav")
                 rendered = False
 
-                if FLUIDSYNTH_AVAILABLE and _FLUID_RENDERER is not None:
+                if (not bool(_groove_sample_assignments)
+                        and FLUIDSYNTH_AVAILABLE
+                        and _FLUID_RENDERER is not None):
                     rendered = _FLUID_RENDERER.render(midi_to_render, wav_out, genre=genre)
 
-                if not rendered and self.current_composition is not None:
-                    # Built-in synth fallback — slower but always available.
+                if not rendered and _groove_comp is not None:
                     try:
+                        _inject_track_gains(_groove_comp, groove_settings)
                         WAVRenderer().render_composition_to_wav(
-                            self.current_composition, wav_out
+                            _groove_comp, wav_out,
+                            sample_assignments=_groove_sample_assignments,
+                            instrument_params=_groove_instrument_params,
+                            groove_settings=groove_settings,
                         )
                         rendered = True
                     except Exception:
                         pass
 
                 if rendered and os.path.exists(wav_out):
-                    self.msg_queue.put(('groove_done', wav_out))
+                    self.msg_queue.put(('groove_done', wav_out, _produced_grooved_midi))
                 else:
                     self.msg_queue.put(('groove_fail', 'Render produced no output'))
 
@@ -2405,9 +2654,20 @@ class SeedComposerApp:
             initialfile=f"SeedComposer_{self.current_composition['config']['genre']}.wav")
         if not p: return
         self._set_status("RENDERING WAV...", S.ORANGE)
+        _export_ip = self._get_instrument_params()
+        _export_groove = None
+        if GROOVE_AVAILABLE and self._mixer_panel is not None:
+            try:
+                _export_groove = self._mixer_panel.get_settings(
+                    genre=self.current_composition.get('config', {}).get('genre', ''))
+            except Exception:
+                pass
         def _w():
             try:
-                WAVRenderer().render_composition_to_wav(self.current_composition, p)
+                WAVRenderer().render_composition_to_wav(
+                    self.current_composition, p,
+                    instrument_params=_export_ip,
+                    groove_settings=_export_groove)
                 self.msg_queue.put(('wav_done', p))
             except Exception as e:
                 self.msg_queue.put(('wav_error', str(e)))
@@ -2473,12 +2733,17 @@ class SeedComposerApp:
         elif t == 'groove_done':
             # Groove re-render succeeded — update waveform and current WAV path.
             wav = msg[1]
+            grooved_midi = msg[2] if len(msg) > 2 else None
             self.current_wav_path = wav
             self.is_generating = False
             if self._mixer_panel is not None:
                 self._mixer_panel.set_busy(False)
             if PLAYER_WIDGETS_AVAILABLE and self._waveform_widget is not None:
                 self._waveform_widget.load_wav(wav)
+            # Forward the grooved MIDI path to the advisor actions bar so the
+            # GROOVED MIDI button in the advisor strip is enabled/disabled.
+            if self._advisor_actions is not None:
+                self._advisor_actions.set_grooved_midi(grooved_midi)
             self._set_status("GROOVE APPLIED — ready to play / export", S.GREEN)
             self._log("Groove: re-render complete.")
         elif t == 'groove_fail':
@@ -2492,6 +2757,14 @@ class SeedComposerApp:
             self.current_composition    = comp
             self.current_midi_path      = midi
             self.current_wav_path       = wav
+            # Snapshot the freshly generated WAV as the canonical "original".
+            # This is set once per generation and never touched by groove
+            # re-renders or advisor preview renders so Play Full Beat always
+            # returns to this baseline.
+            self._original_wav_path     = wav
+            # New generation invalidates any previous groove MIDI — clear the button.
+            if self._advisor_actions is not None:
+                self._advisor_actions.set_grooved_midi(None)
             self.vocal_ready_midi_path  = vocal_midi
             self.vocal_ready_wav_path   = vocal_wav
             self.vocal_ready_composition = vr_comp
@@ -2499,6 +2772,11 @@ class SeedComposerApp:
             self.progress_var.set(100)
             self.progress_label.configure(text="Done!")
             self._display_composition(comp)
+            if self._piano_roll is not None:
+                self._piano_roll.load(comp)
+            # Solo cache is stale after a new generation — clear it silently.
+            if self._mixer_panel is not None:
+                self._mixer_panel._reset_all_solos()
             # ── Update metadata panel and waveform ────────────────────────────
             if PLAYER_WIDGETS_AVAILABLE:
                 if self._metadata_panel is not None:

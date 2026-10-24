@@ -897,6 +897,38 @@ _T = {
     "MIDI und JSON exportieren die aktive Version (Re-Render wenn ausgewaehlt, sonst Original).": (
         "MIDI and JSON export the active version (re-render if selected, otherwise the original).",
         "MIDI et JSON exportent la version active (re-rendu si sélectionné, sinon l'original)."),
+
+    # --- Download-Seite (DAW Light) ---
+    "DAW Light herunterladen": (
+        "Download DAW Light",
+        "Télécharger DAW Light"),
+    "SBS-Synth Master ist das Produktionswerkzeug zum Katalog. Lade es für dein Betriebssystem herunter.": (
+        "SBS-Synth Master is the production tool for the catalogue. Download it for your operating system.",
+        "SBS-Synth Master est l'outil de production du catalogue. Téléchargez-le pour votre système d'exploitation."),
+    "SBS-Synth Master für Mac (.dmg)": (
+        "SBS-Synth Master for Mac (.dmg)",
+        "SBS-Synth Master pour Mac (.dmg)"),
+    "SBS-Synth Master für Windows (.exe)": (
+        "SBS-Synth Master for Windows (.exe)",
+        "SBS-Synth Master pour Windows (.exe)"),
+    "Download .dmg": (
+        "Download .dmg",
+        "Télécharger .dmg"),
+    "Download .exe": (
+        "Download .exe",
+        "Télécharger .exe"),
+    "Noch nicht verfügbar": (
+        "Not available yet",
+        "Pas encore disponible"),
+    "Nur für registrierte Nutzer. Die Dateien werden vom Administrator bereitgestellt.": (
+        "For registered users only. Files are provided by the administrator.",
+        "Réservé aux utilisateurs enregistrés. Les fichiers sont fournis par l'administrateur."),
+    "Datei nicht gefunden. Bitte wende dich an den Administrator.": (
+        "File not found. Please contact the administrator.",
+        "Fichier introuvable. Veuillez contacter l'administrateur."),
+    "Download": (
+        "Download",
+        "Télécharger"),
 }
 
 # ---------------------------------------------------------------------------
@@ -991,6 +1023,7 @@ _JS = {
     "Sample-Zuweisung fuer {label} entfernen.&#10;Die Spur verwendet wieder den eingebauten Synthesizer.": (
         "Remove the sample assignment for {label}.&#10;The track uses the built-in synthesizer again.",
         "Retirer le sample attribué à {label}.&#10;La piste réutilise le synthétiseur intégré."),
+
 }
 
 TRANSLATIONS = {
