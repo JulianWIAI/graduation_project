@@ -122,13 +122,46 @@ Commit `20d802f` — `feat(catalogue): two-layer password recovery`
 
 ---
 
+### TOP 6: Light-Theme-Nachbesserung (Einheit 4) – Master, Telemetrie, Dialog-Übersetzungen
+
+Nach Sichtung von Screenshots aus Einheit 3 wurden vier weitere Probleme identifiziert und behoben:
+
+**Problem 1 — MasterBusChannel-Hintergrund dunkel:**
+`master_bus_channel.py` hat eine eigene `_C`-Palette und setzt in `__init__` `background:{_C['abyss']}` als Widget-Stylesheet. Da Widget-Stylesheets Vorrang vor dem app-weiten QSS haben, blieb der Master-Streifen immer dunkel.
+Lösung: `background:` aus dem `setStyleSheet`-Aufruf entfernt; Border/Border-left/Radius/Margin bleiben.
+
+**Problem 2 — Telemetrie-Container dunkel:**
+`telemetry_manager.py`, `_build_bands_container()`: lokale Variable `_BG = "#0a0a14"` wurde via `container.setStyleSheet(f"background:{_BG};")` gesetzt.
+Lösung: Diese Zeile entfernt; app-weites QSS übernimmt den Hintergrund automatisch.
+
+**Problem 3 — Fenster/Dialoge in falscher Sprache:**
+`AutoMasterDialog` (`auto_mastering_dialog.py`) hatte alle Labels/Titel hartcodiert auf Englisch. Das Fenster wurde stets ohne Sprachparameter geöffnet.
+Lösung:
+- `translations.py`: 17 neue Schlüssel für den Dialog (Fenstertitel, Gruppenboxen, Formular-Labels, Buttons, Platzhaltertexte).
+- `auto_mastering_dialog.py`: `__init__` nimmt jetzt `lang="en"`; alle sichtbaren Strings nutzen `_tr(…, self._lang)`.
+- `gui_windows.py`, `_on_auto_master()`: `AutoMasterDialog(…, lang=self._lang)`.
+
+**Problem 4 — „DS INSTRUMENT"-Dock-Tab immer auf Englisch:**
+`DsPresetPanel` setzt seinen Titel im eigenen `__init__` auf den festen String `"DS INSTRUMENT"`. `retranslate_ui()` aktualisierte diesen Dock bisher nicht.
+Lösung: `translations.py` Eintrag `"DS INSTRUMENT"` ergänzt; `retranslate_ui()` ruft jetzt `self._ds_panel.setWindowTitle(_tr("DS INSTRUMENT", L))` auf.
+
+**Geänderte Dateien:**
+- `daw_light_version/core/translations.py` — 17 neue Schlüssel
+- `daw_light_version/core/master_bus_channel.py` — `background:` aus `setStyleSheet` entfernt
+- `daw_light_version/core/telemetry_manager.py` — `container.setStyleSheet(background)` entfernt
+- `daw_light_version/core/auto_mastering_dialog.py` — `lang`-Parameter + `_tr()`-Aufrufe
+- `daw_light_version/core/gui_windows.py` — `retranslate_ui` + `_on_auto_master` angepasst
+
+---
+
 ## Aufgaben und nächste Schritte
 
 | Aufgabe | Status | Verantwortlich |
 |---|---|---|
 | DAW starten und Settings-Dialog testen | ✅ erledigt | Julian |
 | Dock-Titel auf korrekte Übersetzung prüfen | ✅ erledigt | Julian |
-| Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (3 Iterationen) | Julian |
+| Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (4 Iterationen) | Julian |
+| Dialog-Sprache (AutoMaster, DS INSTRUMENT) umstellen | ✅ erledigt | Julian |
 | Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | offen | Julian |
 | Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | offen | Julian |
 

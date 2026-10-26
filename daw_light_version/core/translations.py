@@ -43,6 +43,24 @@ _T: dict[str, tuple[str, str]] = {
     "EFFECTS":             ("EFFEKTE",                  "EFFETS"),
     "AUDIO FX":            ("AUDIO FX",                 "AUDIO FX"),
     "HUMANIZE":            ("HUMANISIEREN",             "HUMANISER"),
+    "DS INSTRUMENT":       ("DS INSTRUMENT",            "DS INSTRUMENT"),
+    # ── AutoMasterDialog ─────────────────────────────────────────────────────
+    "Auto-Master":                      ("Auto-Master",                       "Auto-Master"),
+    "AUTO-MASTER":                      ("AUTO-MASTER",                       "AUTO-MASTER"),
+    "Offline post-mix mastering chain": ("Offline-Nachbearbeitungskette",     "Chaîne de mastering post-mixage"),
+    "I / O":                            ("E / A",                             "E / S"),
+    "Mastering Parameters":             ("Mastering-Parameter",               "Paramètres de Mastering"),
+    "Input WAV:":                       ("Eingangs-WAV:",                     "WAV d'entrée :"),
+    "Output WAV:":                      ("Ausgangs-WAV:",                     "WAV de sortie :"),
+    "Genre:":                           ("Genre:",                            "Genre :"),
+    "Target LUFS:":                     ("Ziel-LUFS:",                        "LUFS cible :"),
+    "True Peak:":                       ("Wahrer Peak:",                      "Crête réelle :"),
+    "Stereo Width:":                    ("Stereobreite:",                     "Largeur stéréo :"),
+    "Master":                           ("Mastern",                           "Masteriser"),
+    "Browse":                           ("Wählen",                            "Parcourir"),
+    "Auto-Master Complete":             ("Auto-Master abgeschlossen",         "Auto-Master terminé"),
+    "Path to rendered stereo WAV …":    ("Pfad zur gerenderten Stereo-WAV …", "Chemin vers le WAV stéréo rendu …"),
+    "Output path …":                    ("Ausgabepfad …",                     "Chemin de sortie …"),
 }
 
 # Build lookup dicts for non-English languages

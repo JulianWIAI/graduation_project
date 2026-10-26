@@ -5380,11 +5380,12 @@ class MainWindow(QMainWindow):
         self._sb_wav_btn  .setText(_tr("✨ Master WAV",              L))
         self._sb_tel_btn  .setText(_tr("📊 TELEMETRY",              L))
         # Dock titles
-        self._transport_dock.setWindowTitle(_tr("TRANSPORT", L))
-        self._mixer_dock    .setWindowTitle(_tr("MIXER",     L))
-        self._midi_fx_dock  .setWindowTitle(_tr("EFFECTS",   L))
-        self._audio_fx_dock .setWindowTitle(_tr("AUDIO FX",  L))
-        self._humanizer_dock.setWindowTitle(_tr("HUMANIZE",  L))
+        self._transport_dock.setWindowTitle(_tr("TRANSPORT",    L))
+        self._mixer_dock    .setWindowTitle(_tr("MIXER",        L))
+        self._midi_fx_dock  .setWindowTitle(_tr("EFFECTS",      L))
+        self._audio_fx_dock .setWindowTitle(_tr("AUDIO FX",     L))
+        self._humanizer_dock.setWindowTitle(_tr("HUMANIZE",     L))
+        self._ds_panel      .setWindowTitle(_tr("DS INSTRUMENT", L))
 
     def _apply_theme(self) -> None:
         """Switch between dark (Bioluminescent Crystal) and light palette."""
@@ -7265,7 +7266,7 @@ class MainWindow(QMainWindow):
         """
         # Try to pre-fill with the last known export path.
         last_wav = getattr(self, "_last_export_wav", "")
-        dlg = AutoMasterDialog(self, input_path=last_wav)
+        dlg = AutoMasterDialog(self, input_path=last_wav, lang=self._lang)
         dlg.master_completed.connect(self._on_auto_master_done)
         dlg.exec()
 

@@ -328,7 +328,6 @@ class TelemetryManager(QObject):
         _GRN = "#44ffaa"
 
         container = QWidget()
-        container.setStyleSheet(f"background:{_BG};")
         vlay = QVBoxLayout(container)
         vlay.setContentsMargins(4, 4, 4, 2)
         vlay.setSpacing(3)

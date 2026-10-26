@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 from .auto_mastering import AutoMasterEngine
+from .translations import translate as _tr
 
 logger = logging.getLogger(__name__)
 
@@ -216,9 +217,10 @@ class AutoMasterDialog(QDialog):
     # play the result or import it as a new audio clip.
     master_completed = Signal(str)   # output_path
 
-    def __init__(self, parent=None, input_path: str = "") -> None:
+    def __init__(self, parent=None, input_path: str = "", lang: str = "en") -> None:
         super().__init__(parent)
-        self.setWindowTitle("Auto-Master")
+        self._lang = lang
+        self.setWindowTitle(_tr("Auto-Master", lang))
         self.setMinimumWidth(460)
         self._worker: Optional[_MasterWorker] = None
 
@@ -236,7 +238,7 @@ class AutoMasterDialog(QDialog):
         root.setSpacing(10)
 
         # Title
-        title = QLabel("AUTO-MASTER")
+        title = QLabel(_tr("AUTO-MASTER", self._lang))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(
             f"color:{_C['cyan']}; font-size:14px; font-weight:bold;"
@@ -244,7 +246,7 @@ class AutoMasterDialog(QDialog):
         )
         root.addWidget(title)
 
-        subtitle = QLabel("Offline post-mix mastering chain")
+        subtitle = QLabel(_tr("Offline post-mix mastering chain", self._lang))
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet(
             f"color:{_C['dim']}; font-size:9px; background:transparent;"
@@ -252,33 +254,33 @@ class AutoMasterDialog(QDialog):
         root.addWidget(subtitle)
 
         # ── I/O ───────────────────────────────────────────────────────────────
-        io_box = QGroupBox("I / O")
+        io_box = QGroupBox(_tr("I / O", self._lang))
         io_lay = QFormLayout(io_box)
         io_lay.setSpacing(6)
 
         self._input_edit = QLineEdit()
-        self._input_edit.setPlaceholderText("Path to rendered stereo WAV …")
+        self._input_edit.setPlaceholderText(_tr("Path to rendered stereo WAV …", self._lang))
         self._input_edit.textChanged.connect(self._on_input_changed)
-        btn_in = self._small_button("Browse")
+        btn_in = self._small_button(_tr("Browse", self._lang))
         btn_in.clicked.connect(self._browse_input)
         in_row = QHBoxLayout()
         in_row.addWidget(self._input_edit, 1)
         in_row.addWidget(btn_in)
-        io_lay.addRow("Input WAV:", in_row)
+        io_lay.addRow(_tr("Input WAV:", self._lang), in_row)
 
         self._output_edit = QLineEdit()
-        self._output_edit.setPlaceholderText("Output path …")
-        btn_out = self._small_button("Browse")
+        self._output_edit.setPlaceholderText(_tr("Output path …", self._lang))
+        btn_out = self._small_button(_tr("Browse", self._lang))
         btn_out.clicked.connect(self._browse_output)
         out_row = QHBoxLayout()
         out_row.addWidget(self._output_edit, 1)
         out_row.addWidget(btn_out)
-        io_lay.addRow("Output WAV:", out_row)
+        io_lay.addRow(_tr("Output WAV:", self._lang), out_row)
 
         root.addWidget(io_box)
 
         # ── Parameters ────────────────────────────────────────────────────────
-        param_box = QGroupBox("Mastering Parameters")
+        param_box = QGroupBox(_tr("Mastering Parameters", self._lang))
         param_lay = QFormLayout(param_box)
         param_lay.setSpacing(8)
 
@@ -288,7 +290,7 @@ class AutoMasterDialog(QDialog):
             "electronic", "hiphop", "trap", "pop", "classical", "cinematic", "other",
         ])
         self._genre_combo.setCurrentText("other")
-        param_lay.addRow("Genre:", self._genre_combo)
+        param_lay.addRow(_tr("Genre:", self._lang), self._genre_combo)
 
         # Target LUFS
         self._lufs_spin = QDoubleSpinBox()
@@ -300,7 +302,7 @@ class AutoMasterDialog(QDialog):
         self._lufs_spin.setToolTip(
             "Spotify -14 · Apple Music -16 · YouTube -14 · CD -9"
         )
-        param_lay.addRow("Target LUFS:", self._lufs_spin)
+        param_lay.addRow(_tr("Target LUFS:", self._lang), self._lufs_spin)
 
         # True Peak
         self._tp_spin = QDoubleSpinBox()
@@ -313,7 +315,7 @@ class AutoMasterDialog(QDialog):
             "Standard streaming delivery: -1.0 dBTP.  "
             "Use -0.3 for CD or broadcast."
         )
-        param_lay.addRow("True Peak:", self._tp_spin)
+        param_lay.addRow(_tr("True Peak:", self._lang), self._tp_spin)
 
         # Stereo Width
         width_row = QHBoxLayout()
@@ -327,7 +329,7 @@ class AutoMasterDialog(QDialog):
         self._width_slider.valueChanged.connect(self._on_width_changed)
         width_row.addWidget(self._width_slider, 1)
         width_row.addWidget(self._width_label)
-        param_lay.addRow("Stereo Width:", width_row)
+        param_lay.addRow(_tr("Stereo Width:", self._lang), width_row)
 
         root.addWidget(param_box)
 
@@ -361,7 +363,7 @@ class AutoMasterDialog(QDialog):
         # ── Buttons ───────────────────────────────────────────────────────────
         btn_row = QHBoxLayout()
 
-        self._start_btn = QPushButton("▶  Master")
+        self._start_btn = QPushButton(f"▶  {_tr('Master', self._lang)}")
         self._start_btn.setFixedHeight(34)
         self._start_btn.setStyleSheet(
             f"QPushButton {{ background:{_C['deep']}; color:{_C['cyan']};"
@@ -372,7 +374,7 @@ class AutoMasterDialog(QDialog):
         )
         self._start_btn.clicked.connect(self._start_mastering)
 
-        self._cancel_btn = QPushButton("✕  Close")
+        self._cancel_btn = QPushButton(f"✕  {_tr('Close', self._lang)}")
         self._cancel_btn.setFixedHeight(34)
         self._cancel_btn.setStyleSheet(
             f"QPushButton {{ background:{_C['deep']}; color:{_C['dim']};"

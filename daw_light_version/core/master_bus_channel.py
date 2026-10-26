@@ -195,7 +195,6 @@ class MasterBusChannel(QFrame):
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.setStyleSheet(f"""
             MasterBusChannel {{
-                background: {_C["abyss"]};
                 border: 1px solid rgba(0,229,255,0.25);
                 border-left: 2px solid {_C["cyan"]};
                 border-radius: 8px;
