@@ -183,14 +183,35 @@ Lösung:
 
 ---
 
+### TOP 8: MasterBusChannel – transparente Hintergründe (Einheit 6)
+
+Visueller Test des Master-Sliders im Clair-Theme (Screenshot 19:12 Uhr) zeigte: AUDITION-Buttons PREV/STRM, Fader-Groove und LIMITER-Button weiterhin dunkel, obwohl `set_theme(palette)` korrekt aufgerufen wurde.
+
+**Ursache:** `set_theme()` mutiert `_C` und ruft `setStyleSheet()` erneut auf — jedoch reagieren die Buttons auf den Aufruf zur Laufzeit nicht sichtbar, da Qt den Stil bereits gecacht hatte. Das grundlegende Problem: Alle `background:{_C['deep']}` in den Widget-Stylesheets sind bei Initialisierung eingefrorene Dunkelwerte.
+
+**Lösung:** Dieselbe Strategie wie bei allen anderen Buttons im DAW — `background:` vollständig entfernen, damit das app-weite QSS den Hintergrund übernimmt:
+- `_mode_btn_style()` (inaktiver Zustand): `background: {_C['deep']}` → `background: transparent`
+- Fader `setStyleSheet` in `__init__`: `background:{_C['deep']}` aus Groove und Sub-Page entfernt
+- LIMITER-Button `setStyleSheet` in `__init__`: `background:{_C['deep']}` aus Normal- und Disabled-Zustand entfernt
+- Ceiling-Spinbox `setStyleSheet` in `__init__`: `background:{_C['deep']}` entfernt
+
+**Ergebnis (Screenshot 19:27 Uhr):** AUDITION-Buttons, Fader und LIMITER-Bereich korrekt hell im Clair-Theme. VU-Meter-Balken bleiben bewusst dunkel (Messgeräte-Konvention).
+
+**Commit:** `b277ae2`
+
+**Geänderte Datei:** `daw_light_version/core/master_bus_channel.py`
+
+---
+
 ## Aufgaben und nächste Schritte
 
 | Aufgabe | Status | Verantwortlich |
 |---|---|---|
 | DAW starten und Settings-Dialog testen | ✅ erledigt | Julian |
 | Dock-Titel auf korrekte Übersetzung prüfen | ✅ erledigt | Julian |
-| Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (4 Iterationen) | Julian |
-| Dialog-Sprache (AutoMaster, DS INSTRUMENT) umstellen | ✅ erledigt | Julian |
+| Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (6 Iterationen) | Julian |
+| Dialog-Sprache (AutoMaster, DS INSTRUMENT, AI Mix, Auto-Assign) | ✅ erledigt | Julian |
+| Master-Slider im Clair-Theme korrekt | ✅ erledigt | Julian |
 | Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | offen | Julian |
 | Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | offen | Julian |
 
