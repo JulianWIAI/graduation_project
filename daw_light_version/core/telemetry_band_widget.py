@@ -58,6 +58,11 @@ class TelemetryBandWidget(QWidget):
         self._has_benchmark      = False
         self._bench_targets:    List[float] = []
         self._bench_tolerances: List[float] = []
+        self._bg = _BG
+
+    def set_bg(self, color: QColor) -> None:
+        self._bg = color
+        self.update()
 
     def set_total_energy(self, value: float) -> None:
         """Store the mean band energy (0-1) for the Total Energy strip overlay."""
@@ -99,7 +104,7 @@ class TelemetryBandWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, False)
 
-        painter.fillRect(0, 0, _W, _H, _BG)
+        painter.fillRect(0, 0, _W, _H, self._bg)
 
         n        = len(_BANDS)
         bw       = _W // n

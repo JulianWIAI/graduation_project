@@ -32,6 +32,11 @@ class TelemetryChromaWidget(QWidget):
         super().__init__(parent)
         self.setFixedSize(_W, _H)
         self._chroma = np.zeros(12, dtype=np.float32)
+        self._bg = _BG
+
+    def set_bg(self, color: QColor) -> None:
+        self._bg = color
+        self.update()
 
     def update_frame(self, frame) -> None:
         """Store chroma values and schedule a repaint."""
@@ -41,7 +46,7 @@ class TelemetryChromaWidget(QWidget):
     def paintEvent(self, _event) -> None:
         painter = QPainter(self)
 
-        painter.fillRect(0, 0, _W, _H, _BG)
+        painter.fillRect(0, 0, _W, _H, self._bg)
 
         n        = 12
         bw       = _W // n

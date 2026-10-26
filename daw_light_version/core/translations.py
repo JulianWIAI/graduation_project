@@ -61,6 +61,18 @@ _T: dict[str, tuple[str, str]] = {
     "Auto-Master Complete":             ("Auto-Master abgeschlossen",         "Auto-Master terminé"),
     "Path to rendered stereo WAV …":    ("Pfad zur gerenderten Stereo-WAV …", "Chemin vers le WAV stéréo rendu …"),
     "Output path …":                    ("Ausgabepfad …",                     "Chemin de sortie …"),
+    # ── AI Mix dialog ─────────────────────────────────────────────────────────
+    "AI Mix":                           ("KI Mix",                            "Mix IA"),
+    "AI Mix — Select Genre":            ("KI Mix — Genre wählen",             "Mix IA — Choisir le genre"),
+    "Choose a genre to apply the AI FX template:": (
+        "Genre für die KI-FX-Vorlage wählen:",
+        "Choisir un genre pour le modèle FX IA :"),
+    "▶  Apply":                         ("▶  Anwenden",                       "▶  Appliquer"),
+    "Cancel":                           ("Abbrechen",                         "Annuler"),
+    "AI Mix Error":                     ("KI Mix Fehler",                     "Erreur Mix IA"),
+    "No MIDI tracks are loaded. Open a MIDI file first.": (
+        "Keine MIDI-Spuren geladen. Bitte zuerst eine MIDI-Datei öffnen.",
+        "Aucune piste MIDI chargée. Ouvrez d'abord un fichier MIDI."),
 }
 
 # Build lookup dicts for non-English languages

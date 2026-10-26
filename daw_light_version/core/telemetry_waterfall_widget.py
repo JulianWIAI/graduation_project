@@ -55,10 +55,15 @@ class TelemetryWaterfallWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setFixedSize(_TOT_W, _TOT_H)
+        self._bg = _BG
 
         # QImage pixel buffer for the waterfall (RGB888 = 3 bytes per pixel).
         self._img = QImage(_PLOT_W, _PLOT_H, QImage.Format_RGB888)
         self._img.fill(Qt.black)
+
+    def set_bg(self, color: QColor) -> None:
+        self._bg = color
+        self.update()
 
         # Numpy view into QImage memory — modifications are reflected immediately.
         # Shape: (height, width, 3) = (_PLOT_H, _PLOT_W, 3)
@@ -89,7 +94,7 @@ class TelemetryWaterfallWidget(QWidget):
         painter = QPainter(self)
 
         # Background (label area)
-        painter.fillRect(0, 0, _TOT_W, _TOT_H, _BG)
+        painter.fillRect(0, 0, _TOT_W, _TOT_H, self._bg)
 
         # Waterfall image
         painter.drawImage(_LABEL_W, 0, self._img)

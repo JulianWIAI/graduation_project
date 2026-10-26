@@ -5398,6 +5398,8 @@ class MainWindow(QMainWindow):
         # Force repaint on the custom-drawn canvases (not covered by QSS).
         self._piano_roll.update()
         self._arrange_view.update()
+        # Update telemetry widget backgrounds (each has its own frozen _BG).
+        self._telemetry.set_theme(palette)
 
     def _wire_signals(self) -> None:
         t = self._transport
@@ -7289,33 +7291,31 @@ class MainWindow(QMainWindow):
         tracks = self._midi.get_all_tracks()
         if not tracks:
             QMessageBox.information(
-                self, "AI Mix",
-                "No MIDI tracks are loaded. Open a MIDI file first.",
+                self, _tr("AI Mix", self._lang),
+                _tr("No MIDI tracks are loaded. Open a MIDI file first.", self._lang),
             )
             return
 
         # ── Genre picker dialog ───────────────────────────────────────────────
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox
-        _C = {"abyss": "#060A18", "deep": "#0A0E22", "cyan": "#00E5FF",
-              "purple": "#9945FF", "text": "#C8E6FF", "dim": "#3D5A80"}
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("AI Mix — Select Genre")
+        dlg.setWindowTitle(_tr("AI Mix — Select Genre", self._lang))
         dlg.setFixedSize(300, 140)
         dlg.setStyleSheet(
-            f"QDialog {{ background:{_C['abyss']}; color:{_C['text']}; }}"
-            f"QLabel  {{ color:{_C['text']}; font-size:10px; background:transparent; }}"
-            f"QComboBox {{ background:{_C['deep']}; color:{_C['cyan']};"
+            f"QDialog {{ background:{C['abyss']}; color:{C['text']}; }}"
+            f"QLabel  {{ color:{C['text']}; font-size:10px; background:transparent; }}"
+            f"QComboBox {{ background:{C['deep']}; color:{C['cyan']};"
             f" border:1px solid rgba(153,69,255,0.4); border-radius:4px;"
             f" font-size:10px; padding:3px 8px; }}"
-            f"QComboBox QAbstractItemView {{ background:{_C['deep']};"
-            f" color:{_C['text']}; selection-background-color:{_C['purple']}; }}"
+            f"QComboBox QAbstractItemView {{ background:{C['deep']};"
+            f" color:{C['text']}; selection-background-color:{C['purple']}; }}"
         )
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(16, 16, 16, 12)
         lay.setSpacing(10)
 
-        lbl = QLabel("Choose a genre to apply the AI FX template:")
+        lbl = QLabel(_tr("Choose a genre to apply the AI FX template:", self._lang))
         lbl.setWordWrap(True)
         lay.addWidget(lbl)
 
@@ -7328,12 +7328,12 @@ class MainWindow(QMainWindow):
         lay.addWidget(combo)
 
         btn_row = QHBoxLayout()
-        btn_apply  = QPushButton("▶  Apply")
-        btn_cancel = QPushButton("Cancel")
-        for btn, color in ((btn_apply, _C["cyan"]), (btn_cancel, _C["dim"])):
+        btn_apply  = QPushButton(_tr("▶  Apply", self._lang))
+        btn_cancel = QPushButton(_tr("Cancel", self._lang))
+        for btn, color in ((btn_apply, C["cyan"]), (btn_cancel, C["dim"])):
             btn.setFixedHeight(28)
             btn.setStyleSheet(
-                f"QPushButton {{ background:{_C['deep']}; color:{color};"
+                f"QPushButton {{ background:{C['deep']}; color:{color};"
                 f" border:1px solid {color}; border-radius:4px; font-size:10px; }}"
                 f"QPushButton:hover {{ background:rgba(0,0,0,0.2); }}"
             )
@@ -7363,7 +7363,7 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             logger.warning("AIMixAssistant.apply failed: %s", exc)
             QMessageBox.warning(
-                self, "AI Mix Error",
+                self, _tr("AI Mix Error", self._lang),
                 f"Failed to apply AI Mix template:\n{exc}",
             )
 

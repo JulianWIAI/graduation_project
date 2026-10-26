@@ -418,6 +418,14 @@ class TelemetryManager(QObject):
             self._timer.start()   # always runs — analyzer is never None
             self._visible = True
 
+    def set_theme(self, palette: dict) -> None:
+        """Update background colour of all five canvas widgets when the theme changes."""
+        from PySide6.QtGui import QColor as _QColor
+        bg = _QColor(palette.get("abyss", "#060A18"))
+        for widget in (self._waveform, self._bands, self._chroma,
+                       self._waterfall, self._hpss):
+            widget.set_bg(bg)
+
     def set_gain_compensation_callback(self, cb) -> None:
         """Register cb(gain_mult: float) — called on the Qt main thread when
         Total Energy exceeds 120 % of the nominal reference level."""

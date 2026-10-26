@@ -33,6 +33,11 @@ class TelemetryWaveformWidget(QWidget):
         self.setFixedSize(_W, _H)
         self._samples = np.zeros(_W, dtype=np.float32)
         self._rms     = 0.0
+        self._bg      = _BG
+
+    def set_bg(self, color: QColor) -> None:
+        self._bg = color
+        self.update()
 
     def update_frame(self, frame) -> None:
         """Receive a new TelemetryFrame and schedule a repaint."""
@@ -54,7 +59,7 @@ class TelemetryWaveformWidget(QWidget):
         mid    = plot_h // 2
 
         # Background
-        painter.fillRect(0, 0, _W, _H, _BG)
+        painter.fillRect(0, 0, _W, _H, self._bg)
 
         # Grid lines
         painter.setPen(QPen(_GRID_COL, 1))

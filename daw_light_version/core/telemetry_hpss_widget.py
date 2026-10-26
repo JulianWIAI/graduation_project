@@ -49,6 +49,11 @@ class TelemetryHpssWidget(QWidget):
         self._has_benchmark   = False
         self._hp_target       = 0.5
         self._hp_tolerance    = 0.1
+        self._bg = _BG
+
+    def set_bg(self, color: QColor) -> None:
+        self._bg = color
+        self.update()
 
     # ── Benchmark API ─────────────────────────────────────────────────────────
 
@@ -108,7 +113,7 @@ class TelemetryHpssWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        painter.fillRect(0, 0, _W, _H, _BG)
+        painter.fillRect(0, 0, _W, _H, self._bg)
 
         mid     = _H // 2
         amp_max = mid - 6
