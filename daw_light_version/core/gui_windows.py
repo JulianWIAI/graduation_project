@@ -5400,6 +5400,8 @@ class MainWindow(QMainWindow):
         self._arrange_view.update()
         # Update telemetry widget backgrounds (each has its own frozen _BG).
         self._telemetry.set_theme(palette)
+        # Update master bus channel strip (has its own frozen _C dict).
+        self._master_bus_channel.set_theme(palette)
 
     def _wire_signals(self) -> None:
         t = self._transport

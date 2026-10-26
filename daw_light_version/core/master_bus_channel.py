@@ -460,6 +460,74 @@ class MasterBusChannel(QFrame):
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
+    def set_theme(self, palette: dict) -> None:
+        """Recolour all child widgets to match *palette* (dark or light)."""
+        _C.update(palette)
+
+        # Mode buttons
+        _modes_info = [
+            (AUDITION_BYPASS,    _C["text_dim"]),
+            (AUDITION_PREVIEW,   _C["orange"]),
+            (AUDITION_STREAMING, _C["cyan"]),
+        ]
+        for mid, col in _modes_info:
+            btn = self._mode_group.button(mid)
+            if btn is not None:
+                btn.setStyleSheet(
+                    self._mode_btn_style(col, active=(mid == self._active_mode))
+                )
+
+        # Gain fader
+        self._fader.setStyleSheet(f"""
+            QSlider::groove:vertical {{
+                background:{_C["deep"]};
+                width:6px; border-radius:3px;
+            }}
+            QSlider::handle:vertical {{
+                background:{_C["cyan"]};
+                border:none; height:12px; width:18px;
+                margin:0 -6px; border-radius:4px;
+            }}
+            QSlider::sub-page:vertical {{
+                background:{_C["surface"]}; border-radius:3px;
+            }}
+        """)
+
+        # Limiter ON/OFF toggle
+        self._lim_btn.setStyleSheet(f"""
+            QPushButton {{
+                background:{_C["deep"]};
+                border:1px solid rgba(0,229,255,0.3);
+                border-radius:3px; color:{_C["text_dim"]}; font-size:10px;
+            }}
+            QPushButton:checked {{
+                background:rgba(0,229,255,0.15);
+                border-color:{_C["cyan"]}; color:{_C["cyan"]};
+            }}
+            QPushButton:disabled {{
+                background:{_C["deep"]}; border-color:rgba(0,229,255,0.08);
+                color:rgba(61,90,128,0.4);
+            }}
+        """)
+
+        # Ceiling spinbox
+        self._ceil_spin.setStyleSheet(f"""
+            QDoubleSpinBox {{
+                background:{_C["deep"]};
+                border:1px solid rgba(0,229,255,0.2);
+                border-radius:3px; color:{_C["text"]}; font-size:9px;
+                padding:2px 4px;
+            }}
+            QDoubleSpinBox:focus   {{ border-color:{_C["cyan"]}; }}
+            QDoubleSpinBox:disabled {{
+                color:rgba(61,90,128,0.4);
+                border-color:rgba(0,229,255,0.06);
+            }}
+        """)
+
+        # Force repaint of the custom-drawn VU meter
+        self._meter.update()
+
     @staticmethod
     def _mode_btn_style(color: str, active: bool) -> str:
         """Return the stylesheet for a mode toggle button in its current state."""

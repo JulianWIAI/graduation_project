@@ -154,6 +154,35 @@ Lösung: `translations.py` Eintrag `"DS INSTRUMENT"` ergänzt; `retranslate_ui()
 
 ---
 
+### TOP 7: Weitere Nachbesserungen (Einheit 5)
+
+Nach Sichtung weiterer Screenshots wurden drei zusätzliche Probleme identifiziert und behoben:
+
+**Problem 1 — MasterBusChannel: Innere Widgets bleiben dunkel im Light-Theme:**
+Die Unterwidgets des Master-Strips (AUDITION-Buttons PREV/STRM, Gain-Fader-Groove, LIMITER-Button, Ceiling-Spinbox) verwenden alle das eingefrorene Modul-`_C`-Dict aus `master_bus_channel.py`. Das frühere Fix hat nur den äußeren Container-Hintergrund entfernt, nicht die Kinder-Stylesheets.
+Lösung: `MasterBusChannel.set_theme(palette)` hinzugefügt — mutiert `_C` in-place und ruft `setStyleSheet()` auf alle Unterwidgets sowie `self._meter.update()` auf. `_apply_theme()` in `gui_windows.py` ruft nun `self._master_bus_channel.set_theme(palette)` auf.
+
+**Problem 2 — Telemetrie-Widget-Hintergründe (Verbesserung vorheriger Fix):**
+Alle 5 Telemetrie-Canvas-Widgets (`TelemetryWaveformWidget`, `TelemetryBandWidget`, `TelemetryChromaWidget`, `TelemetryWaterfallWidget`, `TelemetryHpssWidget`) haben eigene eingefrorene `_BG = QColor(...)` Modulkonstanten in `paintEvent`.
+Lösung: `set_bg(color: QColor)` / `self._bg`-Instanzmuster in allen 5 Widgets; `TelemetryManager.set_theme(palette)` ruft `set_bg()` auf alle auf; `_apply_theme()` ruft `self._telemetry.set_theme(palette)` auf. *Hinweis: Telemetrie-Panels behalten bewusst dunklen Hintergrund — Oszilloskop- und Spektrum-Anzeigen sind in der DAW-Praxis stets dunkel (wie FL Studio, Ableton), da die farbigen Signallinien auf weißem Hintergrund nicht lesbar sind.*
+
+**Problem 3 — Auto-Assign Instruments / KI-Mix-Dialog noch auf Englisch:**
+`_on_randomize_instruments()` und `_on_ai_mix()` verwendeten hartcodierte englische QMessageBox-Titel und -Texte sowie ein eingefrorenes lokales `_C`-Dict im AI-Mix-Dialog.
+Lösung:
+- `translations.py`: 29 neue Schlüssel (AutoMaster, AI Mix, Auto-Assign, DS INSTRUMENT)
+- `_on_randomize_instruments()`: alle 3 sichtbaren Strings nutzen `_tr()`; dynamische Ergebnisnachricht mit `.format(n=..., total=...)`
+- `_on_ai_mix()`: lokales `_C` durch live `C` ersetzt; Fenstertitel, Label und Buttons nutzen `_tr()`
+
+**Commits dieser Einheit:** `10c73c8`, `6ac3c18`, `f7d7b11`
+
+**Geänderte Dateien (Einheit 5):**
+- `daw_light_version/core/master_bus_channel.py` — `set_theme(palette)` hinzugefügt
+- `daw_light_version/core/gui_windows.py` — `_apply_theme` + AI-Mix-Dialog + Auto-Assign
+- `daw_light_version/core/translations.py` — 29 neue Schlüssel gesamt
+- `daw_light_version/core/telemetry_manager.py` + 5 Telemetrie-Widget-Dateien — `set_bg()`-Muster
+
+---
+
 ## Aufgaben und nächste Schritte
 
 | Aufgabe | Status | Verantwortlich |
