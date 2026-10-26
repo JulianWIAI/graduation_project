@@ -138,6 +138,9 @@ C = {
     ],
 }
 
+# Frozen copy of the dark palette — used to restore C when switching back to dark.
+DARK_PALETTE: dict = {k: (list(v) if isinstance(v, list) else v) for k, v in C.items()}
+
 # ═══════════════════════════════════════════════════════════════════════════
 # LIGHT THEME PALETTE
 # ═══════════════════════════════════════════════════════════════════════════
@@ -4725,7 +4728,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("SBS-Synth Master  ✦  Crystal DAW")
         self.setMinimumSize(1200, 750)
-        _palette = LIGHT_PALETTE if self._theme == "light" else C
+        _palette = LIGHT_PALETTE if self._theme == "light" else DARK_PALETTE
+        C.update(_palette)  # mutate early so widget paintEvents use correct colours
         QApplication.instance().setStyleSheet(build_stylesheet(_palette))
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -5389,8 +5393,15 @@ class MainWindow(QMainWindow):
 
     def _apply_theme(self) -> None:
         """Switch between dark (Bioluminescent Crystal) and light palette."""
-        palette = LIGHT_PALETTE if self._theme == "light" else C
+        palette = LIGHT_PALETTE if self._theme == "light" else DARK_PALETTE
+        # Mutate the module-level C dict in place so paintEvent() calls in
+        # custom-drawing widgets (PianoRollWidget, TrackArrangeView, …)
+        # pick up the new colours on their next repaint.
+        C.update(palette)
         QApplication.instance().setStyleSheet(build_stylesheet(palette))
+        # Force repaint on the custom-drawn canvases (not covered by QSS).
+        self._piano_roll.update()
+        self._arrange_view.update()
 
     def _wire_signals(self) -> None:
         t = self._transport
