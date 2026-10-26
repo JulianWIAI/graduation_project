@@ -28,7 +28,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from PySide6.QtCore import Qt, QPoint, QRectF, QPointF, QTimer, Signal, Slot
+from PySide6.QtCore import Qt, QPoint, QRectF, QPointF, QTimer, Signal, Slot, QSettings
 from PySide6.QtGui import (
     QColor, QPainter, QPen, QBrush, QFont, QKeyEvent,
     QLinearGradient, QRadialGradient, QPainterPath, QPolygonF,
@@ -88,6 +88,7 @@ from .dspreset_panel import DsPresetPanel
 from .dspreset_engine import get_ds_engine, load_preset_into_engine
 from .dspreset_realtime_player import DsRealTimePlayer
 from .telemetry_manager import TelemetryManager
+from .translations import translate as _tr, LANGUAGES, LANGUAGE_LABELS
 
 logger = logging.getLogger(__name__)
 
@@ -137,179 +138,214 @@ C = {
     ],
 }
 
-STYLESHEET = f"""
+# ═══════════════════════════════════════════════════════════════════════════
+# LIGHT THEME PALETTE
+# ═══════════════════════════════════════════════════════════════════════════
+
+LIGHT_PALETTE: dict = {
+    "void":      "#F0F2F5",   # main window background
+    "abyss":     "#E4E7ED",   # panel backgrounds
+    "deep":      "#FFFFFF",   # widget backgrounds
+    "surface":   "#D8DCE8",   # hover / elevated surface
+    "cyan":      "#0077CC",   # primary — professional blue
+    "pink":      "#D4006A",   # secondary — deep rose
+    "purple":    "#6633CC",   # tertiary — muted purple
+    "lime":      "#1A9E00",   # active / playing — natural green
+    "gold":      "#B8860B",   # markers / special — dark gold
+    "orange":    "#CC4400",   # warning / record
+    "text":      "#1A1F2E",   # primary text — dark navy
+    "text_dim":  "#6B7A99",   # secondary text — medium slate
+    "tracks": [
+        "#0077CC", "#CC0055", "#1A9E00", "#B8860B",
+        "#6633CC", "#CC4400", "#008866", "#CC2222",
+        "#3366CC", "#CC6688", "#5A8800", "#CC7722",
+        "#7744CC", "#227755", "#CC3366", "#1188AA",
+    ],
+}
+
+
+def _hex_to_rgb(h: str) -> tuple[int, int, int]:
+    h = h.lstrip("#")
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def build_stylesheet(p: dict) -> str:
+    """Generate a complete QSS stylesheet from a palette dict *p*."""
+    cy_r, cy_g, cy_b = _hex_to_rgb(p["cyan"])
+    pk_r, pk_g, pk_b = _hex_to_rgb(p["pink"])
+    return f"""
 /* ─── Global ─────────────────────────────────────────────────────────── */
 QMainWindow, QWidget {{
-    background-color: {C["void"]};
-    color: {C["text"]};
+    background-color: {p["void"]};
+    color: {p["text"]};
     font-family: 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
     font-size: 13px;
 }}
 QDockWidget {{
-    background: {C["abyss"]};
+    background: {p["abyss"]};
     titlebar-close-icon: none;
 }}
 QDockWidget::title {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 {C["deep"]}, stop:1 {C["abyss"]});
+        stop:0 {p["deep"]}, stop:1 {p["abyss"]});
     padding: 5px 10px;
     font-weight: bold; font-size: 11px; letter-spacing: 2px;
-    color: {C["cyan"]};
-    border-bottom: 1px solid rgba(0,229,255,0.3);
+    color: {p["cyan"]};
+    border-bottom: 1px solid rgba({cy_r},{cy_g},{cy_b},0.3);
 }}
 
 /* ─── Buttons ─────────────────────────────────────────────────────────── */
 QPushButton {{
     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 {C["surface"]}, stop:1 {C["deep"]});
-    color: {C["text"]};
-    border: 1px solid rgba(0,229,255,0.25);
+        stop:0 {p["surface"]}, stop:1 {p["deep"]});
+    color: {p["text"]};
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.25);
     border-radius: 5px;
     padding: 5px 14px;
     font-size: 12px; letter-spacing: 0.5px;
 }}
 QPushButton:hover {{
     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 rgba(0,229,255,0.18), stop:1 rgba(0,229,255,0.08));
-    border: 1px solid rgba(0,229,255,0.7);
-    color: {C["cyan"]};
+        stop:0 rgba({cy_r},{cy_g},{cy_b},0.18), stop:1 rgba({cy_r},{cy_g},{cy_b},0.08));
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.7);
+    color: {p["cyan"]};
 }}
 QPushButton:pressed {{
-    background: rgba(0,229,255,0.25);
-    border: 1px solid {C["cyan"]};
+    background: rgba({cy_r},{cy_g},{cy_b},0.25);
+    border: 1px solid {p["cyan"]};
 }}
 QPushButton:checked {{
     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 rgba(255,45,158,0.4), stop:1 rgba(255,45,158,0.15));
-    border: 1px solid {C["pink"]};
-    color: {C["pink"]};
+        stop:0 rgba({pk_r},{pk_g},{pk_b},0.4), stop:1 rgba({pk_r},{pk_g},{pk_b},0.15));
+    border: 1px solid {p["pink"]};
+    color: {p["pink"]};
 }}
 
 /* ─── Sliders ─────────────────────────────────────────────────────────── */
 QSlider::groove:horizontal {{
     height: 3px;
-    background: rgba(0,229,255,0.12);
+    background: rgba({cy_r},{cy_g},{cy_b},0.12);
     border-radius: 1px;
 }}
 QSlider::sub-page:horizontal {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 {C["purple"]}, stop:1 {C["cyan"]});
+        stop:0 {p["purple"]}, stop:1 {p["cyan"]});
     border-radius: 1px;
 }}
 QSlider::handle:horizontal {{
-    background: {C["cyan"]};
-    border: 2px solid {C["abyss"]};
+    background: {p["cyan"]};
+    border: 2px solid {p["abyss"]};
     width: 13px; height: 13px;
     border-radius: 7px; margin: -5px 0;
 }}
 QSlider::groove:vertical {{
     width: 3px;
-    background: rgba(0,229,255,0.12);
+    background: rgba({cy_r},{cy_g},{cy_b},0.12);
     border-radius: 1px;
 }}
 QSlider::sub-page:vertical {{
     background: qlineargradient(x1:0,y1:1,x2:0,y2:0,
-        stop:0 {C["purple"]}, stop:1 {C["cyan"]});
+        stop:0 {p["purple"]}, stop:1 {p["cyan"]});
     border-radius: 1px;
 }}
 QSlider::handle:vertical {{
-    background: {C["cyan"]};
-    border: 2px solid {C["abyss"]};
+    background: {p["cyan"]};
+    border: 2px solid {p["abyss"]};
     width: 13px; height: 13px;
     border-radius: 7px; margin: 0 -5px;
 }}
 
 /* ─── Combos / Spinboxes ─────────────────────────────────────────────── */
 QComboBox, QSpinBox, QDoubleSpinBox {{
-    background: {C["deep"]};
-    border: 1px solid rgba(0,229,255,0.2);
+    background: {p["deep"]};
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
     border-radius: 4px; padding: 3px 8px;
-    color: {C["text"]};
+    color: {p["text"]};
 }}
 QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-    border-color: rgba(0,229,255,0.6);
+    border-color: rgba({cy_r},{cy_g},{cy_b},0.6);
 }}
 QComboBox::drop-down {{ border: none; }}
 QComboBox QAbstractItemView {{
-    background: {C["deep"]};
-    border: 1px solid rgba(0,229,255,0.3);
-    selection-background-color: rgba(0,229,255,0.2);
-    color: {C["text"]};
+    background: {p["deep"]};
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.3);
+    selection-background-color: rgba({cy_r},{cy_g},{cy_b},0.2);
+    color: {p["text"]};
 }}
 
 /* ─── Scroll bars ────────────────────────────────────────────────────── */
 QScrollBar:vertical {{
-    background: {C["abyss"]}; width: 7px; border-radius: 3px;
+    background: {p["abyss"]}; width: 7px; border-radius: 3px;
 }}
 QScrollBar::handle:vertical {{
-    background: rgba(0,229,255,0.3); border-radius: 3px; min-height: 20px;
+    background: rgba({cy_r},{cy_g},{cy_b},0.3); border-radius: 3px; min-height: 20px;
 }}
 QScrollBar:horizontal {{
-    background: {C["abyss"]}; height: 7px; border-radius: 3px;
+    background: {p["abyss"]}; height: 7px; border-radius: 3px;
 }}
 QScrollBar::handle:horizontal {{
-    background: rgba(0,229,255,0.3); border-radius: 3px; min-width: 20px;
+    background: rgba({cy_r},{cy_g},{cy_b},0.3); border-radius: 3px; min-width: 20px;
 }}
 QScrollBar::add-line, QScrollBar::sub-line {{ border: none; background: none; }}
 
 /* ─── List widgets ───────────────────────────────────────────────────── */
 QListWidget {{
-    background: {C["deep"]}; border: 1px solid rgba(0,229,255,0.18);
-    border-radius: 4px; color: {C["text"]}; outline: none;
+    background: {p["deep"]}; border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.18);
+    border-radius: 4px; color: {p["text"]}; outline: none;
 }}
 QListWidget::item:selected {{
-    background: rgba(0,229,255,0.2);
-    color: {C["cyan"]};
+    background: rgba({cy_r},{cy_g},{cy_b},0.2);
+    color: {p["cyan"]};
 }}
 QListWidget::item:hover {{
-    background: rgba(0,229,255,0.08);
+    background: rgba({cy_r},{cy_g},{cy_b},0.08);
 }}
 
 /* ─── Line edit ──────────────────────────────────────────────────────── */
 QLineEdit {{
-    background: {C["deep"]}; border: 1px solid rgba(0,229,255,0.2);
-    border-radius: 4px; padding: 5px 10px; color: {C["text"]};
+    background: {p["deep"]}; border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
+    border-radius: 4px; padding: 5px 10px; color: {p["text"]};
 }}
-QLineEdit:focus {{ border-color: rgba(0,229,255,0.6); }}
+QLineEdit:focus {{ border-color: rgba({cy_r},{cy_g},{cy_b},0.6); }}
 
 /* ─── Group box ──────────────────────────────────────────────────────── */
 QGroupBox {{
-    border: 1px solid rgba(0,229,255,0.2);
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
     border-radius: 6px; margin-top: 10px; padding-top: 6px;
-    color: {C["text_dim"]}; font-size: 11px; letter-spacing: 1px;
+    color: {p["text_dim"]}; font-size: 11px; letter-spacing: 1px;
 }}
 QGroupBox::title {{
     subcontrol-origin: margin; left: 10px; padding: 0 5px;
-    color: rgba(0,229,255,0.7);
+    color: rgba({cy_r},{cy_g},{cy_b},0.7);
 }}
 
 /* ─── Status bar ─────────────────────────────────────────────────────── */
 QStatusBar {{
-    background: {C["abyss"]};
-    border-top: 1px solid rgba(0,229,255,0.1);
+    background: {p["abyss"]};
+    border-top: 1px solid rgba({cy_r},{cy_g},{cy_b},0.1);
 }}
 QStatusBar QLabel {{ padding: 0 8px; }}
 
 /* ─── Tool bar ───────────────────────────────────────────────────────── */
 QToolBar {{
-    background: {C["abyss"]};
-    border-bottom: 1px solid rgba(0,229,255,0.15);
+    background: {p["abyss"]};
+    border-bottom: 1px solid rgba({cy_r},{cy_g},{cy_b},0.15);
     spacing: 4px; padding: 3px 6px;
 }}
 QToolBar::separator {{
-    background: rgba(0,229,255,0.15); width: 1px; margin: 4px 6px;
+    background: rgba({cy_r},{cy_g},{cy_b},0.15); width: 1px; margin: 4px 6px;
 }}
 
 /* ─── Checkboxes ─────────────────────────────────────────────────────── */
-QCheckBox {{ color: {C["text"]}; spacing: 6px; }}
+QCheckBox {{ color: {p["text"]}; spacing: 6px; }}
 QCheckBox::indicator {{
     width: 14px; height: 14px;
-    border: 1px solid rgba(0,229,255,0.4); border-radius: 3px;
-    background: {C["deep"]};
+    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.4); border-radius: 3px;
+    background: {p["deep"]};
 }}
 QCheckBox::indicator:checked {{
-    background: {C["cyan"]};
-    border-color: {C["cyan"]};
+    background: {p["cyan"]};
+    border-color: {p["cyan"]};
 }}
 
 /* ─── Dial ───────────────────────────────────────────────────────────── */
@@ -317,6 +353,10 @@ QDial {{
     background: transparent;
 }}
 """
+
+
+# Backward-compatible alias (dark theme is default)
+STYLESHEET = build_stylesheet(C)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2270,6 +2310,121 @@ class TransportBar(QWidget):
         )
         self.panic_btn.setToolTip("All notes off — emergency silence")
         lay.addWidget(self.panic_btn)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Settings Dialog  (Language + Theme)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class SettingsDialog(QDialog):
+    """
+    Compact settings popup — language switcher (DE/EN/FR) and theme toggle.
+    Opened from the ⚙ SETTINGS button in the lower-left status bar.
+    Changes take effect immediately (live preview, no OK/Apply needed).
+    """
+
+    language_changed = Signal(str)   # emits language code e.g. "de"
+    theme_changed    = Signal(str)   # emits "dark" or "light"
+
+    def __init__(self, current_lang: str, current_theme: str,
+                 parent: QWidget = None) -> None:
+        super().__init__(parent, Qt.Tool | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self._lang  = current_lang
+        self._theme = current_theme
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(14, 14, 14, 14)
+        root.setSpacing(12)
+
+        # ── Header ────────────────────────────────────────────────────────
+        hdr = QLabel(_tr("⚙  SETTINGS", current_lang))
+        hdr.setStyleSheet(
+            f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
+            " letter-spacing:1.5px;"
+        )
+        root.addWidget(hdr)
+
+        sep = QFrame(); sep.setFrameShape(QFrame.HLine)
+        sep.setStyleSheet(f"color:{C['surface']};")
+        root.addWidget(sep)
+
+        # ── Language section ──────────────────────────────────────────────
+        self._lang_lbl = QLabel(_tr("LANGUAGE", current_lang))
+        self._lang_lbl.setStyleSheet(
+            f"color:{C['text_dim']}; font-size:10px; letter-spacing:1px;"
+        )
+        root.addWidget(self._lang_lbl)
+
+        lang_row = QHBoxLayout()
+        lang_row.setSpacing(6)
+        self._lang_btns: dict[str, QPushButton] = {}
+        self._lang_grp = QButtonGroup(self)
+        for code in LANGUAGES:
+            btn = QPushButton(LANGUAGE_LABELS[code])
+            btn.setCheckable(True)
+            btn.setFixedSize(42, 28)
+            btn.setChecked(code == current_lang)
+            btn.clicked.connect(lambda checked, c=code: self._on_lang(c))
+            self._lang_grp.addButton(btn)
+            self._lang_btns[code] = btn
+            lang_row.addWidget(btn)
+        lang_row.addStretch()
+        root.addLayout(lang_row)
+
+        # ── Theme section ─────────────────────────────────────────────────
+        self._theme_lbl = QLabel(_tr("THEME", current_lang))
+        self._theme_lbl.setStyleSheet(
+            f"color:{C['text_dim']}; font-size:10px; letter-spacing:1px;"
+        )
+        root.addWidget(self._theme_lbl)
+
+        theme_row = QHBoxLayout()
+        theme_row.setSpacing(6)
+        self._dark_btn  = QPushButton(_tr("Dark",  current_lang))
+        self._light_btn = QPushButton(_tr("Light", current_lang))
+        for btn in (self._dark_btn, self._light_btn):
+            btn.setCheckable(True)
+            btn.setFixedHeight(28)
+        self._dark_btn .setChecked(current_theme == "dark")
+        self._light_btn.setChecked(current_theme == "light")
+        self._theme_grp = QButtonGroup(self)
+        self._theme_grp.addButton(self._dark_btn)
+        self._theme_grp.addButton(self._light_btn)
+        self._dark_btn .clicked.connect(lambda: self._on_theme("dark"))
+        self._light_btn.clicked.connect(lambda: self._on_theme("light"))
+        theme_row.addWidget(self._dark_btn)
+        theme_row.addWidget(self._light_btn)
+        theme_row.addStretch()
+        root.addLayout(theme_row)
+
+        # ── Close button ──────────────────────────────────────────────────
+        sep2 = QFrame(); sep2.setFrameShape(QFrame.HLine)
+        sep2.setStyleSheet(f"color:{C['surface']};")
+        root.addWidget(sep2)
+
+        self._close_btn = QPushButton(_tr("Close", current_lang))
+        self._close_btn.setFixedHeight(28)
+        self._close_btn.clicked.connect(self.close)
+        root.addWidget(self._close_btn)
+
+        self.setFixedWidth(220)
+
+    # ------------------------------------------------------------------
+
+    def _on_lang(self, code: str) -> None:
+        self._lang = code
+        self.language_changed.emit(code)
+        # Retranslate the dialog's own labels live
+        self._lang_lbl  .setText(_tr("LANGUAGE", code))
+        self._theme_lbl .setText(_tr("THEME",    code))
+        self._dark_btn  .setText(_tr("Dark",     code))
+        self._light_btn .setText(_tr("Light",    code))
+        self._close_btn .setText(_tr("Close",    code))
+
+    def _on_theme(self, theme: str) -> None:
+        self._theme = theme
+        self.theme_changed.emit(theme)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -4569,9 +4724,15 @@ class MainWindow(QMainWindow):
         self._init_audio_clip_playback()
         self._init_timeline_bridge()
 
+        # Load persisted preferences (language and theme)
+        _qs = QSettings("SBS", "SynthMaster")
+        self._lang  = _qs.value("language", "en")
+        self._theme = _qs.value("theme",    "dark")
+
         self.setWindowTitle("SBS-Synth Master  ✦  Crystal DAW")
         self.setMinimumSize(1200, 750)
-        self.setStyleSheet(STYLESHEET)
+        _palette = LIGHT_PALETTE if self._theme == "light" else C
+        QApplication.instance().setStyleSheet(build_stylesheet(_palette))
         self.setFocusPolicy(Qt.StrongFocus)
 
         self._setup_toolbar()
@@ -4688,50 +4849,59 @@ class MainWindow(QMainWindow):
             b.clicked.connect(slot)
             return b
 
-        tb.addWidget(_btn("✦ NEW PROJECT",  "Clear all tracks and start fresh",
-                          self._on_new_project, C["purple"]))
-        tb.addWidget(_btn("💾 SAVE PROJECT", "Save full project to .dawproj",
-                          self._on_save_project, C["cyan"]))
-        tb.addWidget(_btn("📂 LOAD PROJECT", "Load a .dawproj project file",
-                          self._on_load_project, C["cyan"]))
+        self._tb_new     = _btn("✦ NEW PROJECT",  "Clear all tracks and start fresh",
+                                self._on_new_project, C["purple"])
+        self._tb_save    = _btn("💾 SAVE PROJECT", "Save full project to .dawproj",
+                                self._on_save_project, C["cyan"])
+        self._tb_load    = _btn("📂 LOAD PROJECT", "Load a .dawproj project file",
+                                self._on_load_project, C["cyan"])
+        self._tb_rack    = _btn("🎹 CHANNEL RACK",
+                                "Open / close the step sequencer (Channel Rack)",
+                                self._on_toggle_channel_rack, C["pink"])
+        self._tb_addtrk  = _btn("+ ADD TRACK",    "Add a new instrument track",
+                                self._on_add_track)
+        self._tb_savemid = _btn("💾 SAVE MIDI",   "Export tracks to .mid",
+                                self._on_save_midi)
+        self._tb_loadmid = _btn("📂 LOAD MIDI",
+                                "Import MIDI file(s) — each track gets its own "
+                                "GM instrument automatically. Use NEW PROJECT first "
+                                "to replace the current project.",
+                                self._on_import_midi_files, C["cyan"])
+        self._tb_audio   = _btn("🎵+ IMPORT AUDIO",
+                                "Add multiple audio files — each gets its own track",
+                                self._on_import_audio_files, C["gold"])
+        self._tb_gmdef   = _btn("🎹 GM DEFAULTS",
+                                "Set default SFZ / VST3 instruments for MIDI drag-and-drop",
+                                self._on_gm_defaults, C["purple"])
+        self._tb_export  = _btn("🎵 EXPORT",      "Export to WAV or MP3",
+                                self._on_export, C["gold"])
+        self._tb_master  = _btn("🎚 MASTER",      "Multi-format mastering export (MP3 / WAV / Stems)",
+                                self._on_master_export, C["cyan"])
+        self._tb_gamepad = _btn("🎮 GAMEPAD",     "Connect PS5 DualSense",
+                                self._on_connect_gamepad)
+        self._tb_keymap  = _btn("⌨ KEY MAP",      "Show keyboard mapping",
+                                self._on_show_map)
+
+        for w in (self._tb_new, self._tb_save, self._tb_load):
+            tb.addWidget(w)
         tb.addSeparator()
-        # Channel Rack placed early so it is always visible even on narrow screens.
-        tb.addWidget(_btn("🎹 CHANNEL RACK",
-                          "Open / close the step sequencer (Channel Rack)",
-                          self._on_toggle_channel_rack, C["pink"]))
+        tb.addWidget(self._tb_rack)
         tb.addSeparator()
-        tb.addWidget(_btn("+ ADD TRACK",    "Add a new instrument track",
-                          self._on_add_track))
+        tb.addWidget(self._tb_addtrk)
         tb.addSeparator()
-        tb.addWidget(_btn("💾 SAVE MIDI",   "Export tracks to .mid",
-                          self._on_save_midi))
-        tb.addWidget(_btn("📂 LOAD MIDI",
-                          "Import MIDI file(s) — each track gets its own "
-                          "GM instrument automatically. Use NEW PROJECT first "
-                          "to replace the current project.",
-                          self._on_import_midi_files, C["cyan"]))
-        tb.addWidget(_btn("🎵+ IMPORT AUDIO",
-                          "Add multiple audio files — each gets its own track",
-                          self._on_import_audio_files, C["gold"]))
-        tb.addWidget(_btn("🎹 GM DEFAULTS",
-                          "Set default SFZ / VST3 instruments for MIDI drag-and-drop",
-                          self._on_gm_defaults, C["purple"]))
-        tb.addWidget(_btn("🎵 EXPORT",      "Export to WAV or MP3",
-                          self._on_export, C["gold"]))
-        tb.addWidget(_btn("🎚 MASTER",      "Multi-format mastering export (MP3 / WAV / Stems)",
-                          self._on_master_export, C["cyan"]))
+        for w in (self._tb_savemid, self._tb_loadmid, self._tb_audio,
+                  self._tb_gmdef, self._tb_export, self._tb_master):
+            tb.addWidget(w)
         tb.addSeparator()
-        tb.addWidget(_btn("🎮 GAMEPAD",     "Connect PS5 DualSense",
-                          self._on_connect_gamepad))
-        tb.addWidget(_btn("⌨ KEY MAP",      "Show keyboard mapping",
-                          self._on_show_map))
+        tb.addWidget(self._tb_gamepad)
+        tb.addWidget(self._tb_keymap)
 
     def _setup_transport(self) -> None:
         self._transport = TransportBar()
-        dock = QDockWidget("TRANSPORT", self)
-        dock.setWidget(self._transport)
-        dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
-        self.addDockWidget(Qt.TopDockWidgetArea, dock)
+        self._transport_dock = QDockWidget("TRANSPORT", self)
+        self._transport_dock.setWidget(self._transport)
+        self._transport_dock.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.addDockWidget(Qt.TopDockWidgetArea, self._transport_dock)
 
     def _setup_piano_roll(self) -> None:
         self._piano_roll   = PianoRollWidget()
@@ -5038,9 +5208,9 @@ class MainWindow(QMainWindow):
         outer_layout.addWidget(sep)
         outer_layout.addWidget(self._master_bus_channel)
 
-        dock = QDockWidget("MIXER", self)
-        dock.setWidget(mixer_outer)
-        self.addDockWidget(Qt.BottomDockWidgetArea, dock)
+        self._mixer_dock = QDockWidget("MIXER", self)
+        self._mixer_dock.setWidget(mixer_outer)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self._mixer_dock)
 
     def _setup_effects_dock(self) -> None:
         # -- MIDI instrument FX panel -----------------------------------------
@@ -5089,6 +5259,21 @@ class MainWindow(QMainWindow):
     def _setup_status_bar(self) -> None:
         sb = QStatusBar()
         self.setStatusBar(sb)
+
+        # ── Settings button — lower LEFT corner ───────────────────────────
+        self._settings_btn = QPushButton(_tr("⚙  SETTINGS", self._lang))
+        self._settings_btn.setFixedHeight(22)
+        self._settings_btn.setStyleSheet(
+            f"QPushButton {{ background:{C['deep']}; color:{C['cyan']};"
+            f" border:1px solid rgba(0,229,255,0.35); border-radius:4px;"
+            f" padding:0 10px; font-size:11px; }}"
+            f"QPushButton:hover {{ border-color:{C['cyan']};"
+            f" background:rgba(0,229,255,0.12); }}"
+        )
+        self._settings_btn.clicked.connect(self._on_settings)
+        sb.addWidget(self._settings_btn)   # addWidget = left side
+
+        # ── Permanent status labels (right side) ──────────────────────────
         self._st_engine = QLabel("Engine: —")
         self._st_scale  = QLabel("Scale: —")
         self._st_beat   = QLabel("♩ 0.00")
@@ -5098,69 +5283,130 @@ class MainWindow(QMainWindow):
         sb.addPermanentWidget(self._st_scale)
         sb.addPermanentWidget(self._st_beat)
 
-        rand_btn = QPushButton("🎲 Auto-Assign Instruments")
-        rand_btn.setToolTip(
+        self._sb_rand_btn = QPushButton(_tr("🎲 Auto-Assign Instruments", self._lang))
+        self._sb_rand_btn.setToolTip(
             "Randomly assign role-appropriate Soundfonts/presets\n"
             "to all loaded MIDI tracks for maximum variety."
         )
-        rand_btn.setFixedHeight(22)
-        rand_btn.setStyleSheet(
+        self._sb_rand_btn.setFixedHeight(22)
+        self._sb_rand_btn.setStyleSheet(
             f"QPushButton {{ background:{C['deep']}; color:#FFD700;"
             f" border:1px solid rgba(255,215,0,0.35); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
             f"QPushButton:hover {{ border-color:#FFD700;"
             f" background:rgba(255,215,0,0.08); }}"
         )
-        rand_btn.clicked.connect(self._on_randomize_instruments)
-        sb.addPermanentWidget(rand_btn)
+        self._sb_rand_btn.clicked.connect(self._on_randomize_instruments)
+        sb.addPermanentWidget(self._sb_rand_btn)
 
-        ai_btn = QPushButton("🤖 AI MIX")
-        ai_btn.setToolTip(
+        self._sb_ai_btn = QPushButton(_tr("🤖 AI MIX", self._lang))
+        self._sb_ai_btn.setToolTip(
             "Apply a genre-specific FX template to all tracks\n"
             "(EQ · Compression · Reverb · Stereo · Spectral Panning)"
         )
-        ai_btn.setFixedHeight(22)
-        ai_btn.setStyleSheet(
+        self._sb_ai_btn.setFixedHeight(22)
+        self._sb_ai_btn.setStyleSheet(
             f"QPushButton {{ background:{C['deep']}; color:#9945FF;"
             f" border:1px solid rgba(153,69,255,0.40); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
             f"QPushButton:hover {{ border-color:#9945FF;"
             f" background:rgba(153,69,255,0.10); }}"
         )
-        ai_btn.clicked.connect(self._on_ai_mix)
-        sb.addPermanentWidget(ai_btn)
+        self._sb_ai_btn.clicked.connect(self._on_ai_mix)
+        sb.addPermanentWidget(self._sb_ai_btn)
 
-        wav_master_btn = QPushButton("✨ Master WAV")
-        wav_master_btn.setToolTip(
+        self._sb_wav_btn = QPushButton(_tr("✨ Master WAV", self._lang))
+        self._sb_wav_btn.setToolTip(
             "Master an external .wav file\n"
             "Genre EQ · M/S width · LUFS · Brickwall limiter"
         )
-        wav_master_btn.setFixedHeight(22)
-        wav_master_btn.setStyleSheet(
+        self._sb_wav_btn.setFixedHeight(22)
+        self._sb_wav_btn.setStyleSheet(
             f"QPushButton {{ background:{C['deep']}; color:#00FF88;"
             f" border:1px solid rgba(0,255,136,0.35); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
             f"QPushButton:hover {{ border-color:#00FF88;"
             f" background:rgba(0,255,136,0.08); }}"
         )
-        wav_master_btn.clicked.connect(self._on_auto_master)
-        sb.addPermanentWidget(wav_master_btn)
+        self._sb_wav_btn.clicked.connect(self._on_auto_master)
+        sb.addPermanentWidget(self._sb_wav_btn)
 
-        tel_btn = QPushButton("📊 TELEMETRY")
-        tel_btn.setToolTip(
+        self._sb_tel_btn = QPushButton(_tr("📊 TELEMETRY", self._lang))
+        self._sb_tel_btn.setToolTip(
             "Show / hide real-time audio telemetry panels\n"
             "(Waveform · Freq Bands · Chroma · Waterfall · H/P)"
         )
-        tel_btn.setFixedHeight(22)
-        tel_btn.setStyleSheet(
+        self._sb_tel_btn.setFixedHeight(22)
+        self._sb_tel_btn.setStyleSheet(
             f"QPushButton {{ background:{C['deep']}; color:{C['lime']};"
             f" border:1px solid rgba(0,229,255,0.2); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
             f"QPushButton:hover {{ border-color:{C['lime']};"
             f" background:rgba(0,229,255,0.08); }}"
         )
-        tel_btn.clicked.connect(self._telemetry.toggle)
-        sb.addPermanentWidget(tel_btn)
+        self._sb_tel_btn.clicked.connect(self._telemetry.toggle)
+        sb.addPermanentWidget(self._sb_tel_btn)
+
+    # ------------------------------------------------------------------
+    # Settings: language, theme
+    # ------------------------------------------------------------------
+
+    def _on_settings(self) -> None:
+        """Open the SettingsDialog anchored to the lower-left settings button."""
+        dlg = SettingsDialog(self._lang, self._theme, self)
+        dlg.language_changed.connect(self._on_language_changed)
+        dlg.theme_changed   .connect(self._on_theme_changed)
+        # Position dialog just above the settings button
+        btn_pos = self._settings_btn.mapToGlobal(
+            self._settings_btn.rect().topLeft()
+        )
+        dlg.move(btn_pos.x(), btn_pos.y() - dlg.sizeHint().height() - 4)
+        dlg.exec()
+
+    def _on_language_changed(self, lang: str) -> None:
+        self._lang = lang
+        QSettings("SBS", "SynthMaster").setValue("language", lang)
+        self.retranslate_ui()
+
+    def _on_theme_changed(self, theme: str) -> None:
+        self._theme = theme
+        QSettings("SBS", "SynthMaster").setValue("theme", theme)
+        self._apply_theme()
+
+    def retranslate_ui(self) -> None:
+        """Update all stored translatable widget texts to the current language."""
+        L = self._lang
+        # Toolbar buttons
+        self._tb_new    .setText(_tr("✦ NEW PROJECT",    L))
+        self._tb_save   .setText(_tr("💾 SAVE PROJECT",  L))
+        self._tb_load   .setText(_tr("📂 LOAD PROJECT",  L))
+        self._tb_rack   .setText(_tr("🎹 CHANNEL RACK",  L))
+        self._tb_addtrk .setText(_tr("+ ADD TRACK",      L))
+        self._tb_savemid.setText(_tr("💾 SAVE MIDI",     L))
+        self._tb_loadmid.setText(_tr("📂 LOAD MIDI",     L))
+        self._tb_audio  .setText(_tr("🎵+ IMPORT AUDIO", L))
+        self._tb_gmdef  .setText(_tr("🎹 GM DEFAULTS",   L))
+        self._tb_export .setText(_tr("🎵 EXPORT",        L))
+        self._tb_master .setText(_tr("🎚 MASTER",        L))
+        self._tb_gamepad.setText(_tr("🎮 GAMEPAD",       L))
+        self._tb_keymap .setText(_tr("⌨ KEY MAP",        L))
+        # Status bar
+        self._settings_btn.setText(_tr("⚙  SETTINGS",              L))
+        self._sb_rand_btn .setText(_tr("🎲 Auto-Assign Instruments", L))
+        self._sb_ai_btn   .setText(_tr("🤖 AI MIX",                 L))
+        self._sb_wav_btn  .setText(_tr("✨ Master WAV",              L))
+        self._sb_tel_btn  .setText(_tr("📊 TELEMETRY",              L))
+        # Dock titles
+        self._transport_dock.setWindowTitle(_tr("TRANSPORT", L))
+        self._mixer_dock    .setWindowTitle(_tr("MIXER",     L))
+        self._midi_fx_dock  .setWindowTitle(_tr("EFFECTS",   L))
+        self._audio_fx_dock .setWindowTitle(_tr("AUDIO FX",  L))
+        self._humanizer_dock.setWindowTitle(_tr("HUMANIZE",  L))
+
+    def _apply_theme(self) -> None:
+        """Switch between dark (Bioluminescent Crystal) and light palette."""
+        palette = LIGHT_PALETTE if self._theme == "light" else C
+        QApplication.instance().setStyleSheet(build_stylesheet(palette))
 
     def _wire_signals(self) -> None:
         t = self._transport
