@@ -212,7 +212,7 @@ Visueller Test des Master-Sliders im Clair-Theme (Screenshot 19:12 Uhr) zeigte: 
 | Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (6 Iterationen) | Julian |
 | Dialog-Sprache (AutoMaster, DS INSTRUMENT, AI Mix, Auto-Assign) | ✅ erledigt | Julian |
 | Master-Slider im Clair-Theme korrekt | ✅ erledigt (visuell bestätigt 19:29 Uhr) | Julian |
-| Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | offen | Julian |
+| Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | ✅ erledigt (visuell bestätigt 19:41 Uhr) | Julian |
 | Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | offen | Julian |
 
 ---
