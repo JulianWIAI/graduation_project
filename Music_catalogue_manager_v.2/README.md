@@ -347,6 +347,10 @@ wird mit Zeitstempel, Ereignistyp und Details protokolliert.
 - Der Schlüssel zum Signieren der Sitzungen kommt aus `SBS_SECRET_KEY`; fehlt sie,
   wird er einmalig erzeugt und in `instance/secret_key` abgelegt (nicht in Git).
 - Neue Nutzer registrieren sich selbst und wählen danach ihren Tarif (`/plan`).
+- Login-Sperre: Nach 3 falschen Passwörtern in Folge ist das Konto 24 Stunden
+  gesperrt, auch für das richtige Passwort. Ein erfolgreicher Login setzt den
+  Zähler zurück. Admins können unter **Nutzer** vorzeitig entsperren. Sperre und
+  Entsperrung stehen im Protokoll (`LOGIN_LOCKED`, `LOGIN_UNLOCKED`).
 
 ---
 

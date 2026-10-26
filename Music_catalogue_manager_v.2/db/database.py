@@ -219,6 +219,11 @@ def init_db():
     # is_admin: 1 = Zugang zu allen Admin-Routen, 0 = nur /generate und /stats.
     if "is_admin" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+    # Login-Sperre: Fehlversuche in Folge und Ende der Sperre (ISO-Zeitpunkt).
+    if "failed_logins" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN failed_logins INTEGER NOT NULL DEFAULT 0")
+    if "locked_until" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN locked_until TEXT")
 
     track_cols = {row["name"] for row in
                   conn.execute("PRAGMA table_info(tracks)").fetchall()}

@@ -13,7 +13,7 @@ import sqlite3
 import tempfile
 import time
 import wave
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import config
 
@@ -374,6 +374,28 @@ def test_login_redirects_only_within_the_site():
         client.get("/logout")
         resp = client.post(f"/login?next={target}", data={"email": email, "password": "geheim"})
         assert resp.headers["Location"] == expected, target
+
+
+def test_three_wrong_passwords_lock_the_account_for_a_day():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    email = quota.get_user(uid)["email"]
+    client.get("/logout")
+    login = lambda pw: client.post("/login", data={"email": email, "password": pw})
+    assert "Noch 2 Versuch" in login("falsch").get_data(as_text=True)
+    assert "/generate" in login("geheim").headers["Location"]     # Erfolg setzt Zaehler zurueck
+    client.get("/logout")
+    login("falsch"), login("falsch")
+    assert "gesperrt bis" in login("falsch").get_data(as_text=True)
+    assert "gesperrt bis" in login("geheim").get_data(as_text=True)  # auch richtiges Passwort
+    until = datetime.fromisoformat(quota.get_user(uid)["locked_until"])
+    assert timedelta(hours=23, minutes=59) < until - datetime.now() <= timedelta(hours=24)
+
+    admin = main.app.test_client()
+    admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    assert "Entsperren" in admin.get("/users").get_data(as_text=True)
+    admin.post(f"/users/{uid}/unlock")
+    assert "/generate" in login("geheim").headers["Location"]
 
 
 def test_unclosed_connection_does_not_lock_the_database():

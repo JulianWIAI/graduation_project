@@ -63,6 +63,15 @@ _T = {
         "Un compte avec cette adresse e-mail existe déjà."),
     "Ungueltige E-Mail oder falsches Passwort.": (
         "Invalid email or wrong password.", "E-mail invalide ou mot de passe incorrect."),
+    "Noch %(n)s Versuch(e) bis zur Sperre.": (
+        "%(n)s attempt(s) left before the account is locked.",
+        "Encore %(n)s tentative(s) avant le blocage du compte."),
+    "Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.": (
+        "Account locked after %(n)s wrong passwords until %(until)s.",
+        "Compte bloqué après %(n)s mots de passe erronés jusqu'au %(until)s."),
+    "Konto entsperrt.": ("Account unlocked.", "Compte débloqué."),
+    "gesperrt bis": ("locked until", "bloqué jusqu'au"),
+    "Entsperren": ("Unlock", "Débloquer"),
 
     # --- Tarifwahl (plan.html) ----------------------------------------------
     "Tarif wählen": ("Choose your plan", "Choisir une offre"),

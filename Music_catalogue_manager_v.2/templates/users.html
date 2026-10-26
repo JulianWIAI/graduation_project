@@ -29,7 +29,14 @@
     <tbody>
       {% for r in rows %}
       <tr>
-        <td>{{ r.u.name }}<div class="muted small">{{ r.u.email or '' }}</div></td>
+        <td>{{ r.u.name }}<div class="muted small">{{ r.u.email or '' }}</div>
+          {% if r.locked_until %}
+          <form method="post" action="{{ url_for('users_unlock', user_id=r.u.id) }}" class="row-actions" style="margin:4px 0 0;">
+            <span class="badge badge-exclusive_sold">{{ _('gesperrt bis') }} {{ r.locked_until.strftime('%d.%m.%Y, %H:%M') }}</span>
+            <button class="btn btn-ghost btn-sm" type="submit">{{ _('Entsperren') }}</button>
+          </form>
+          {% endif %}
+        </td>
         <td>
           {% if r.u.is_subscriber %}
             <span class="badge badge-exclusive_sold">{{ _('Abo') }}</span>

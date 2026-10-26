@@ -36,7 +36,7 @@ from commerce.token_shop import tokens_bp
 from catalog import scanner
 from catalog import watermark_reader
 from db.demo_data import generate as generate_demo
-from auth.auth import auth_bp, User
+from auth.auth import auth_bp, User, lock_end, set_login_state
 from beatgen.generate import generate_bp
 from auth.rbac import require_admin
 from catalog.sample_upload import sample_upload_bp
@@ -387,7 +387,7 @@ def users_view():
     rows = []
     for u in users:
         st = quota.quota_status(u)
-        rows.append({"u": u, "st": st})
+        rows.append({"u": u, "st": st, "locked_until": lock_end(u)})
     limits = {"free": db.get_setting("limit_free"),
               "sub": db.get_setting("limit_subscriber"),
               "discount": db.get_setting("discount_pct")}
@@ -410,6 +410,17 @@ def users_tokens(user_id):
         flash(_("Token-Guthaben angepasst."), "success")
     except (ValueError, tokens.TokenError) as exc:
         flash(str(exc) or _("Ungueltiger Betrag."), "error")
+    return redirect(url_for("users_view"))
+
+
+@app.route("/users/<int:user_id>/unlock", methods=["POST"])
+@login_required
+@require_admin
+def users_unlock(user_id):
+    """Admin: Login-Sperre nach falschen Passwoertern vorzeitig aufheben."""
+    set_login_state(user_id, 0)
+    db.log_event("LOGIN_UNLOCKED", "user", user_id, {"by": current_user.id})
+    flash(_("Konto entsperrt."), "success")
     return redirect(url_for("users_view"))
 
 

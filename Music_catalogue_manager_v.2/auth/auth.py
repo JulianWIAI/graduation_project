@@ -6,6 +6,8 @@ Passwort-Hashing. Die User-Klasse kapselt die SQLite-Zeile, damit die
 Flask-Login-Mixins ohne ORM funktionieren.
 """
 
+from datetime import datetime, timedelta
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import UserMixin, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -15,6 +17,31 @@ from db import database as db
 from i18n import _
 
 auth_bp = Blueprint("auth", __name__)
+
+MAX_FAILED_LOGINS = 3                  # falsche Passwoerter in Folge bis zur Sperre
+LOCK_DURATION = timedelta(hours=24)
+
+
+def lock_end(row):
+    """Ende einer laufenden Sperre als datetime, sonst None."""
+    until = row["locked_until"]
+    if until and datetime.fromisoformat(until) > datetime.now():
+        return datetime.fromisoformat(until)
+    return None
+
+
+def set_login_state(user_id, failed, locked_until=None):
+    conn = db.get_conn()
+    conn.execute("UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?",
+                 (failed, locked_until.isoformat(timespec="seconds") if locked_until else None,
+                  user_id))
+    conn.commit()
+    conn.close()
+
+
+def _flash_locked(until):
+    flash(_("Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.",
+            n=MAX_FAILED_LOGINS, until=until.strftime("%d.%m.%Y, %H:%M")), "error")
 
 # --- User model -------------------------------------------------------------
 
@@ -83,10 +110,27 @@ def login():
         if not row or not row["password_hash"]:
             flash(_("Ungueltige E-Mail oder falsches Passwort."), "error")
             return render_template("login.html")
+        # Gesperrt: auch das richtige Passwort wird abgelehnt.
+        until = lock_end(row)
+        if until:
+            _flash_locked(until)
+            return render_template("login.html")
         if not check_password_hash(row["password_hash"], password):
-            flash(_("Ungueltige E-Mail oder falsches Passwort."), "error")
+            failed = row["failed_logins"] + 1     # beim Sperren auf 0 gesetzt
+            if failed >= MAX_FAILED_LOGINS:
+                until = datetime.now() + LOCK_DURATION
+                set_login_state(row["id"], 0, until)
+                db.log_event("LOGIN_LOCKED", "user", row["id"], {"email": email})
+                _flash_locked(until)
+            else:
+                set_login_state(row["id"], failed)
+                flash(_("Ungueltige E-Mail oder falsches Passwort.") + " "
+                      + _("Noch %(n)s Versuch(e) bis zur Sperre.", n=MAX_FAILED_LOGINS - failed),
+                      "error")
             return render_template("login.html")
 
+        if row["failed_logins"] or row["locked_until"]:
+            set_login_state(row["id"], 0)
         login_user(User(row))
         next_page = request.args.get("next")
         # Nur Pfade dieser Seite zulassen -- "//x" und "/\x" fuehren Browser auf fremde Hosts.
