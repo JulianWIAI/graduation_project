@@ -419,7 +419,6 @@ class EffectsPanel(QWidget):
         self._building = True
 
         self.setFixedWidth(220)
-        self.setStyleSheet(f"background:{C['abyss']};")
 
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 8, 8, 8)
@@ -2023,13 +2022,12 @@ class MixerStrip(QFrame):
 
         self.setFixedWidth(96)
         self.setFrameShape(QFrame.NoFrame)
-        self.setStyleSheet(f"""
-            MixerStrip {{
-                background: {C["abyss"]};
+        self.setStyleSheet("""
+            MixerStrip {
                 border: 1px solid rgba(0,229,255,0.1);
                 border-radius: 8px;
                 margin: 2px;
-            }}
+            }
         """)
 
         lay = QVBoxLayout(self)
@@ -2165,7 +2163,6 @@ class MixerStrip(QFrame):
         self.sel_btn.setChecked(selected)
         self.setStyleSheet(f"""
             MixerStrip {{
-                background: {C['abyss']};
                 border: 1px solid {'rgba(0,229,255,0.55)' if selected else 'rgba(0,229,255,0.1)'};
                 border-radius: 8px;
                 margin: 2px;
@@ -2202,7 +2199,6 @@ class TransportBar(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet(f"background:{C['abyss']};")
         lay = QHBoxLayout(self)
         lay.setContentsMargins(10, 4, 10, 4)
         lay.setSpacing(8)
@@ -2215,11 +2211,9 @@ class TransportBar(QWidget):
             b.setToolTip(tip)
             if color:
                 b.setStyleSheet(
-                    f"QPushButton {{ background:{C['deep']}; color:{color};"
-                    f" border:1px solid rgba(0,229,255,0.3); border-radius:5px; }}"
-                    f"QPushButton:hover {{ border-color:{color}; }}"
-                    f"QPushButton:checked {{ background:rgba(255,45,158,0.3);"
-                    f" border-color:{C['pink']}; color:{C['pink']}; }}"
+                    f"QPushButton {{ color:{color}; border-radius:5px; }}"
+                    f"QPushButton:hover {{ border-color:{color}; color:{color}; }}"
+                    f"QPushButton:checked {{ border-color:{C['pink']}; color:{C['pink']}; }}"
                 )
             return b
 
@@ -2264,9 +2258,8 @@ class TransportBar(QWidget):
             "Loop playback between markers — drag the ruler in the piano roll to set the region"
         )
         self.loop_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['purple']};"
-            f" border:1px solid rgba(153,69,255,0.4); border-radius:5px; }}"
-            f"QPushButton:hover {{ border-color:{C['purple']}; }}"
+            f"QPushButton {{ color:{C['purple']}; border:1px solid rgba(153,69,255,0.4); border-radius:5px; }}"
+            f"QPushButton:hover {{ border-color:{C['purple']}; color:{C['purple']}; }}"
             f"QPushButton:checked {{ background:rgba(153,69,255,0.3);"
             f" border-color:{C['purple']}; color:{C['purple']}; }}"
         )
@@ -2363,7 +2356,8 @@ class SettingsDialog(QDialog):
         for code in LANGUAGES:
             btn = QPushButton(LANGUAGE_LABELS[code])
             btn.setCheckable(True)
-            btn.setFixedSize(42, 28)
+            btn.setFixedHeight(28)
+            btn.setMinimumWidth(52)
             btn.setChecked(code == current_lang)
             btn.clicked.connect(lambda checked, c=code: self._on_lang(c))
             self._lang_grp.addButton(btn)
@@ -4840,11 +4834,8 @@ class MainWindow(QMainWindow):
             b.setToolTip(tip)
             b.setFixedHeight(32)
             b.setStyleSheet(
-                f"QPushButton {{ background:{C['deep']}; color:{color};"
-                f" border:1px solid rgba(0,229,255,0.2); border-radius:5px;"
-                f" padding:0 12px; }}"
-                f"QPushButton:hover {{ border-color:{color};"
-                f" background:rgba(0,229,255,0.1); color:{color}; }}"
+                f"QPushButton {{ color:{color}; padding:0 12px; }}"
+                f"QPushButton:hover {{ border-color:{color}; color:{color}; }}"
             )
             b.clicked.connect(slot)
             return b
@@ -4916,7 +4907,7 @@ class MainWindow(QMainWindow):
         arrange_scroll.setWidgetResizable(True)
         arrange_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         arrange_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        arrange_scroll.setStyleSheet(f"background:{C['abyss']}; border:none;")
+        arrange_scroll.setStyleSheet("border:none;")
 
         self._arrange_hscroll = QScrollBar(Qt.Horizontal)
         self._arrange_hscroll.setRange(0, int(self._arrange_view._total_beats * 4))
@@ -5172,7 +5163,6 @@ class MainWindow(QMainWindow):
         # can be managed independently (different key spaces: channel vs track_id).
         self._audio_mixer_strips: Dict[int, AudioMixerStrip] = {}
         self._mixer_inner  = QWidget()
-        self._mixer_inner.setStyleSheet(f"background:{C['abyss']};")
         self._mixer_layout = QHBoxLayout(self._mixer_inner)
         self._mixer_layout.setAlignment(Qt.AlignLeft)
         self._mixer_layout.setContentsMargins(6, 6, 6, 6)
@@ -5183,7 +5173,7 @@ class MainWindow(QMainWindow):
         mixer_scroll.setWidgetResizable(True)
         mixer_scroll.setFixedHeight(310)
         mixer_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        mixer_scroll.setStyleSheet(f"background:{C['abyss']}; border:none;")
+        mixer_scroll.setStyleSheet("border:none;")
 
         # Create the C++ MasterBus (or Python fallback) and connect to the player.
         self._master_bus = get_master_bus(44100.0)
@@ -5200,7 +5190,6 @@ class MainWindow(QMainWindow):
 
         # Outer container: scrollable track area + separator + master strip.
         mixer_outer = QWidget()
-        mixer_outer.setStyleSheet(f"background:{C['abyss']};")
         outer_layout = QHBoxLayout(mixer_outer)
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(0)
@@ -5219,7 +5208,7 @@ class MainWindow(QMainWindow):
         scroll.setWidget(self._effects_panel)
         scroll.setWidgetResizable(True)
         scroll.setFixedWidth(240)
-        scroll.setStyleSheet(f"background:{C['abyss']}; border:none;")
+        scroll.setStyleSheet("border:none;")
 
         self._midi_fx_dock = QDockWidget("EFFECTS", self)
         self._midi_fx_dock.setWidget(scroll)
@@ -5264,11 +5253,10 @@ class MainWindow(QMainWindow):
         self._settings_btn = QPushButton(_tr("⚙  SETTINGS", self._lang))
         self._settings_btn.setFixedHeight(22)
         self._settings_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['cyan']};"
+            f"QPushButton {{ color:{C['cyan']};"
             f" border:1px solid rgba(0,229,255,0.35); border-radius:4px;"
             f" padding:0 10px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:{C['cyan']};"
-            f" background:rgba(0,229,255,0.12); }}"
+            f"QPushButton:hover {{ border-color:{C['cyan']}; color:{C['cyan']}; }}"
         )
         self._settings_btn.clicked.connect(self._on_settings)
         sb.addWidget(self._settings_btn)   # addWidget = left side
@@ -5290,11 +5278,10 @@ class MainWindow(QMainWindow):
         )
         self._sb_rand_btn.setFixedHeight(22)
         self._sb_rand_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:#FFD700;"
+            f"QPushButton {{ color:#FFD700;"
             f" border:1px solid rgba(255,215,0,0.35); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#FFD700;"
-            f" background:rgba(255,215,0,0.08); }}"
+            f"QPushButton:hover {{ border-color:#FFD700; color:#FFD700; }}"
         )
         self._sb_rand_btn.clicked.connect(self._on_randomize_instruments)
         sb.addPermanentWidget(self._sb_rand_btn)
@@ -5306,11 +5293,10 @@ class MainWindow(QMainWindow):
         )
         self._sb_ai_btn.setFixedHeight(22)
         self._sb_ai_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:#9945FF;"
+            f"QPushButton {{ color:#9945FF;"
             f" border:1px solid rgba(153,69,255,0.40); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#9945FF;"
-            f" background:rgba(153,69,255,0.10); }}"
+            f"QPushButton:hover {{ border-color:#9945FF; color:#9945FF; }}"
         )
         self._sb_ai_btn.clicked.connect(self._on_ai_mix)
         sb.addPermanentWidget(self._sb_ai_btn)
@@ -5322,11 +5308,10 @@ class MainWindow(QMainWindow):
         )
         self._sb_wav_btn.setFixedHeight(22)
         self._sb_wav_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:#00FF88;"
+            f"QPushButton {{ color:#00FF88;"
             f" border:1px solid rgba(0,255,136,0.35); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#00FF88;"
-            f" background:rgba(0,255,136,0.08); }}"
+            f"QPushButton:hover {{ border-color:#00FF88; color:#00FF88; }}"
         )
         self._sb_wav_btn.clicked.connect(self._on_auto_master)
         sb.addPermanentWidget(self._sb_wav_btn)
@@ -5338,11 +5323,10 @@ class MainWindow(QMainWindow):
         )
         self._sb_tel_btn.setFixedHeight(22)
         self._sb_tel_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['lime']};"
+            f"QPushButton {{ color:{C['lime']};"
             f" border:1px solid rgba(0,229,255,0.2); border-radius:4px;"
             f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:{C['lime']};"
-            f" background:rgba(0,229,255,0.08); }}"
+            f"QPushButton:hover {{ border-color:{C['lime']}; color:{C['lime']}; }}"
         )
         self._sb_tel_btn.clicked.connect(self._telemetry.toggle)
         sb.addPermanentWidget(self._sb_tel_btn)
