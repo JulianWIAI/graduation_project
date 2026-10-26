@@ -3,11 +3,11 @@
 | Feld | Inhalt |
 |---|---|
 | **Datum** | Montag, 26.10.2026 |
-| **Uhrzeit** | Einzelsitzung (Dauer: ca. 1 h 30 min) |
+| **Uhrzeit** | Ganztag (ca. 08:00 – 18:45 Uhr, mehrere Einheiten) |
 | **Ort** | zu Hause |
 | **Teilnehmer** | Julian (Einzelarbeit) |
 | **Protokollführer** | Claude (KI-Werkzeug) |
-| **Thema** | Mehrsprachigkeit (DE/EN/FR) und Light-Theme für DAW Light Version |
+| **Thema** | Mehrsprachigkeit (DE/EN/FR) und Light-Theme DAW · Light-Theme-Nachbesserung · Passwort-Wiederherstellung Catalogue |
 | **Arbeitspakete (PSP)** | – |
 | **Hilfsmittel** | Claude Code (KI), PyCharm, Git, GitHub |
 
@@ -18,7 +18,9 @@
 1. Konzeptionsphase: Ausarbeitung des besten Ansatzes für Sprachumschalter und Theme-Wechsel
 2. Implementierung: Übersetzungsmodul, Theme-System, Settings-Dialog
 3. Commit und Push auf GitHub
-4. Protokollerstellung
+4. Light-Theme-Nachbesserung: verbleibende schwarze Bereiche beheben (mehrere Iterationen)
+5. Passwort-Wiederherstellung für Catalogue Manager konzipieren und implementieren
+6. Protokollerstellung
 
 ---
 
@@ -77,21 +79,58 @@
 
 ---
 
-### TOP 3: Commit und Push
+### TOP 3: Commit und Push (Einheit 1)
 
-- Commit `48fb519` auf Branch `main`
-- Commit-Message: `feat(daw): add DE/EN/FR language switching and light theme`
+- Commit `48fb519` — `feat(daw): add DE/EN/FR language switching and light theme`
 - Gepusht auf `https://github.com/JulianWIAI/graduation_project.git`
+
+---
+
+### TOP 4: Light-Theme-Nachbesserung (Einheit 2 + 3)
+
+Nach dem ersten Test waren mehrere Bereiche im Light-Theme noch dunkel. Die Probleme wurden in drei weiteren Commits iterativ behoben:
+
+**Iteration 1 — `1675f12`:** Alle hardkodierten `background:{C['deep/abyss']}` aus Toolbar-Buttons, Statusbar-Buttons, TransportBar, EffectsPanel, MixerStrip und Mixer-Containern entfernt. Sprachbuttons von `setFixedSize(42,28)` auf `setFixedHeight(28)+setMinimumWidth(52)` geändert (waren abgeschnitten).
+
+**Iteration 2 — `bee05a1`:** Track-View-Canvas (`PianoRollWidget`, `TrackArrangeView`) blieb schwarz, weil `paintEvent()` zur Laufzeit `C["abyss"]`/`C["void"]` liest. Lösung: `_apply_theme()` mutiert nun `C` in-place via `C.update(palette)` vor dem Stylesheet-Wechsel. `DARK_PALETTE = dict(C)` als eingefrorene Kopie für den Rückwechsel hinzugefügt.
+
+**Iteration 3 — `e4b29dd`:** Restliche dunkle Bereiche bereinigt (15 Dateien):
+- In `gui_windows.py`: 6 Dialog-`setStyleSheet(STYLESHEET)` → `setStyleSheet(build_stylesheet(C))` (dynamisch); 5 Piano-Roll-Layoutcontainer-Hintergründe entfernt; Panic-Button `background:#1A0000` entfernt
+- `auto_mastering_dialog.py`, `export_dialog.py`, `gm_defaults_dialog.py`, `channel_rack.py`: eigene `_STYLESHEET`-Aufrufe entfernt
+- `fx_rack_widget.py`, `fx_slot_widget.py`, `grid_settings_panel.py`, 10 FX-Plugin-Dateien: dunkle Container-Hintergründe entfernt
+
+---
+
+### TOP 5: Passwort-Wiederherstellung Catalogue Manager (Einheit 3)
+
+Commit `20d802f` — `feat(catalogue): two-layer password recovery`
+
+**Schicht 1 — Sicherheitsfrage (Selbstbedienung):**
+- Registrierung: 2 neue Felder (Frage + Antwort, Antwort bcrypt-gehasht, kleingeschrieben)
+- Flow: `/forgot-password` → `/forgot-password/<email>` (Frage anzeigen) → `/reset-password/<email>/<token>` (neues Passwort)
+- 3-Versuchs-Sperre analog zur bestehenden Login-Sperre
+- 4 neue Templates: `forgot_password.html`, `forgot_password_question.html`, `reset_password.html`, `change_password.html`
+
+**Schicht 2 — Admin-Temporärpasswort (Fallback):**
+- Einstellungen-Seite: neue Sektion „Benutzerverwaltung" mit Nutzer-Tabelle
+- „Zurücksetzen"-Button generiert 8-stelliges Hex-Passwort, zeigt es einmalig per Flash
+- `must_change_pw = 1` → Pflicht zur Passwortänderung beim nächsten Login
+
+**DB-Migration:** 3 neue Spalten (`security_question`, `security_answer_hash`, `must_change_pw`), rückwärtskompatibel via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+
+**Übersetzungen:** ~20 neue Einträge in `translations.py` (DE → EN / FR)
 
 ---
 
 ## Aufgaben und nächste Schritte
 
-| Aufgabe | Verantwortlich | Termin |
+| Aufgabe | Status | Verantwortlich |
 |---|---|---|
-| DAW starten und Settings-Dialog manuell testen (Sprachumschalter + Theme-Toggle) | Julian | nächste Einheit |
-| Prüfen, ob alle Dock-Titel korrekt übersetzt werden (insbes. Telemetrie-Docks) | Julian | nächste Einheit |
-| Ggf. Toolbar-Buttons im Light-Theme auf Lesbarkeit prüfen (individuell gesetzte `setStyleSheet`-Farben überschreiben das globale QSS) | Julian | nächste Einheit |
+| DAW starten und Settings-Dialog testen | ✅ erledigt | Julian |
+| Dock-Titel auf korrekte Übersetzung prüfen | ✅ erledigt | Julian |
+| Light-Theme: verbleibende schwarze Bereiche beheben | ✅ erledigt (3 Iterationen) | Julian |
+| Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | offen | Julian |
+| Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | offen | Julian |
 
 ---
 
