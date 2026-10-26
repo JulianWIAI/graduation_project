@@ -114,7 +114,6 @@ All four backends can be active at the same time on different MIDI channels. The
 | **State save/restore** | C++ `Vst3StateManager` serialises `IComponent` + `IEditController` state to bytes for project files |
 | **Sample-accurate automation** | C++ `Vst3AutomationQueue` implements `IParameterChanges` / `IParamValueQueue`; `Vst3AutomationCurve` maps beat positions to per-block sample offsets |
 | **Transport sync** | C++ `Vst3TransportContext` maintains a `ProcessContext` with tempo, time signature, and sample position; updated once per block |
-| **Python bridges** | `vst3_host_extensions.py` wraps state/automation/transport; `vst3_bus_manager.py` wraps bus topology — all degrade to no-op stubs without the VST3 SDK |
 
 ### Instrument Selector Dialog
 
@@ -205,7 +204,6 @@ Pure-Python fallbacks (matching the same API) are provided for every C++ class s
 | **AI Smart EQ** | Analyses frequency content and suggests per-band EQ settings |
 | **AI Generative Reverb** | Generates reverb impulse responses tuned to the project context |
 | **AI Smart Master** | One-click AI mastering pipeline |
-| **AI Stem Splitter** | Source-separation to split an audio file into instrument stems |
 
 ### Timeline & Navigation
 
@@ -330,8 +328,6 @@ Recommended free SF2 files:
 # MP3 export (Windows: install ffmpeg and add to PATH)
 # macOS: brew install ffmpeg
 
-# AI tools
-pip install torch torchaudio demucs
 ```
 
 ### Run
@@ -461,8 +457,6 @@ daw_light_version/
     ├── dspreset_engine.py           # DS factory (C++ DecentSamplerEngine or pygame fallback)
     ├── dspreset_realtime_player.py  # sounddevice stream wrapping DecentSamplerEngine
     ├── vst_engine.py                # VST3 / AU plugin host (pedalboard)
-    ├── vst3_host_extensions.py      # Vst3StateStore / AutomationCurve / TransportBridge
-    ├── vst3_bus_manager.py          # Python bridge for C++ Vst3BusManager
     │
     ├── # ── Audio tracks & FX ─────────────────────────────────────────────
     ├── audio_file_player.py         # sounddevice mixing engine for audio file tracks
@@ -527,8 +521,7 @@ daw_light_version/
     └── # ── AI tools ──────────────────────────────────────────────────────
         ├── ai_smart_eq.py
         ├── ai_generative_reverb.py
-        ├── ai_smart_master.py
-        └── ai_stem_splitter.py
+        └── ai_smart_master.py
 ```
 
 ---
@@ -551,7 +544,6 @@ daw_light_version/
 | `scikit-learn` | ML utilities for AI tools |
 | `sentence-transformers` | Text embedding for AI Generative Reverb IR search |
 | `pybind11` | C++ → Python binding (build-time only) |
-| `torch` / `torchaudio` / `demucs` *(optional)* | AI stem splitting |
 
 ---
 
