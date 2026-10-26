@@ -5480,14 +5480,8 @@ class MainWindow(QMainWindow):
 
         # Register new MIDI tracks in the engine with a default instrument.
         for track in midi_tracks:
-            chain = EffectChain(channel=track.channel)
-            self._effect_chains[track.channel] = chain
-            self._engine.apply_effect_chain(chain)   # override FluidSynth defaults
-            col = C["tracks"][track.channel % len(C["tracks"])]
-            track.color = col
-            strip = self._make_mixer_strip(track.channel, track.name, col)
-            self._mixer_strips[track.channel] = strip
-            self._mixer_layout.addWidget(strip)
+            track.color = C["tracks"][track.channel % len(C["tracks"])]
+            self._setup_track_ui(track)
 
         # Auto-load SFZ instruments for every imported MIDI track.
         # _parse_midi_file extracts the GM program ID from the file and maps it
@@ -5574,14 +5568,8 @@ class MainWindow(QMainWindow):
         )
 
         for track in new_tracks:
-            chain = EffectChain(channel=track.channel)
-            self._effect_chains[track.channel] = chain
-            self._engine.apply_effect_chain(chain)   # override FluidSynth defaults
-            col = C["tracks"][track.channel % len(C["tracks"])]
-            track.color = col
-            strip = self._make_mixer_strip(track.channel, track.name, col)
-            self._mixer_strips[track.channel] = strip
-            self._mixer_layout.addWidget(strip)
+            track.color = C["tracks"][track.channel % len(C["tracks"])]
+            self._setup_track_ui(track)
 
         # Auto-load SFZ instruments (same logic as _on_files_dropped).
         if new_tracks:
@@ -5660,6 +5648,15 @@ class MainWindow(QMainWindow):
             self._register_audio_track_with_player(atrack.track_id)
 
         self._refresh_piano_roll()
+
+    def _setup_track_ui(self, track) -> None:
+        """Effect chain and mixer strip for a MIDI track that already exists in midi_logic."""
+        chain = EffectChain(channel=track.channel)
+        self._effect_chains[track.channel] = chain
+        self._engine.apply_effect_chain(chain)   # override FluidSynth defaults
+        strip = self._make_mixer_strip(track.channel, track.name, track.color)
+        self._mixer_strips[track.channel] = strip
+        self._mixer_layout.addWidget(strip)
 
     def _make_mixer_strip(self, channel: int, name: str, color: str) -> "MixerStrip":
         """
@@ -6587,7 +6584,11 @@ class MainWindow(QMainWindow):
             QMessageBox.Yes | QMessageBox.No,
         ) != QMessageBox.Yes:
             return
+        self._reset_project()
+        self._st_engine.setText("Engine: ■ New Project")
 
+    def _reset_project(self) -> None:
+        """Remove all tracks, instruments, mixer strips and FX (New/Load Project)."""
         self._midi.stop()
         self._engine.all_notes_off()
 
@@ -6622,7 +6623,7 @@ class MainWindow(QMainWindow):
             strip.deleteLater()
         self._audio_mixer_strips.clear()
 
-        self._midi._tracks.clear()
+        self._midi.clear_project()      # MIDI and audio tracks
         self._midi.clear_clips()
         self._effect_chains.clear()
         self._pygame_sounds.clear()
@@ -6635,7 +6636,6 @@ class MainWindow(QMainWindow):
         self._arrange_view.set_audio_tracks([])
         self._view_stack.setCurrentIndex(0)
         self._refresh_piano_roll()
-        self._st_engine.setText("Engine: ■ New Project")
 
     # ── Project save / load ───────────────────────────────────────────────────
 
@@ -6682,24 +6682,7 @@ class MainWindow(QMainWindow):
                                  "Could not read project file.")
             return
 
-        # Clear the current session (same as New Project, but no confirmation).
-        self._midi.stop()
-        self._engine.all_notes_off()
-        self._audio_player.stop_all()
-        for tid in list(self._audio_fx_chains.keys()):
-            self._audio_player.unregister_track(tid)
-        self._audio_fx_chains.clear()
-        for renderer in list(self._instrument_renderers.values()):
-            try:
-                renderer.stop()
-            except Exception:
-                pass
-        self._instrument_renderers.clear()
-        self._midi_fx_chains.clear()
-        self._midi.clear_project()
-        self._effect_chains.clear()
-        self._selected_channel = 0
-        self._active_clip = None
+        self._reset_project()
 
         # ── Restore BPM ───────────────────────────────────────────────────────
         bpm = float(doc.get("bpm", 120.0))
@@ -6732,6 +6715,21 @@ class MainWindow(QMainWindow):
                         note_id=self._midi._next_id(),
                     ))
                 track.clips.append(clip)
+
+        # ── Restore instruments + mixer strips ────────────────────────────────
+        # Saved SF2 paths may come from another computer -- fall back to a local one.
+        sf2_files = AudioEngine.get_available_sf2_files()
+        for ins in doc.get("instruments", []):
+            sf2 = ins.get("sf2_path", "")
+            if not os.path.isfile(sf2):
+                sf2 = sf2_files[0] if sf2_files else ""
+            if sf2:
+                self._engine.register_instrument(InstrumentPlugin(
+                    name=ins.get("name", ""), sf2_path=sf2,
+                    bank=ins.get("bank", 0), preset=ins.get("preset", 0),
+                    channel=ins["channel"]))
+        for track in self._midi.get_all_tracks():
+            self._setup_track_ui(track)
 
         # ── Restore audio tracks + clips ──────────────────────────────────────
         for at in doc.get("audio_tracks", []):
@@ -6768,6 +6766,9 @@ class MainWindow(QMainWindow):
             chain = ProjectManager.rebuild_fx_chain_from_list(slots, ch)
             if chain is not None:
                 self._midi_fx_chains[ch] = chain
+
+        for atrack in self._midi.get_audio_tracks():
+            self._register_audio_track_with_player(atrack.track_id)
 
         # ── Restore automation envelopes ──────────────────────────────────────
         ProjectManager.restore_automation_lanes(
@@ -7009,7 +7010,9 @@ class MainWindow(QMainWindow):
         if not path:
             return
 
-        ok = self._midi.export_to_midi_file(path)
+        ok = self._midi.export_to_midi_file(path, instruments={
+            ch: (p.bank, p.preset)
+            for ch, p in self._engine.get_instruments_by_channel().items()})
         if ok:
             self._st_engine.setText(f"MIDI saved: {os.path.basename(path)}")
             QMessageBox.information(self, "Save MIDI", f"Saved:\n{path}")
@@ -7184,130 +7187,6 @@ class MainWindow(QMainWindow):
         if errors:
             msg += f"\nFailed tracks: {', '.join(errors)}"
         QMessageBox.information(self, "Auto-Assign Instruments", msg)
-
-    @Slot()
-    def _on_open_midi(self) -> None:
-        if self._midi.get_all_tracks():
-            if QMessageBox.question(
-                self, "Open MIDI",
-                "Opening will replace all current tracks. Continue?",
-                QMessageBox.Yes | QMessageBox.No,
-            ) != QMessageBox.Yes:
-                return
-
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open MIDI File", os.path.expanduser("~"),
-            "MIDI Files (*.mid *.midi);;All Files (*)",
-        )
-        if not path:
-            return
-
-        self._midi.stop()
-        self._engine.all_notes_off()
-        for strip in list(self._mixer_strips.values()):
-            self._mixer_layout.removeWidget(strip)
-            strip.deleteLater()
-        self._mixer_strips.clear()
-        for ch in list(self._engine._instruments.keys()):
-            self._engine.unregister_instrument(ch)
-        self._effect_chains.clear()
-
-        ok = self._midi.import_from_midi_file(path)
-        if not ok:
-            QMessageBox.critical(self, "Open MIDI", "Import failed.")
-            return
-
-        self._transport.bpm_spin.setValue(self._midi.bpm)
-        sf2_files = AudioEngine.get_available_sf2_files()
-        sf2 = sf2_files[0] if sf2_files else ""
-
-        # Parse the MIDI file once to get GM program IDs and SFZ paths for
-        # every channel — used for both SF2 preset selection and SFZ loading.
-        _overrides = GmDefaultsManager().load()
-        _parsed    = _parse_midi_file(path, _overrides)
-        # Build channel → (gm_program_id, sfz_path) lookup from parsed payloads.
-        _ch_gm: dict = {}   # channel → gm_program_id
-        _ch_sfz: dict = {}  # channel → sfz_path
-        if _parsed:
-            _, _payloads = _parsed
-            for _pl in _payloads:
-                if not _pl.events:
-                    continue
-                _ch = _pl.events[0].channel
-                if _ch not in _ch_gm:
-                    _ch_gm[_ch]  = _pl.gm_program_id
-                    _ch_sfz[_ch] = _pl.sfz_path
-
-        for track in self._midi.get_all_tracks():
-            track.color = C["tracks"][track.channel % len(C["tracks"])]
-            gm_id    = _ch_gm.get(track.channel, 0)
-            is_drums = (track.channel == 9) or (gm_id == 128)
-            plugin = InstrumentPlugin(
-                name=track.name, sf2_path=sf2,
-                bank=128 if is_drums else 0,
-                preset=0 if is_drums else gm_id,
-                channel=track.channel,
-            )
-            if sf2:
-                self._engine.register_instrument(plugin)
-
-            self._effect_chains[track.channel] = EffectChain(
-                channel=track.channel)
-
-            strip = MixerStrip(track.channel, track.name, track.color)
-            strip.gain_changed  .connect(self._engine.set_gain)
-            strip.pan_changed   .connect(self._engine.set_pan)
-            strip.mute_toggled  .connect(self._engine.set_mute)
-            strip.solo_toggled  .connect(self._engine.set_solo)
-            strip.track_selected.connect(self._on_track_selected)
-            strip.remove_clicked.connect(self._on_remove_track)
-            self._mixer_strips[track.channel] = strip
-            self._mixer_layout.addWidget(strip)
-
-        if self._midi.get_all_tracks():
-            self._on_track_selected(self._midi.get_all_tracks()[0].channel)
-
-        # Apply all effect chains — zeros reverb/chorus so the imported MIDI
-        # doesn't play with FluidSynth's default heavy reverb.
-        for ch, chain in self._effect_chains.items():
-            self._engine.apply_effect_chain(chain)
-
-        # Apply per-category instrument overrides (SFZ, SF2, or VST3).
-        # Only activated when the user has explicitly set an override via GM Defaults.
-        _gm_mgr_inst  = GmDefaultsManager()
-        _loaded_channels: set = set()
-        for _ch, _gm_id in _ch_gm.items():
-            if _ch in _loaded_channels:
-                continue
-            _loaded_channels.add(_ch)
-            _entry = _gm_mgr_inst.get_override_entry(_gm_id, _overrides)
-            if not _entry:
-                continue
-            _etype = _entry.get("type", "sfz")
-            _epath = _entry.get("path", "")
-            if not _epath or not os.path.isfile(_epath):
-                continue
-            if _etype == "sfz":
-                self._start_sfz_player(_ch, _epath)
-                _pl = self._sfz_engines.get(_ch)
-                if _pl is not None:
-                    _pl._telemetry_push = self._telemetry.push_audio
-            elif _etype == "sf2":
-                _track_name = next(
-                    (t.name for t in self._midi.get_all_tracks() if t.channel == _ch),
-                    "",
-                )
-                _is_drums = (_gm_id == 128) or (_ch == 9)
-                _ov_plugin = InstrumentPlugin(
-                    name=_track_name, sf2_path=_epath,
-                    bank=_entry.get("bank", 128 if _is_drums else 0),
-                    preset=_entry.get("preset", 0),
-                    channel=_ch,
-                )
-                self._engine.register_instrument(_ov_plugin)
-
-        self._refresh_piano_roll()
-        self._st_engine.setText(f"Opened: {os.path.basename(path)}")
 
     @Slot()
     def _on_gm_defaults(self) -> None:

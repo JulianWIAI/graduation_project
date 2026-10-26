@@ -176,6 +176,8 @@ def _parse_midi_file(
         #    Priority (highest wins):
         #      a) ANY note_on / note_off on channel 9  → drums (128)
         #      b) program_change on channel 9           → drums (128)
+        #         or bank select 128 (CC0 = 1, written by SAVE MIDI for
+        #         drum tracks that were moved off channel 9)
         #      c) first program_change on another ch    → that GM ID
         #      d) no program_change at all              → piano (0)
         gm_program_id = 0       # Piano — guaranteed fallback for naked tracks
@@ -192,6 +194,8 @@ def _parse_midi_file(
                   and msg.channel == _DRUMS_CHANNEL
                   and msg.type in ("note_on", "note_off")):
                 forced_drums = True              # any ch-9 note overrides PC
+            elif msg.type == "control_change" and msg.control == 0 and msg.value == 1:
+                forced_drums = True              # bank 128 = drum kit
 
         if forced_drums:
             gm_program_id = _DRUMS_INSTRUMENT_ID
