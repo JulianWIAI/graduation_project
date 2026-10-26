@@ -84,6 +84,9 @@
     </form>
 
     <p class="link-row">
+      <a href="{{ url_for('auth.forgot_password') }}">{{ _('Passwort vergessen?') }}</a>
+    </p>
+    <p class="link-row">
       {{ _('Kein Konto?') }} <a href="{{ url_for('auth.register') }}">{{ _('Registrieren') }}</a>
     </p>
   </div>

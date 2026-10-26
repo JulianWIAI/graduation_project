@@ -938,6 +938,48 @@ _T = {
     "Download": (
         "Download",
         "Télécharger"),
+
+    # --- Passwort-Wiederherstellung / Sicherheitsfrage -----------------------
+    "Passwort vergessen?": ("Forgot password?", "Mot de passe oublié ?"),
+    "Passwort vergessen? — SBS Catalog": (
+        "Forgot password? — SBS Catalog", "Mot de passe oublié ? — SBS Catalog"),
+    "Weiter": ("Continue", "Continuer"),
+    "Sicherheitsfrage": ("Security question", "Question de sécurité"),
+    "Antwort": ("Answer", "Réponse"),
+    "Passwort zurücksetzen": ("Reset password", "Réinitialiser le mot de passe"),
+    "Neues Passwort — SBS Catalog": ("New password — SBS Catalog", "Nouveau mot de passe — SBS Catalog"),
+    "Neues Passwort": ("New password", "Nouveau mot de passe"),
+    "Passwort ändern": ("Change password", "Changer le mot de passe"),
+    "Passwort ändern — SBS Catalog": (
+        "Change password — SBS Catalog", "Changer le mot de passe — SBS Catalog"),
+    "Falscher Benutzername": ("Invalid username", "Nom d'utilisateur invalide"),
+    "Falsche Antwort": ("Wrong answer", "Réponse incorrecte"),
+    "Passwort erfolgreich geaendert": (
+        "Password changed successfully", "Mot de passe modifié avec succès"),
+    "Temporaeres Passwort": ("Temporary password", "Mot de passe temporaire"),
+    "Benutzerverwaltung": ("User management", "Gestion des utilisateurs"),
+    "Passwort zurücksetzen (Admin)": (
+        "Reset password (admin)", "Réinitialiser le mot de passe (admin)"),
+    "Muss Passwort ändern": ("Must change password", "Doit changer le mot de passe"),
+    "Beim nächsten Login muss das Passwort geändert werden.": (
+        "The password must be changed at the next login.",
+        "Le mot de passe doit être changé lors de la prochaine connexion."),
+    "Das temporaere Passwort lautet:": (
+        "The temporary password is:", "Le mot de passe temporaire est :"),
+    "Sicherheitsfrage und Antwort sind erforderlich.": (
+        "Security question and answer are required.",
+        "La question de sécurité et la réponse sont obligatoires."),
+    "z. B. Name des ersten Haustiers": (
+        "e.g. name of your first pet", "p. ex. nom de votre premier animal"),
+    "Ungueltige oder abgelaufene Sitzung.": (
+        "Invalid or expired session.", "Session invalide ou expirée."),
+    "Neues Passwort darf nicht leer sein.": (
+        "New password must not be empty.", "Le nouveau mot de passe ne doit pas être vide."),
+    "Zurücksetzen": ("Reset", "Réinitialiser"),
+    "Passwort zurücksetzen?": ("Reset password?", "Réinitialiser le mot de passe ?"),
+    "Ja": ("Yes", "Oui"),
+    "Nein": ("No", "Non"),
+    "Benutzername": ("Username", "Nom d'utilisateur"),
 }
 
 # ---------------------------------------------------------------------------

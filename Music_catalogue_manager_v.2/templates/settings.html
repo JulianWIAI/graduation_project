@@ -114,4 +114,49 @@
     <a class="btn btn-ghost" href="{{ url_for('audit_csv') }}">{{ _('Protokoll als CSV') }}</a>
   </div>
 </div>
+
+<div class="panel" style="margin-top:20px;">
+  <h2>{{ _('Benutzerverwaltung') }}</h2>
+  <p class="muted small" style="margin-bottom:12px;">
+    {{ _('Passwort zurücksetzen (Admin)') }}: {{ _('Beim nächsten Login muss das Passwort geändert werden.') }}
+  </p>
+  <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+    <thead>
+      <tr style="text-align:left;border-bottom:1px solid #2e2e3e;">
+        <th style="padding:.5rem .8rem;color:#888;">{{ _('Benutzername') }}</th>
+        <th style="padding:.5rem .8rem;color:#888;">E-Mail</th>
+        <th style="padding:.5rem .8rem;color:#888;">{{ _('Muss Passwort ändern') }}</th>
+        <th style="padding:.5rem .8rem;color:#888;">{{ _('Passwort zurücksetzen (Admin)') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in all_users %}
+      <tr style="border-bottom:1px solid #1e1e2e;">
+        <td style="padding:.5rem .8rem;color:#e2e2e2;">{{ u.name }}</td>
+        <td style="padding:.5rem .8rem;color:#aaa;">{{ u.email or '—' }}</td>
+        <td style="padding:.5rem .8rem;">
+          {% if u.must_change_pw %}
+            <span style="color:#facc15;font-size:.8rem;">&#9888; {{ _('Ja') }}</span>
+          {% else %}
+            <span style="color:#555;font-size:.8rem;">{{ _('Nein') }}</span>
+          {% endif %}
+        </td>
+        <td style="padding:.5rem .8rem;">
+          {% if u.password_hash %}
+          <form method="post" action="{{ url_for('auth.admin_reset_password', user_id=u.id) }}"
+                onsubmit="return confirm('{{ _('Passwort zurücksetzen?') }}');">
+            <button type="submit" class="btn btn-ghost"
+                    style="padding:.25rem .7rem;font-size:.8rem;">
+              {{ _('Zurücksetzen') }}
+            </button>
+          </form>
+          {% else %}
+            <span style="color:#555;font-size:.8rem;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

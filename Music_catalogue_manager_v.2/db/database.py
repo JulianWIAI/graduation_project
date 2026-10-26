@@ -224,6 +224,14 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN failed_logins INTEGER NOT NULL DEFAULT 0")
     if "locked_until" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN locked_until TEXT")
+    # Passwort-Wiederherstellung via Sicherheitsfrage.
+    if "security_question" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN security_question TEXT")
+    if "security_answer_hash" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN security_answer_hash TEXT")
+    # Erzwungene Passwortaenderung (z. B. nach Admin-Reset).
+    if "must_change_pw" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN must_change_pw INTEGER NOT NULL DEFAULT 0")
 
     track_cols = {row["name"] for row in
                   conn.execute("PRAGMA table_info(tracks)").fetchall()}
@@ -336,14 +344,23 @@ def get_user_by_email(email: str):
     return row
 
 
-def create_user(email: str, password_hash: str):
+def get_user_by_id(user_id: int):
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def create_user(email: str, password_hash: str,
+                security_question: str = None, security_answer_hash: str = None):
     """Legt einen neuen Web-Auth-Nutzer an; gibt die neue Nutzer-ID zurueck."""
     conn = get_conn()
     now = datetime.now().isoformat(timespec="seconds")
     cur = conn.execute(
-        "INSERT INTO users (name, email, password_hash, is_subscriber, created_at) "
-        "VALUES (?, ?, ?, 0, ?)",
-        (email.split("@")[0], email, password_hash, now),
+        "INSERT INTO users (name, email, password_hash, is_subscriber, "
+        "security_question, security_answer_hash, created_at) "
+        "VALUES (?, ?, ?, 0, ?, ?, ?)",
+        (email.split("@")[0], email, password_hash, security_question, security_answer_hash, now),
     )
     uid = cur.lastrowid
     conn.commit()

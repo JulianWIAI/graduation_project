@@ -83,6 +83,14 @@
       <input type="password" id="confirm" name="confirm" required
              autocomplete="new-password">
 
+      <label for="security_question">{{ _('Sicherheitsfrage') }}</label>
+      <input type="text" id="security_question" name="security_question" required
+             autocomplete="off" placeholder="{{ _('z. B. Name des ersten Haustiers') }}">
+
+      <label for="security_answer">{{ _('Antwort') }}</label>
+      <input type="text" id="security_answer" name="security_answer" required
+             autocomplete="off">
+
       <button type="submit" class="btn">{{ _('Registrieren') }}</button>
     </form>
 

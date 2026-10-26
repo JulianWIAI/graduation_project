@@ -336,7 +336,9 @@ def settings_view():
         return redirect(url_for("settings_view"))
 
     settings = db.get_all_settings()
-    return render_template("settings.html", s=settings, tiers=config.DEFAULT_TIERS)
+    all_users = quota.list_users()
+    return render_template("settings.html", s=settings, tiers=config.DEFAULT_TIERS,
+                           all_users=all_users)
 
 
 # --- Aktionen: Scan & Demo --------------------------------------------------
