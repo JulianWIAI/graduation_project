@@ -145,7 +145,6 @@ class _Sf2PresetPickerDialog(QDialog):
         self.setWindowTitle("Select SF2 Preset")
         self.setModal(True)
         self.setMinimumWidth(420)
-        self.setStyleSheet(_DIALOG_STYLESHEET)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self._picked: Optional[tuple] = None  # (bank, preset, name)
 
@@ -420,7 +419,6 @@ class GmDefaultsDialog(QDialog):
         self.setWindowTitle("GM Instrument Defaults")
         self.setMinimumWidth(780)
         self.setModal(True)
-        self.setStyleSheet(_DIALOG_STYLESHEET)
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint
         )

@@ -108,7 +108,6 @@ def _base_widget():
     """Return a dark-themed QWidget + its QVBoxLayout."""
     from PySide6.QtWidgets import QWidget, QVBoxLayout
     w = QWidget()
-    w.setStyleSheet(f"background:{_C['abyss']};")
     lay = QVBoxLayout(w)
     lay.setContentsMargins(8, 8, 8, 8)
     lay.setSpacing(4)

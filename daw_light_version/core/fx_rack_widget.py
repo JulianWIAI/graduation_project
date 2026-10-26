@@ -124,7 +124,6 @@ class FxRackWidget(QWidget):
         self._selected_slot_idx: int = -1  # index of slot whose params are shown
 
         self.setMinimumWidth(260)
-        self.setStyleSheet(f"background:{_C['abyss']};")
 
         # Outer layout with scroll so it works on small screens.
         root_lay = QVBoxLayout(self)
@@ -139,7 +138,6 @@ class FxRackWidget(QWidget):
         root_lay.addWidget(scroll)
 
         inner = QWidget()
-        inner.setStyleSheet(f"background:{_C['abyss']};")
         scroll.setWidget(inner)
 
         self._inner_lay = QVBoxLayout(inner)

@@ -72,7 +72,6 @@ class FxSlotWidget(QWidget):
         self._selected: bool = False  # visual highlight when param panel is open
 
         self.setFixedHeight(_SLOT_HEIGHT)
-        self.setStyleSheet(f"background:{_C['deep']};")
 
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(4, 2, 4, 2)

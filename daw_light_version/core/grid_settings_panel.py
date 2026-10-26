@@ -109,7 +109,6 @@ class GridSettingsPanel(QWidget):
     # ── UI construction ────────────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
-        self.setStyleSheet(f"background:{_C['abyss']};")
         root = QHBoxLayout(self)
         root.setContentsMargins(4, 2, 4, 2)
         root.setSpacing(6)

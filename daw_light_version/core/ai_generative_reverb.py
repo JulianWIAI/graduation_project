@@ -361,7 +361,6 @@ class GenerativeReverbPlugin(FxPluginBase):
             return ctr
 
         root = QWidget()
-        root.setStyleSheet(f"background:{_C['abyss']};")
         lay = QVBoxLayout(root)
         lay.setContentsMargins(8, 8, 8, 8)
         lay.setSpacing(6)

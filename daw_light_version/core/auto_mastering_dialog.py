@@ -220,7 +220,6 @@ class AutoMasterDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Auto-Master")
         self.setMinimumWidth(460)
-        self.setStyleSheet(_STYLESHEET)
         self._worker: Optional[_MasterWorker] = None
 
         self._build_ui()

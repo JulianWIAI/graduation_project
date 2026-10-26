@@ -373,7 +373,6 @@ class SmartEQPlugin(FxPluginBase):
             return b
 
         root = QWidget()
-        root.setStyleSheet(f"background:{_C['abyss']};")
         lay = QVBoxLayout(root)
         lay.setContentsMargins(8, 8, 8, 8)
         lay.setSpacing(6)

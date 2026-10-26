@@ -314,7 +314,6 @@ class ChannelRackRow(QWidget):
         self._step_btns: List[StepButton] = []
 
         self.setFixedHeight(36)
-        self.setStyleSheet("background:#060A18;")
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -486,7 +485,6 @@ class ChannelRackWindow(QDialog):
         super().__init__(parent, Qt.Window | Qt.WindowCloseButtonHint)
         self.setWindowTitle("Crystal DAW  ·  Channel Rack")
         self.resize(1000, 380)
-        self.setStyleSheet(_DIALOG_STYLE)
 
         self._rows:        List[ChannelStepData]  = []
         self._row_widgets: List[ChannelRackRow]   = []
@@ -629,7 +627,7 @@ class ChannelRackWindow(QDialog):
         scroll.setWidget(self._content)
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("background:#060A18; border:none;")
+        scroll.setStyleSheet("border:none;")
         outer.addWidget(scroll, stretch=1)
 
         # Bottom toolbar

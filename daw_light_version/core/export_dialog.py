@@ -211,7 +211,6 @@ class ExportDialog(QDialog):
         self.setWindowTitle("Export / Master")
         self.setMinimumWidth(540)
         self.setModal(True)
-        self.setStyleSheet(_DIALOG_SS)
 
         root = QVBoxLayout(self)
         root.setSpacing(12)

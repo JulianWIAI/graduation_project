@@ -2300,7 +2300,7 @@ class TransportBar(QWidget):
         self.panic_btn = QPushButton("⚡ PANIC")
         self.panic_btn.setFixedHeight(34)
         self.panic_btn.setStyleSheet(
-            f"QPushButton {{ background:#1A0000; color:{C['orange']};"
+            f"QPushButton {{ color:{C['orange']};"
             f" border:1px solid rgba(255,107,43,0.5); border-radius:5px; }}"
             f"QPushButton:hover {{ background:rgba(255,107,43,0.3); }}"
         )
@@ -2456,7 +2456,7 @@ class InstrumentSelectorDialog(QDialog):
 
         self.setWindowTitle(f"Change Instrument  —  {track_name}")
         self.setMinimumSize(680, 540)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(build_stylesheet(C))
 
         root = QVBoxLayout(self)
         root.setSpacing(8)
@@ -2988,7 +2988,7 @@ class VstBrowserDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("✦  Load VST3 / AU Plugin")
         self.setMinimumSize(660, 500)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(build_stylesheet(C))
 
         self._result_path: str = ""
         self._result_name: str = ""
@@ -3163,7 +3163,7 @@ class VstParameterPanel(QDialog):
 
         self.setWindowTitle(f"VST Parameters — {name}")
         self.setMinimumSize(480, 520)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(build_stylesheet(C))
 
         root = QVBoxLayout(self)
         root.setSpacing(8)
@@ -3184,7 +3184,6 @@ class VstParameterPanel(QDialog):
             scroll.setStyleSheet(
                 f"QScrollArea {{ background:{C['deep']}; border:none; }}")
             inner = QWidget()
-            inner.setStyleSheet(f"background:{C['deep']};")
             grid = QGridLayout(inner)
             grid.setSpacing(6)
             grid.setContentsMargins(8, 8, 8, 8)
@@ -3329,7 +3328,7 @@ class ExportDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("✦  Export Audio")
         self.setMinimumWidth(440)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(build_stylesheet(C))
 
         self._fmt: str = "wav"
 
@@ -3442,7 +3441,7 @@ class AddTrackDialog(QDialog):
 
         self.setWindowTitle("✦  Add Instrument Track")
         self.setMinimumSize(600, 500)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(build_stylesheet(C))
 
         root = QVBoxLayout(self)
         root.setSpacing(10)
@@ -4985,7 +4984,6 @@ class MainWindow(QMainWindow):
         self._arrange_splitter.setCollapsible(0, False)
 
         arrange_panel = QWidget()
-        arrange_panel.setStyleSheet(f"background:{C['abyss']};")
         ap_lay = QVBoxLayout(arrange_panel)
         ap_lay.setContentsMargins(0, 0, 0, 0)
         ap_lay.setSpacing(0)
@@ -5004,7 +5002,7 @@ class MainWindow(QMainWindow):
         piano_scroll.setWidgetResizable(True)
         piano_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         piano_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        piano_scroll.setStyleSheet(f"background:{C['void']}; border:none;")
+        piano_scroll.setStyleSheet(f"border:none;")
         self._piano_scroll = piano_scroll
 
         # Vertical scrollbar spanning the full MIDI range (C-1 … G9 = 0 … 127).
@@ -5031,7 +5029,6 @@ class MainWindow(QMainWindow):
 
         # Wrapper: piano scroll area + manual scrollbar side-by-side
         piano_with_scroll = QWidget()
-        piano_with_scroll.setStyleSheet(f"background:{C['void']};")
         phs_lay = QHBoxLayout(piano_with_scroll)
         phs_lay.setContentsMargins(0, 0, 0, 0)
         phs_lay.setSpacing(0)
@@ -5140,7 +5137,6 @@ class MainWindow(QMainWindow):
         self._piano_vel_splitter.setSizes([600, 80])
 
         piano_panel = QWidget()
-        piano_panel.setStyleSheet(f"background:{C['void']};")
         pvlay = QVBoxLayout(piano_panel)
         pvlay.setContentsMargins(0, 0, 0, 0)
         pvlay.setSpacing(0)
@@ -5154,7 +5150,6 @@ class MainWindow(QMainWindow):
         self._view_stack.setCurrentIndex(0)
 
         central = QWidget()
-        central.setStyleSheet(f"background:{C['void']};")
         vlay = QVBoxLayout(central)
         vlay.setContentsMargins(0, 0, 0, 0)
         vlay.setSpacing(0)
@@ -7736,7 +7731,7 @@ class MainWindow(QMainWindow):
         dlg = QDialog(self)
         dlg.setWindowTitle("Input Mapping Guide")
         dlg.setMinimumSize(520, 480)
-        dlg.setStyleSheet(STYLESHEET)
+        dlg.setStyleSheet(build_stylesheet(C))
         lay = QVBoxLayout(dlg)
 
         # Header
