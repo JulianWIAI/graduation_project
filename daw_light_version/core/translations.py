@@ -73,6 +73,12 @@ _T: dict[str, tuple[str, str]] = {
     "No MIDI tracks are loaded. Open a MIDI file first.": (
         "Keine MIDI-Spuren geladen. Bitte zuerst eine MIDI-Datei öffnen.",
         "Aucune piste MIDI chargée. Ouvrez d'abord un fichier MIDI."),
+    # ── Auto-Assign Instruments ───────────────────────────────────────────────
+    "Auto-Assign Instruments":       ("Instrumente Zufallszuweisung",      "Attribution aléatoire d'instruments"),
+    "Assigned instruments to {n}/{total} track(s).": (
+        "{n}/{total} Spur(en) mit Instrumenten belegt.",
+        "{n}/{total} piste(s) dotées d'instruments."),
+    "Failed tracks: {tracks}":       ("Fehlgeschlagene Spuren: {tracks}",  "Pistes échouées : {tracks}"),
 }
 
 # Build lookup dicts for non-English languages

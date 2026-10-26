@@ -7379,8 +7379,8 @@ class MainWindow(QMainWindow):
         tracks = self._midi.get_all_tracks()
         if not tracks:
             QMessageBox.information(
-                self, "Auto-Assign Instruments",
-                "No MIDI tracks are loaded. Open a MIDI file first.",
+                self, _tr("Auto-Assign Instruments", self._lang),
+                _tr("No MIDI tracks are loaded. Open a MIDI file first.", self._lang),
             )
             return
 
@@ -7420,10 +7420,15 @@ class MainWindow(QMainWindow):
             else:
                 errors.append(track.name)
 
-        msg = f"Assigned instruments to {assigned}/{len(tracks)} track(s)."
+        msg = _tr(
+            "Assigned instruments to {n}/{total} track(s).",
+            self._lang,
+        ).format(n=assigned, total=len(tracks))
         if errors:
-            msg += f"\nFailed tracks: {', '.join(errors)}"
-        QMessageBox.information(self, "Auto-Assign Instruments", msg)
+            msg += "\n" + _tr("Failed tracks: {tracks}", self._lang).format(
+                tracks=", ".join(errors)
+            )
+        QMessageBox.information(self, _tr("Auto-Assign Instruments", self._lang), msg)
 
     @Slot()
     def _on_gm_defaults(self) -> None:
