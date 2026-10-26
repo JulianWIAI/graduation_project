@@ -203,6 +203,25 @@ Visueller Test des Master-Sliders im Clair-Theme (Screenshot 19:12 Uhr) zeigte: 
 
 ---
 
+### TOP 9: Piano Roll – Theme-aware Farben
+
+Visueller Test der Piano Roll im Clair-Theme zeigte: Tasten und Gitter-Reihen blieben schwarz, da `_draw_piano()` und `_draw_grid()` hardcodierte Dunkelwerte (`QColor(15, 18, 35)`, `QColor(8, 10, 22)` usw.) verwendeten.
+
+**Ursache:** Die Farben wurden als Python-Literale bei Methodenaufruf eingebettet – nicht über das theme-aware `C`-Dict – und wurden daher von `C.update(palette)` in `_apply_theme()` nicht aktualisiert.
+
+**Lösung:** Sechs neue Palette-Schlüssel in beide Paletten (`C` / `LIGHT_PALETTE`) eingetragen:
+- `key_black` – Farbe der schwarzen Pianotasten (dunkel in beiden Themes)
+- `key_white_hi` / `key_white_lo` – Farbverlauf der weißen Pianotasten (dunkelblau dunkel / weiß hell)
+- `grid_black` / `grid_white` – Hintergrundfarbe der Gitterreihen für Halb- und Ganztöne
+
+`_draw_piano()` und `_draw_grid()` nutzen jetzt `QColor(C["..."])`, sodass `C.update(palette)` + `self._piano_roll.update()` in `_apply_theme()` ein vollständiges Theme-Switching auslöst.
+
+**Ergebnis:** Im Clair-Theme erscheinen weiße Tasten weiß und das Gitter hell; im Dunkel-Theme bleibt alles wie bisher dunkel.
+
+**Geänderte Datei:** `daw_light_version/core/gui_windows.py`
+
+---
+
 ## Aufgaben und nächste Schritte
 
 | Aufgabe | Status | Verantwortlich |
@@ -213,7 +232,7 @@ Visueller Test des Master-Sliders im Clair-Theme (Screenshot 19:12 Uhr) zeigte: 
 | Dialog-Sprache (AutoMaster, DS INSTRUMENT, AI Mix, Auto-Assign) | ✅ erledigt | Julian |
 | Master-Slider im Clair-Theme korrekt | ✅ erledigt (visuell bestätigt 19:29 Uhr) | Julian |
 | Passwort-Wiederherstellung visuell testen (Registrierung, Vergessen-Flow, Admin-Reset) | ✅ erledigt (visuell bestätigt 19:41 Uhr) | Julian |
-| Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | offen | Julian |
+| Piano-Roll-Noten und Piano-Tasten im Light-Theme auf Lesbarkeit prüfen | ✅ erledigt (hardcoded Dunkelfarben durch theme-aware Palette-Keys ersetzt) | Julian |
 
 ---
 

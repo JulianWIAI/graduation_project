@@ -117,6 +117,14 @@ C = {
     "text":      "#C8E6FF",   # primary text — ice white-blue
     "text_dim":  "#3D5A80",   # secondary text — muted ocean blue
 
+    # Piano roll keys
+    "key_black":    "#0F1223",   # black piano keys
+    "key_white_hi": "#1E2841",   # white key highlight edge
+    "key_white_lo": "#141A32",   # white key shadow edge
+    # Piano roll grid rows
+    "grid_black":   "#08060A",   # black-note rows (dark purple-black)
+    "grid_white":   "#080A1C",   # white-note rows (dark navy)
+
     # Track neons (per-lane colour sequence)
     "tracks": [
         "#00E5FF",  # 0  cyan
@@ -158,6 +166,13 @@ LIGHT_PALETTE: dict = {
     "orange":    "#CC4400",   # warning / record
     "text":      "#1A1F2E",   # primary text — dark navy
     "text_dim":  "#6B7A99",   # secondary text — medium slate
+    # Piano roll keys
+    "key_black":    "#1A1A22",   # black piano keys (always dark)
+    "key_white_hi": "#FFFFFF",   # white key highlight edge
+    "key_white_lo": "#E8EAF0",   # white key shadow edge
+    # Piano roll grid rows
+    "grid_black":   "#D8DCE8",   # black-note rows (light grey)
+    "grid_white":   "#FFFFFF",   # white-note rows (white)
     "tracks": [
         "#0077CC", "#CC0055", "#1A9E00", "#B8860B",
         "#6633CC", "#CC4400", "#008866", "#CC2222",
@@ -893,11 +908,11 @@ class PianoRollWidget(QWidget):
             is_black = pitch % 12 in {1, 3, 6, 8, 10}
             if is_black:
                 p.fillRect(0, y, self.PIANO_WIDTH - 2, self.NOTE_HEIGHT - 1,
-                           QColor(15, 18, 35))
+                           QColor(C["key_black"]))
             else:
                 grad = QLinearGradient(0, y, self.PIANO_WIDTH, y)
-                grad.setColorAt(0, QColor(30, 40, 65))
-                grad.setColorAt(1, QColor(20, 26, 50))
+                grad.setColorAt(0, QColor(C["key_white_hi"]))
+                grad.setColorAt(1, QColor(C["key_white_lo"]))
                 p.fillRect(0, y, self.PIANO_WIDTH - 2, self.NOTE_HEIGHT - 1,
                            QBrush(grad))
 
@@ -973,8 +988,7 @@ class PianoRollWidget(QWidget):
             if y > gh:
                 break
             is_black = pitch % 12 in {1, 3, 6, 8, 10}
-            # Crystal dark rows — black-key rows are slightly more purple
-            r = QColor(8, 10, 22) if is_black else QColor(10, 13, 28)
+            r = QColor(C["grid_black"]) if is_black else QColor(C["grid_white"])
             p.fillRect(0, y, gw, self.NOTE_HEIGHT, r)
 
             # C-note separator line
