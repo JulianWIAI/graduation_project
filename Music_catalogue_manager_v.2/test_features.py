@@ -264,6 +264,16 @@ def test_mixer_reaches_tracks_the_engine_ignores():
     assert comp["track_info"]["08_Stabs"]["program"] == 48
 
 
+def test_bass_slider_changes_bass_volume():
+    from beatgen import generate
+    comp = lambda: {"tracks": {"03_Bass": [(0, 1, 36, 110)]}, "track_info": {}}
+    loud, fusion = comp(), comp()
+    generate._apply_layer_mixer(loud, {"vol_bass": "0.40"})
+    generate._apply_layer_mixer(fusion, {"vol_bass": "0.40"}, skip=("bass",))
+    assert loud["tracks"]["03_Bass"][0][3] == 55                 # halber Bezugswert 0.80
+    assert fusion["tracks"]["03_Bass"][0][3] == 110              # Fusion: Motor regelt selbst
+
+
 def test_old_work_folders_are_cleaned_up():
     from beatgen import generate
     old, new = generate._new_tmp_dir(), generate._new_tmp_dir()

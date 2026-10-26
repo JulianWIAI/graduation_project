@@ -90,25 +90,31 @@ def _set_volume(cfg, track: str, value):
 
 # Spuren, deren Mixer-Werte der Motor nicht auswertet: Er erzeugt sie mit festem
 # Instrument und Pegel. Der Katalog setzt sie nach dem Komponieren selbst.
+# Bass: Der Motor prueft die Lautstaerke nur auf 0 und nimmt sonst feste
+# Anschlagstaerken je Genre (nur der Fusion-Bass beachtet den Regler).
 # Bezugswert = bisheriger Regler-Standard, bei dem der Motor-Pegel unveraendert bleibt.
 _LAYER_TRACKS = {
     "drums":      ("01_Kick", 0.85),
     "percussion": ("02_Percussion", 0.65),
+    "bass":       ("03_Bass", 0.80),
     "stabs":      ("08_Stabs", 0.55),
     "texture":    ("09_Texture", 0.40),
     "fx":         ("10_FX", 0.35),
 }
 
 
-def _apply_layer_mixer(composition, data):
+def _apply_layer_mixer(composition, data, skip=()):
     """
     Lautstaerke (0 = Spur aus) und Instrument fuer Schlagzeug, Perkussion, Stabs,
     Textur und FX anwenden. Das Drum-Kit gilt fuer Kick und Perkussion (beide
     auf dem Schlagzeug-Kanal). Die Perkussions-Auswahl bleibt ohne Wirkung: Ihre
-    Melodie-Instrumente passen nicht zu Schlagzeug-Noten.
+    Melodie-Instrumente passen nicht zu Schlagzeug-Noten. skip: Spuren, die
+    der Motor in diesem Lauf selbst geregelt hat (sonst doppelt skaliert).
     """
     tracks, info = composition["tracks"], composition.get("track_info", {})
     for key, (name, ref) in _LAYER_TRACKS.items():
+        if key in skip:
+            continue
         try:
             vol = max(0.0, min(1.0, float(data.get(f"vol_{key}"))))
         except (TypeError, ValueError):
@@ -659,7 +665,9 @@ def generate_track():
         cfg.structure_override = _fit_structure(draft["structure"], cfg.bpm, length_s)
         cfg_vocal   = copy.deepcopy(cfg) if gen_mode == "both" else None
         composition = engine.compose(cfg)
-        _apply_layer_mixer(composition, data)
+        # Im Fusion-Modus regelt der Motor die Bass-Lautstaerke selbst.
+        _mixer_skip = ("bass",) if fusion_cfg is not None else ()
+        _apply_layer_mixer(composition, data, _mixer_skip)
 
         tmp_dir  = _new_tmp_dir()
         wav_path = tmp_dir / "beat.wav"
@@ -737,7 +745,7 @@ def generate_track():
         if cfg_vocal is not None:
             cfg_vocal.vocal_mask = True
             comp_vocal     = engine.compose(cfg_vocal)
-            _apply_layer_mixer(comp_vocal, data)
+            _apply_layer_mixer(comp_vocal, data, _mixer_skip)
             vocal_wav_path = tmp_dir / "beat_vocal.wav"
             _render(comp_vocal, groove_processor.jsonify_composition(comp_vocal),
                     vocal_wav_path, "render_vocal.mid")
