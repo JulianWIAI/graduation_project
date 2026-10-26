@@ -294,16 +294,12 @@ class MasterBusChannel(QFrame):
         self._fader.setFixedHeight(88)
         self._fader.setStyleSheet(f"""
             QSlider::groove:vertical {{
-                background:{_C["deep"]};
                 width:6px; border-radius:3px;
             }}
             QSlider::handle:vertical {{
                 background:{_C["cyan"]};
                 border:none; height:12px; width:18px;
                 margin:0 -6px; border-radius:4px;
-            }}
-            QSlider::sub-page:vertical {{
-                background:{_C["surface"]}; border-radius:3px;
             }}
         """)
         self._fader.valueChanged.connect(self._on_fader_changed)
@@ -332,7 +328,6 @@ class MasterBusChannel(QFrame):
         self._lim_btn.setFixedHeight(22)
         self._lim_btn.setStyleSheet(f"""
             QPushButton {{
-                background:{_C["deep"]};
                 border:1px solid rgba(0,229,255,0.3);
                 border-radius:3px; color:{_C["text_dim"]}; font-size:10px;
             }}
@@ -341,7 +336,7 @@ class MasterBusChannel(QFrame):
                 border-color:{_C["cyan"]}; color:{_C["cyan"]};
             }}
             QPushButton:disabled {{
-                background:{_C["deep"]}; border-color:rgba(0,229,255,0.08);
+                border-color:rgba(0,229,255,0.08);
                 color:rgba(61,90,128,0.4);
             }}
         """)
@@ -365,7 +360,6 @@ class MasterBusChannel(QFrame):
         self._ceil_spin.setFixedWidth(68)
         self._ceil_spin.setStyleSheet(f"""
             QDoubleSpinBox {{
-                background:{_C["deep"]};
                 border:1px solid rgba(0,229,255,0.2);
                 border-radius:3px; color:{_C["text"]}; font-size:9px;
                 padding:2px 4px;
@@ -480,16 +474,12 @@ class MasterBusChannel(QFrame):
         # Gain fader
         self._fader.setStyleSheet(f"""
             QSlider::groove:vertical {{
-                background:{_C["deep"]};
                 width:6px; border-radius:3px;
             }}
             QSlider::handle:vertical {{
                 background:{_C["cyan"]};
                 border:none; height:12px; width:18px;
                 margin:0 -6px; border-radius:4px;
-            }}
-            QSlider::sub-page:vertical {{
-                background:{_C["surface"]}; border-radius:3px;
             }}
         """)
 
@@ -547,7 +537,7 @@ class MasterBusChannel(QFrame):
             )
         return (
             f"QPushButton {{"
-            f"  background: {_C['deep']};"
+            f"  background: transparent;"
             f"  border: 1px solid rgba(61,90,128,0.4);"
             f"  border-radius: 3px;"
             f"  color: {_C['text_dim']};"
