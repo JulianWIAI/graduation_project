@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Beat generieren — SBS CATALOG') }}{% endblock %}
+{% block title %}{{ _('Beat generieren — %(brand)s', brand=brand.name) }}{% endblock %}
 
 {% block content %}
 <div class="gen-layout">
@@ -889,7 +889,7 @@ const GM_BDRA_CODES = {{ _gm_bdra_codes_json | safe }};
 
 /* ── Seitenstruktur ──────────────────────────────────────────────── */
 body  { overflow:hidden; }
-.content { padding-bottom:0; }
+.content { padding-bottom:0; --content-max-w: 100%; }  /* Arbeitsbereich: volle Breite */
 
 /* ── Layout ──────────────────────────────────────────────────────── */
 .gen-layout { display:grid; grid-template-columns:348px 1fr; gap:1.4rem; align-items:stretch; }
@@ -897,7 +897,7 @@ body  { overflow:hidden; }
 [hidden] { display:none !important; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────── */
-.gen-sidebar { display:flex; flex-direction:column; gap:.55rem; height:calc(100vh - 122px); overflow:hidden; }
+.gen-sidebar { display:flex; flex-direction:column; gap:.55rem; height:calc(100vh - var(--topbar-h) - var(--footer-h) - var(--content-pad-t)); overflow:hidden; }
 .gen-sidebar-scroll {
   flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
   display:flex; flex-direction:column; gap:.3rem; padding-right:.25rem;
@@ -1037,7 +1037,7 @@ body  { overflow:hidden; }
 /* ── Rechtes Panel ───────────────────────────────────────────────── */
 .gen-main {
   display:flex; flex-direction:column; gap:.9rem;
-  height:calc(100vh - 122px); overflow-y:auto; overflow-x:hidden; padding-right:.2rem;
+  height:calc(100vh - var(--topbar-h) - var(--footer-h) - var(--content-pad-t)); overflow-y:auto; overflow-x:hidden; padding-right:.2rem;
 }
 .gen-main::-webkit-scrollbar       { width:3px; }
 .gen-main::-webkit-scrollbar-track { background:transparent; }

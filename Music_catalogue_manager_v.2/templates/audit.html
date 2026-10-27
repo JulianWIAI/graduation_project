@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Protokoll · SBS Catalog') }}{% endblock %}
+{% block title %}{{ _('Protokoll · %(brand)s', brand=brand.name) }}{% endblock %}
 {% block content %}
 <h1>{{ _('Audit-Protokoll') }}</h1>
 <p class="subtitle">{{ _('Revisionssichere Aufzeichnung aller geschäftsrelevanten Aktionen.') }}</p>

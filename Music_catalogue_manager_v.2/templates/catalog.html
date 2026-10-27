@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Katalog · SBS Catalog') }}{% endblock %}
+{% block title %}{{ _('Katalog · %(brand)s', brand=brand.name) }}{% endblock %}
 {% block content %}
 <h1>{{ _('Katalog') }}</h1>
 <p class="subtitle">{{ _('Alle aus Music Architect eingelesenen Tracks inkl. Wasserzeichen-Status.') }}</p>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Wirtschaftlichkeit · SBS Catalog') }}{% endblock %}
+{% block title %}{{ _('Wirtschaftlichkeit · %(brand)s', brand=brand.name) }}{% endblock %}
 {% block content %}
 <h1>{{ _('Wirtschaftlichkeit') }}</h1>
 <p class="subtitle">{{ _('Kosten-Nutzen-Betrachtung, Break-even und ROI auf Basis der erfassten Verkäufe.') }}</p>

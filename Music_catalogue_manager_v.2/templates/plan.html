@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Tarif wählen') }} · SBS Catalog{% endblock %}
+{% block title %}{{ _('Tarif wählen') }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{{ _('Tarif wählen') }}</h1>
 <p class="subtitle">
-  {{ _('Wie möchtest du SBS Catalog nutzen? Ein Abo kannst du auch später jederzeit hier abschließen.') }}
+  {{ _('Wie möchtest du %(brand)s nutzen? Ein Abo kannst du auch später jederzeit hier abschließen.', brand=brand.name) }}
 </p>
 
 {% if notice == 'expiring' %}

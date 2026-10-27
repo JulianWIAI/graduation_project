@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ *
- * SBS Catalog — Music Creator Platform                                 *
+ * Beat Collage — Music Creator Platform                                 *
  * Professionelles Dark-UI fuer Produzenten, Singer & Songwriter        *
  * 2026 Edition — Deep-Violet Dark Theme                                *
  * ------------------------------------------------------------------ */
@@ -30,6 +30,13 @@
   /* Schriften */
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Layout-Masse (--topbar-h/--footer-h werden von layout.js gemessen) */
+  --topbar-min-h:  58px;   /* Mindesthoehe der Kopfzeile */
+  --topbar-h:      58px;
+  --footer-h:      36px;
+  --content-pad-t: 28px;
+  --content-pad-x: 24px;
+  --content-max-w: 1140px; /* max. Inhaltsbreite; einzelne Seiten koennen das ueberschreiben */
 }
 
 * { box-sizing: border-box; }
@@ -56,7 +63,7 @@ body {
 .topbar {
   display: flex; align-items: center; gap: 20px;
   padding: 0 28px;
-  height: 58px;
+  min-height: var(--topbar-min-h);
   background: rgba(8,8,13,0.82);
   border-bottom: 1px solid var(--line);
   position: sticky; top: 0; z-index: 200;
@@ -75,6 +82,7 @@ body {
   box-shadow: 0 0 18px rgba(109,93,240,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
   flex-shrink: 0;
 }
+.brand-logo { width: 30px; height: 30px; flex-shrink: 0; display: block; }
 .brand-name {
   font-family: var(--mono); font-weight: 700; letter-spacing: 2.5px;
   font-size: 12px; color: var(--tx); text-transform: uppercase;
@@ -91,7 +99,7 @@ body {
 .nav a.active { color: var(--vl); background: rgba(124,109,234,0.12); }
 
 /* ── Layout ─────────────────────────────────────────────────────────── */
-.content { max-width: 1140px; margin: 0 auto; padding: 28px 24px 60px; }
+.content { max-width: var(--content-max-w); margin: 0 auto; padding: var(--content-pad-t) var(--content-pad-x) 60px; }
 .footer {
   text-align: center; color: var(--tx3); font-size: 11px;
   padding: 20px; border-top: 1px solid var(--line); letter-spacing: .03em;
@@ -244,3 +252,84 @@ input:focus, select:focus, textarea:focus {
 .lang-link { font-size: 11px; padding: 3px 6px; border-radius: 6px; color: var(--tx3); text-decoration: none; }
 .lang-link:hover { color: var(--tx2); }
 .lang-link.active { color: var(--vl); background: rgba(124,109,234,0.12); }
+
+/* ── Kopfzeile: Dropdown-Menues, Benutzermenue, mobiles Menue ────────── */
+:root {
+  --menu-bg:      var(--s2);
+  --menu-border:  var(--line-2);
+  --menu-radius:  10px;
+  --menu-min-w:   200px;
+}
+.topbar-right { display: flex; align-items: center; gap: .8rem; flex-shrink: 0; }
+
+details.menu { position: relative; }
+details.menu > summary { list-style: none; }
+details.menu > summary::-webkit-details-marker { display: none; }
+.menu-trigger {
+  cursor: pointer; user-select: none;
+  color: var(--tx3); font-size: 13px; font-weight: 500;
+  padding: 6px 11px; border-radius: 8px;
+  display: flex; align-items: center; gap: 6px;
+  transition: color .18s, background .18s;
+}
+.menu-trigger::after {           /* gut sichtbarer Pfeil: zeigt, dass sich ein Menue oeffnet */
+  content: ""; width: 6px; height: 6px; margin-left: 2px;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform .18s;
+}
+details.menu[open] > .menu-trigger::after { transform: rotate(-135deg) translateY(-1px); }
+.menu-trigger .icon { flex-shrink: 0; }
+.menu-panel-narrow { min-width: 140px; }
+.menu-trigger:hover { color: var(--tx2); background: rgba(255,255,255,0.04); }
+.menu-trigger.active, details.menu[open] > .menu-trigger { color: var(--vl); background: rgba(124,109,234,0.12); }
+
+.menu-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 300;
+  min-width: var(--menu-min-w);
+  background: var(--menu-bg); border: 1px solid var(--menu-border);
+  border-radius: var(--menu-radius); padding: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.menu-right .menu-panel { left: auto; right: 0; }
+.menu-panel a, .menu-item {
+  display: block; width: 100%; text-align: left;
+  color: var(--tx2); text-decoration: none; font: inherit; font-size: 13px;
+  padding: 7px 10px; border-radius: 6px; background: none; border: 0; cursor: pointer;
+}
+.menu-panel a:hover, .menu-item:hover { color: var(--tx); background: rgba(255,255,255,0.05); }
+.menu-panel a.active { color: var(--vl); background: rgba(124,109,234,0.12); }
+.menu-form { margin: 0; }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 2px; }
+.menu-label { font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: var(--tx3); padding: 6px 10px 2px; }
+.menu-panel .lang-switch { padding: 2px 6px 4px; }
+.menu-panel .lang-link { display: inline-block; width: auto; }
+
+.user-email { font-size: 12px; color: var(--tx2); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-badge {
+  font-size: 10px; padding: 1px 7px; border-radius: 99px;
+  color: var(--vl); background: rgba(124,109,234,0.12); border: 1px solid rgba(124,109,234,0.35);
+}
+
+.nav-toggle {
+  display: none; margin-left: auto;
+  background: none; border: 1px solid var(--line-2); border-radius: 8px;
+  color: var(--tx2); font-size: 18px; line-height: 1; padding: 6px 10px; cursor: pointer;
+}
+.nav { flex-wrap: nowrap; align-items: center; }
+
+/* Mittlere Fenster: E-Mail ausblenden (Personen-Symbol bleibt), damit alles einzeilig bleibt */
+@media (max-width: 1280px) {
+  .user-email { display: none; }
+  .topbar { gap: 14px; }
+}
+
+/* Schmale Fenster: Navigation als aufklappbare Liste unter der Kopfzeile */
+@media (max-width: 1100px) {
+  .topbar { flex-wrap: wrap; }
+  .nav-toggle { display: block; }
+  .nav { display: none; order: 3; flex-basis: 100%; flex-direction: column; align-items: stretch; padding: 8px 0 12px; }
+  .topbar.nav-open .nav { display: flex; }
+  .nav details.menu .menu-panel { position: static; box-shadow: none; margin-top: 4px; }
+  .user-email { display: none; }
+}

@@ -1,4 +1,4 @@
-# SBS Catalog — Web-Frontend für Music Architect V7
+# Beat Collage — Web-Frontend für Music Architect V7
 
 Webbasiertes Produktions- und Verwaltungsmodul zum Musikproduktions-Gesamtpaket aus
 **Music Architect V7** (KI-Beat-Generator) und **SBS-Synth Master** (DAW/Mastering).

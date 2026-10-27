@@ -63,6 +63,12 @@ def _secret_key():
 app = Flask(__name__)
 app.secret_key = _secret_key()
 
+
+@app.context_processor
+def _inject_brand():
+    """Stellt Name und Logo der Suite allen Templates als `brand` bereit."""
+    return {"brand": {"name": config.BRAND_NAME, "logo_mark": config.BRAND_LOGO_MARK}}
+
 # --- Serverseitige Session-Konfiguration ------------------------------------
 # Cookie-basierte Sessions sind auf ~4 KB begrenzt — zu klein fuer Audio-Pfade.
 # Flask-Session speichert Sitzungsdaten auf dem Dateisystem, kein Groessenlimit.

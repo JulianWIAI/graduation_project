@@ -18,76 +18,88 @@
 <body>
   <header class="topbar">
     <a href="{{ url_for('generate.generate_page') }}" class="brand" style="text-decoration:none;">
-      <div class="brand-mark">◈</div>
+      <img class="brand-logo" src="{{ url_for('static', filename=brand.logo_mark) }}" alt="" width="30" height="30">
       <div>
-        <div class="brand-name">SBS&nbsp;CATALOG</div>
+        <div class="brand-name">{{ brand.name }}</div>
         <div class="brand-sub">{{ _('for creators') }}</div>
       </div>
     </a>
-    <nav class="nav">
+
+    <!-- Menue-Schalter fuer schmale Fenster (wird per CSS nur mobil angezeigt) -->
+    <button type="button" class="nav-toggle" aria-label="{{ _('Menü') }}" aria-expanded="false" aria-controls="mainNav">☰</button>
+
+    {# Admin-Endpunkte: steuern, ob "Verwaltung" als aktiv markiert wird #}
+    {% set admin_endpoints = ['dashboard_view','catalog','track_detail','licenses','users_view','economics_view','audit'] %}
+
+    <nav class="nav" id="mainNav">
       <!-- Nutzer-Routen: immer sichtbar nach Login -->
       <a href="{{ url_for('generate.generate_page') }}"
-         class="{{ 'active' if request.endpoint == 'generate.generate_page' }}">
-        {{ _('Generate') }}
-      </a>
+         class="{{ 'active' if request.endpoint == 'generate.generate_page' }}">{{ _('Generate') }}</a>
       <a href="{{ url_for('stats.stats_page') }}"
-         class="{{ 'active' if request.endpoint == 'stats.stats_page' }}">
-        {{ _('Statistik') }}
-      </a>
+         class="{{ 'active' if request.endpoint == 'stats.stats_page' }}">{{ _('Statistik') }}</a>
       <a href="{{ url_for('tokens.shop') }}"
-         class="{{ 'active' if request.endpoint and request.endpoint.startswith('tokens.') }}">
-        {{ _('Tokens') }}
-      </a>
+         class="{{ 'active' if request.endpoint and request.endpoint.startswith('tokens.') }}">{{ _('Tokens') }}</a>
       <a href="{{ url_for('plan') }}"
-         class="{{ 'active' if request.endpoint == 'plan' }}">
-        {{ _('Abo') }}
-      </a>
+         class="{{ 'active' if request.endpoint == 'plan' }}">{{ _('Abo') }}</a>
       <a href="{{ url_for('download_page') }}"
-         class="{{ 'active' if request.endpoint == 'download_page' }}">
-        {{ _('Download') }}
-      </a>
+         class="{{ 'active' if request.endpoint == 'download_page' }}">{{ _('Download') }}</a>
 
-      <!-- Admin-Routen: nur fuer Administratoren anzeigen -->
+      <!-- Admin-Routen: gebuendelt im Dropdown "Verwaltung", nur fuer Administratoren -->
       {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('dashboard_view') }}"
-           class="{{ 'active' if request.endpoint == 'dashboard_view' }}">{{ _('Dashboard') }}</a>
-        <a href="{{ url_for('catalog') }}"
-           class="{{ 'active' if request.endpoint in ['catalog','track_detail'] }}">{{ _('Katalog') }}</a>
-        <a href="{{ url_for('licenses') }}"
-           class="{{ 'active' if request.endpoint == 'licenses' }}">{{ _('Lizenzen') }}</a>
-        <a href="{{ url_for('users_view') }}"
-           class="{{ 'active' if request.endpoint == 'users_view' }}">{{ _('Nutzer') }}</a>
-        <a href="{{ url_for('economics_view') }}"
-           class="{{ 'active' if request.endpoint == 'economics_view' }}">{{ _('Wirtschaftlichkeit') }}</a>
-        <a href="{{ url_for('audit') }}"
-           class="{{ 'active' if request.endpoint == 'audit' }}">{{ _('Protokoll') }}</a>
-        <a href="{{ url_for('settings_view') }}"
-           class="{{ 'active' if request.endpoint == 'settings_view' }}">{{ _('Einstellungen') }}</a>
+        <details class="menu">
+          <summary class="menu-trigger{{ ' active' if request.endpoint in admin_endpoints }}">{{ _('Verwaltung') }}</summary>
+          <div class="menu-panel">
+            <a href="{{ url_for('dashboard_view') }}"
+               class="{{ 'active' if request.endpoint == 'dashboard_view' }}">{{ _('Dashboard') }}</a>
+            <a href="{{ url_for('catalog') }}"
+               class="{{ 'active' if request.endpoint in ['catalog','track_detail'] }}">{{ _('Katalog') }}</a>
+            <a href="{{ url_for('licenses') }}"
+               class="{{ 'active' if request.endpoint == 'licenses' }}">{{ _('Lizenzen') }}</a>
+            <a href="{{ url_for('users_view') }}"
+               class="{{ 'active' if request.endpoint == 'users_view' }}">{{ _('Nutzer') }}</a>
+            <a href="{{ url_for('economics_view') }}"
+               class="{{ 'active' if request.endpoint == 'economics_view' }}">{{ _('Wirtschaftlichkeit') }}</a>
+            <a href="{{ url_for('audit') }}"
+               class="{{ 'active' if request.endpoint == 'audit' }}">{{ _('Protokoll') }}</a>
+            <div class="menu-sep"></div>
+            <form method="post" action="{{ url_for('scan') }}" class="menu-form">
+              <button type="submit" class="menu-item">{{ _('↻ Scannen') }}</button>
+            </form>
+          </div>
+        </details>
       {% endif %}
     </nav>
 
-    <div style="display:flex;align-items:center;gap:.8rem;">
-      <!-- Sprachumschalter: DE / EN / FR -->
-      <span class="lang-switch">{% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" title="{{ languages[code] }}" class="lang-link{{ ' active' if code == lang }}">{{ code|upper }}</a>{% endfor %}</span>
-      <!-- Tooltip-Toggle: fuer alle eingeloggten Nutzer sichtbar -->
+    <div class="topbar-right">
       {% if current_user.is_authenticated %}
+        <!-- Tooltip-Toggle (Text/Status wird von tooltips.js gesetzt) -->
         <button id="btnTooltipToggle" type="button">{{ _('? Hilfe AN') }}</button>
-      {% endif %}
-      {% if current_user.is_authenticated %}
-        <span style="font-size:.78rem;color:#888;">{{ current_user.email }}</span>
-        {% if current_user.is_admin %}
-          <span style="font-size:.68rem;padding:.1rem .5rem;border-radius:99px;
-                       background:#1e1e2e;color:#7c6dea;border:1px solid #3a3060;">
-            ADMIN
-          </span>
-        {% endif %}
-        <a href="{{ url_for('auth.logout') }}"
-           style="font-size:.78rem;color:#7c6dea;text-decoration:none;">{{ _('Logout') }}</a>
-      {% endif %}
-      {% if current_user.is_authenticated and current_user.is_admin %}
-        <form method="post" action="{{ url_for('scan') }}" class="topbar-action">
-          <button type="submit" class="btn btn-ghost">{{ _('↻ Scannen') }}</button>
-        </form>
+
+        <!-- Sprachauswahl: eigenes Dropdown mit Globus-Symbol -->
+        <details class="menu menu-right">
+          <summary class="menu-trigger" title="{{ _('Sprache') }}"><svg class="icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg><span>{{ lang|upper }}</span></summary>
+          <div class="menu-panel menu-panel-narrow">
+            {% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" class="{{ 'active' if code == lang }}">{{ languages[code] }}</a>{% endfor %}
+          </div>
+        </details>
+
+        <!-- Benutzermenue: Einstellungen, Logout -->
+        <details class="menu menu-right">
+          <summary class="menu-trigger user-trigger{{ ' active' if request.endpoint == 'settings_view' }}">
+            <svg class="icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+            <span class="user-email">{{ current_user.email }}</span>
+            {% if current_user.is_admin %}<span class="role-badge">ADMIN</span>{% endif %}
+          </summary>
+          <div class="menu-panel">
+            {% if current_user.is_admin %}
+              <a href="{{ url_for('settings_view') }}"
+                 class="{{ 'active' if request.endpoint == 'settings_view' }}">{{ _('Einstellungen') }}</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a>
+          </div>
+        </details>
+      {% else %}
+        <span class="lang-switch">{% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" title="{{ languages[code] }}" class="lang-link{{ ' active' if code == lang }}">{{ code|upper }}</a>{% endfor %}</span>
       {% endif %}
     </div>
   </header>
@@ -108,6 +120,8 @@
   <footer class="footer">
     {{ _('Ergänzungsmodul zum Gesamtpaket · koppelt read-only an Music Architect V7 &amp; SBS-Synth Master') }}
   </footer>
+  <script src="{{ url_for('static', filename='layout.js') }}"></script>
+  <script src="{{ url_for('static', filename='nav.js') }}"></script>
   <script src="{{ url_for('static', filename='tooltips.js') }}"></script>
 </body>
 </html>

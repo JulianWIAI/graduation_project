@@ -35,6 +35,9 @@ _T = {
     "Einstellungen": ("Settings", "Paramètres"),
     "? Hilfe AN": ("? Help ON", "? Aide ON"),
     "Logout": ("Logout", "Déconnexion"),
+    "Verwaltung": ("Administration", "Administration"),
+    "Sprache": ("Language", "Langue"),
+    "Menü": ("Menu", "Menu"),
     "↻ Scannen": ("↻ Scan", "↻ Scanner"),
     "Ergänzungsmodul zum Gesamtpaket · koppelt read-only an Music Architect V7 &amp; SBS-Synth Master": (
         "Add-on module for the full package · read-only link to Music Architect V7 &amp; SBS-Synth Master",
@@ -44,13 +47,13 @@ _T = {
         "Veuillez vous connecter pour accéder à cette page."),
 
     # --- Anmeldung / Registrierung ------------------------------------------
-    "Anmelden — SBS Catalog": ("Sign in — SBS Catalog", "Connexion — SBS Catalog"),
+    "Anmelden — %(brand)s": ("Sign in — %(brand)s", "Connexion — %(brand)s"),
     "Anmelden": ("Sign in", "Se connecter"),
     "E-Mail": ("Email", "E-mail"),
     "Passwort": ("Password", "Mot de passe"),
     "Kein Konto?": ("No account?", "Pas de compte ?"),
     "Registrieren": ("Sign up", "S'inscrire"),
-    "Registrieren — SBS Catalog": ("Sign up — SBS Catalog", "Inscription — SBS Catalog"),
+    "Registrieren — %(brand)s": ("Sign up — %(brand)s", "Inscription — %(brand)s"),
     "Konto erstellen": ("Create account", "Créer un compte"),
     "Passwort bestätigen": ("Confirm password", "Confirmer le mot de passe"),
     "Bereits ein Konto?": ("Already have an account?", "Déjà un compte ?"),
@@ -75,9 +78,9 @@ _T = {
 
     # --- Tarifwahl (plan.html) ----------------------------------------------
     "Tarif wählen": ("Choose your plan", "Choisir une offre"),
-    "Wie möchtest du SBS Catalog nutzen? Ein Abo kannst du auch später jederzeit hier abschließen.": (
-        "How would you like to use SBS Catalog? You can also take out a subscription here at any later time.",
-        "Comment souhaitez-vous utiliser SBS Catalog ? Vous pourrez aussi souscrire un abonnement ici plus tard, à tout moment."),
+    "Wie möchtest du %(brand)s nutzen? Ein Abo kannst du auch später jederzeit hier abschließen.": (
+        "How would you like to use %(brand)s? You can also take out a subscription here at any later time.",
+        "Comment souhaitez-vous utiliser %(brand)s ? Vous pourrez aussi souscrire un abonnement ici plus tard, à tout moment."),
     "Dein Abo ist aktiv bis %(date)s.": (
         "Your subscription is active until %(date)s.", "Votre abonnement est actif jusqu'au %(date)s."),
     "Dein Abo ist aktiv.": ("Your subscription is active.", "Votre abonnement est actif."),
@@ -159,7 +162,7 @@ _T = {
     "Token-Guthaben angepasst.": ("Token balance adjusted.", "Solde de jetons ajusté."),
 
     # --- Token-Shop (tokens.html) -------------------------------------------
-    "Tokens · SBS Catalog": ("Tokens · SBS Catalog", "Jetons · SBS Catalog"),
+    "Tokens · %(brand)s": ("Tokens · %(brand)s", "Jetons · %(brand)s"),
     "Kontingent aufgebraucht? Mit Tokens kannst du weitere Sounds speichern und exportieren — jeder Beat über dem Limit verbraucht genau 1 Token. Tokens verfallen nicht.": (
         "Quota used up? With tokens you can save and export more sounds — every beat above the limit uses exactly 1 token. Tokens do not expire.",
         "Quota épuisé ? Avec des jetons, vous pouvez enregistrer et exporter d'autres sons — chaque beat au-delà de la limite consomme exactement 1 jeton. Les jetons n'expirent pas."),
@@ -200,7 +203,7 @@ _T = {
     "Gutschrift (Admin)": ("Credit (admin)", "Crédit (admin)"),
 
     # --- Checkout & Rechnung ------------------------------------------------
-    "Checkout · SBS Catalog": ("Checkout · SBS Catalog", "Paiement · SBS Catalog"),
+    "Checkout · %(brand)s": ("Checkout · %(brand)s", "Paiement · %(brand)s"),
     "Checkout": ("Checkout", "Paiement"),
     "simuliert": ("simulated", "simulé"),
     "Zahlungsübersicht — Status:": ("Payment summary — status:", "Récapitulatif du paiement — statut :"),
@@ -252,7 +255,7 @@ _T = {
     "Rechnung nicht gefunden.": ("Invoice not found.", "Facture introuvable."),
 
     # --- Statistik (stats.html) ---------------------------------------------
-    "Meine Statistik — SBS Catalog": ("My statistics — SBS Catalog", "Mes statistiques — SBS Catalog"),
+    "Meine Statistik — %(brand)s": ("My statistics — %(brand)s", "Mes statistiques — %(brand)s"),
     "&#8635; Aktualisieren": ("&#8635; Refresh", "&#8635; Actualiser"),
     "Gespeicherte Beats": ("Saved beats", "Beats enregistrés"),
     "Heute": ("Today", "Aujourd'hui"),
@@ -266,7 +269,7 @@ _T = {
         "Genre distribution (saved tracks)", "Répartition par genre (morceaux enregistrés)"),
 
     # --- Katalog & Track-Details --------------------------------------------
-    "Katalog · SBS Catalog": ("Catalog · SBS Catalog", "Catalogue · SBS Catalog"),
+    "Katalog · %(brand)s": ("Catalog · %(brand)s", "Catalogue · %(brand)s"),
     "Alle aus Music Architect eingelesenen Tracks inkl. Wasserzeichen-Status.": (
         "All tracks imported from Music Architect, incl. watermark status.",
         "Tous les morceaux importés de Music Architect, avec l'état du filigrane."),
@@ -350,7 +353,7 @@ _T = {
     "Exklusiv (Vollrechte)": ("Exclusive (full rights)", "Exclusif (tous droits)"),
 
     # --- Lizenzen -----------------------------------------------------------
-    "Lizenzen · SBS Catalog": ("Licenses · SBS Catalog", "Licences · SBS Catalog"),
+    "Lizenzen · %(brand)s": ("Licenses · %(brand)s", "Licences · %(brand)s"),
     "Verkaufte Lizenzen": ("Licenses sold", "Licences vendues"),
     "Vollständige Verkaufshistorie über alle Tracks.": (
         "Complete sales history across all tracks.", "Historique complet des ventes pour tous les morceaux."),
@@ -375,7 +378,7 @@ _T = {
         "Attention : %(n)s licence(s) de location existent déjà pour ce morceau."),
 
     # --- Dashboard & Wirtschaftlichkeit -------------------------------------
-    "Dashboard · SBS Catalog": ("Dashboard · SBS Catalog", "Tableau de bord · SBS Catalog"),
+    "Dashboard · %(brand)s": ("Dashboard · %(brand)s", "Tableau de bord · %(brand)s"),
     "Überblick über Katalog, Lizenzerlöse und Wirtschaftlichkeit.": (
         "Overview of catalog, license revenue and profitability.",
         "Vue d'ensemble du catalogue, des revenus de licences et de la rentabilité."),
@@ -406,7 +409,7 @@ _T = {
         "in revenue needed to cover the one-off investment.",
         "de chiffre d'affaires pour couvrir l'investissement initial."),
     "Umsatz nach Lizenz-Stufe": ("Revenue by license tier", "Chiffre d'affaires par niveau de licence"),
-    "Wirtschaftlichkeit · SBS Catalog": ("Profitability · SBS Catalog", "Rentabilité · SBS Catalog"),
+    "Wirtschaftlichkeit · %(brand)s": ("Profitability · %(brand)s", "Rentabilité · %(brand)s"),
     "Kosten-Nutzen-Betrachtung, Break-even und ROI auf Basis der erfassten Verkäufe.": (
         "Cost-benefit analysis, break-even and ROI based on recorded sales.",
         "Analyse coûts-bénéfices, seuil de rentabilité et ROI sur la base des ventes enregistrées."),
@@ -443,7 +446,7 @@ _T = {
         "— idéal pour des scénarios (pessimiste / réaliste / optimiste) dans votre dossier."),
 
     # --- Nutzer & Abo (users.html) ------------------------------------------
-    "Nutzer & Abo · SBS Catalog": ("Users & subscriptions · SBS Catalog", "Utilisateurs & abonnements · SBS Catalog"),
+    "Nutzer & Abo · %(brand)s": ("Users & subscriptions · %(brand)s", "Utilisateurs & abonnements · %(brand)s"),
     "Nutzer & Abo": ("Users & subscriptions", "Utilisateurs & abonnements"),
     "Freemium-Modell: Abonnenten dürfen mehr Sounds pro Monat beziehen und erhalten Rabatt.": (
         "Freemium model: subscribers get more sounds per month and a discount.",
@@ -485,7 +488,7 @@ _T = {
     "Nutzer '%(name)s' angelegt.": ("User '%(name)s' created.", "Utilisateur « %(name)s » créé."),
 
     # --- Einstellungen, Scan, Audit -----------------------------------------
-    "Einstellungen · SBS Catalog": ("Settings · SBS Catalog", "Paramètres · SBS Catalog"),
+    "Einstellungen · %(brand)s": ("Settings · %(brand)s", "Paramètres · %(brand)s"),
     "Kopplung an die Sound-Programme, Kostenannahmen und Preis-Stufen.": (
         "Link to the sound programs, cost assumptions and price tiers.",
         "Couplage aux programmes audio, hypothèses de coûts et niveaux de prix."),
@@ -550,7 +553,7 @@ _T = {
         "Music Architect exited with error code %(code)s.", "Music Architect s'est terminé avec le code d'erreur %(code)s."),
     "Aufruf von Music Architect fehlgeschlagen: %(exc)s": (
         "Calling Music Architect failed: %(exc)s", "Échec de l'appel de Music Architect : %(exc)s"),
-    "Protokoll · SBS Catalog": ("Audit log · SBS Catalog", "Journal · SBS Catalog"),
+    "Protokoll · %(brand)s": ("Audit log · %(brand)s", "Journal · %(brand)s"),
     "Audit-Protokoll": ("Audit log", "Journal d'audit"),
     "Revisionssichere Aufzeichnung aller geschäftsrelevanten Aktionen.": (
         "Tamper-evident record of all business-relevant actions.",
@@ -607,7 +610,7 @@ _T = {
         "File exceeds the 20 MB limit (%(mb)s MB received)", "Le fichier dépasse la limite de 20 Mo (%(mb)s Mo reçus)"),
 
     # --- Generator: Oberflaeche (generate.html) -----------------------------
-    "Beat generieren — SBS CATALOG": ("Generate beat — SBS CATALOG", "Générer un beat — SBS CATALOG"),
+    "Beat generieren — %(brand)s": ("Generate beat — %(brand)s", "Générer un beat — %(brand)s"),
     "Kontingent": ("Quota", "Quota"),
     "diesen Monat frei ·": ("left this month ·", "restants ce mois-ci ·"),
     "Kontingent aufgebraucht? Mit Tokens kannst du weitere Beats speichern und exportieren.": (
@@ -941,17 +944,17 @@ _T = {
 
     # --- Passwort-Wiederherstellung / Sicherheitsfrage -----------------------
     "Passwort vergessen?": ("Forgot password?", "Mot de passe oublié ?"),
-    "Passwort vergessen? — SBS Catalog": (
-        "Forgot password? — SBS Catalog", "Mot de passe oublié ? — SBS Catalog"),
+    "Passwort vergessen? — %(brand)s": (
+        "Forgot password? — %(brand)s", "Mot de passe oublié ? — %(brand)s"),
     "Weiter": ("Continue", "Continuer"),
     "Sicherheitsfrage": ("Security question", "Question de sécurité"),
     "Antwort": ("Answer", "Réponse"),
     "Passwort zurücksetzen": ("Reset password", "Réinitialiser le mot de passe"),
-    "Neues Passwort — SBS Catalog": ("New password — SBS Catalog", "Nouveau mot de passe — SBS Catalog"),
+    "Neues Passwort — %(brand)s": ("New password — %(brand)s", "Nouveau mot de passe — %(brand)s"),
     "Neues Passwort": ("New password", "Nouveau mot de passe"),
     "Passwort ändern": ("Change password", "Changer le mot de passe"),
-    "Passwort ändern — SBS Catalog": (
-        "Change password — SBS Catalog", "Changer le mot de passe — SBS Catalog"),
+    "Passwort ändern — %(brand)s": (
+        "Change password — %(brand)s", "Changer le mot de passe — %(brand)s"),
     "Falscher Benutzername": ("Invalid username", "Nom d'utilisateur invalide"),
     "Falsche Antwort": ("Wrong answer", "Réponse incorrecte"),
     "Passwort erfolgreich geaendert": (

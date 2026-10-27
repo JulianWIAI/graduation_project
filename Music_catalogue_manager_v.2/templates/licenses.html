@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Lizenzen · SBS Catalog') }}{% endblock %}
+{% block title %}{{ _('Lizenzen · %(brand)s', brand=brand.name) }}{% endblock %}
 {% block content %}
 <h1>{{ _('Verkaufte Lizenzen') }}</h1>
 <p class="subtitle">{{ _('Vollständige Verkaufshistorie über alle Tracks.') }}</p>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Rechnung') }} {{ ctx.number }} · SBS Catalog{% endblock %}
+{% block title %}{{ _('Rechnung') }} {{ ctx.number }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="row-actions" style="margin-bottom:16px;">
   <button class="btn btn-ghost" onclick="window.print()">{{ _('Drucken') }}</button>

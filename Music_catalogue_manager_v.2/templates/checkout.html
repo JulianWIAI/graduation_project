@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Checkout · SBS Catalog') }}{% endblock %}
+{% block title %}{{ _('Checkout · %(brand)s', brand=brand.name) }}{% endblock %}
 {% block content %}
 <h1>{{ _('Checkout') }} <span class="badge badge-leased" style="vertical-align:middle;">{{ _('simuliert') }}</span></h1>
 <p class="subtitle">{{ _('Zahlungsübersicht — Status:') }} <strong>{{ _('bezahlt') if ctx.status == 'paid' else _('offen') }}</strong>.</p>

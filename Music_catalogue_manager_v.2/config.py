@@ -138,3 +138,11 @@ DEFAULT_TOKENS = {
 
 # Waehlbare Paketgroessen (Anzahl Tokens) im Token-Shop.
 TOKEN_PACKAGES = [1, 5, 10, 25]
+
+# ---------------------------------------------------------------------------
+# Branding — Name und Logo zentral, damit sie nur hier geaendert werden muessen
+# ---------------------------------------------------------------------------
+# Der Name kann per Umgebungsvariable SBS_BRAND_NAME
+# ueberschrieben werden. Pfade sind relativ zum Ordner static/.
+BRAND_NAME = os.environ.get("SBS_BRAND_NAME", "Beat Collage")
+BRAND_LOGO_MARK = "brand/logo-mark.svg"
