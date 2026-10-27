@@ -8,13 +8,13 @@ Flask-Login-Mixins ohne ORM funktionieren.
 """
 
 import secrets
-from datetime import datetime, timedelta
 
 from flask import (Blueprint, flash, redirect, render_template,
                    request, session, url_for)
 from flask_login import UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from auth import lockout
 from auth.rbac import require_admin
 from commerce import quota
 from db import database as db
@@ -22,34 +22,14 @@ from i18n import _
 
 auth_bp = Blueprint("auth", __name__)
 
-MAX_FAILED_LOGINS = 3                  # falsche Passwoerter in Folge bis zur Sperre
-LOCK_DURATION = timedelta(hours=24)
-
-# Schluessel fuer den Sicherheitsfragen-Fehlversuchszaehler in der Session.
-_SQ_FAILS_KEY = "sq_fails"
-_SQ_LOCKED_KEY = "sq_locked_until"
-
-
-def lock_end(row):
-    """Ende einer laufenden Sperre als datetime, sonst None."""
-    until = row["locked_until"]
-    if until and datetime.fromisoformat(until) > datetime.now():
-        return datetime.fromisoformat(until)
-    return None
-
-
-def set_login_state(user_id, failed, locked_until=None):
-    conn = db.get_conn()
-    conn.execute("UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?",
-                 (failed, locked_until.isoformat(timespec="seconds") if locked_until else None,
-                  user_id))
-    conn.commit()
-    conn.close()
+# Sperr-Einstellungen (Fehlversuche, steigende Sperrdauer) stehen in auth/lockout.py.
+MAX_FAILED_LOGINS = lockout.MAX_FAILED_ATTEMPTS
 
 
 def _flash_locked(until):
-    flash(_("Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.",
-            n=MAX_FAILED_LOGINS, until=until.strftime("%d.%m.%Y, %H:%M")), "error")
+    """Neutrale Sperrmeldung: nennt nur die Uhrzeit, ab der es wieder geht."""
+    flash(_("Zu viele Fehlversuche. Bitte versuche es um %(time)s Uhr erneut.",
+            time=until.strftime("%H:%M")), "error")
 
 # --- User model -------------------------------------------------------------
 
@@ -93,7 +73,7 @@ def register():
             flash(_("E-Mail und Passwort sind erforderlich."), "error")
             return render_template("register.html")
         if password != confirm:
-            flash(_("Passwoerter stimmen nicht ueberein."), "error")
+            flash(_("Passwörter stimmen nicht überein."), "error")
             return render_template("register.html")
         if not security_question or not security_answer:
             flash(_("Sicherheitsfrage und Antwort sind erforderlich."), "error")
@@ -123,29 +103,25 @@ def login():
 
         row = db.get_user_by_email(email)
         if not row or not row["password_hash"]:
-            flash(_("Ungueltige E-Mail oder falsches Passwort."), "error")
+            flash(_("Ungültige E-Mail oder falsches Passwort."), "error")
             return render_template("login.html")
-        # Gesperrt: auch das richtige Passwort wird abgelehnt.
-        until = lock_end(row)
+        # Gesperrt (fuer diesen Nutzer an dieser IP): auch das richtige Passwort wird abgelehnt.
+        until = lockout.active_lock(row["id"], lockout.KIND_LOGIN)
         if until:
             _flash_locked(until)
             return render_template("login.html")
         if not check_password_hash(row["password_hash"], password):
-            failed = row["failed_logins"] + 1     # beim Sperren auf 0 gesetzt
-            if failed >= MAX_FAILED_LOGINS:
-                until = datetime.now() + LOCK_DURATION
-                set_login_state(row["id"], 0, until)
-                db.log_event("LOGIN_LOCKED", "user", row["id"], {"email": email})
+            until, _remaining = lockout.register_failure(row["id"], lockout.KIND_LOGIN)
+            if until:
+                db.log_event("LOGIN_LOCKED", "user", row["id"],
+                             {"email": email, "ip": lockout.client_ip(), "until": until.isoformat()})
                 _flash_locked(until)
             else:
-                set_login_state(row["id"], failed)
-                flash(_("Ungueltige E-Mail oder falsches Passwort.") + " "
-                      + _("Noch %(n)s Versuch(e) bis zur Sperre.", n=MAX_FAILED_LOGINS - failed),
-                      "error")
+                # Ohne Zaehler: sonst verraet die Meldung, dass das Konto existiert.
+                flash(_("Ungültige E-Mail oder falsches Passwort."), "error")
             return render_template("login.html")
 
-        if row["failed_logins"] or row["locked_until"]:
-            set_login_state(row["id"], 0)
+        lockout.reset(row["id"], lockout.KIND_LOGIN)
         login_user(User(row))
 
         # Muss das Passwort geaendert werden? (Admin-Reset)
@@ -174,14 +150,6 @@ def logout():
 
 # --- Passwort vergessen (Sicherheitsfrage) ----------------------------------
 
-def _sq_locked():
-    """Prueft ob die Sicherheitsfragen-Sperre noch aktiv ist."""
-    locked_until = session.get(_SQ_LOCKED_KEY)
-    if locked_until and datetime.fromisoformat(locked_until) > datetime.now():
-        return datetime.fromisoformat(locked_until)
-    return None
-
-
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -193,22 +161,12 @@ def forgot_password():
             return render_template("forgot_password.html")
         # Token in der Session ablegen und weiterleiten.
         session["pw_reset_email"] = email
-        session[_SQ_FAILS_KEY] = 0
-        session.pop(_SQ_LOCKED_KEY, None)
         return redirect(url_for("auth.forgot_password_question", email=email))
     return render_template("forgot_password.html")
 
 
 @auth_bp.route("/forgot-password/<email>", methods=["GET", "POST"])
 def forgot_password_question(email):
-    # Sperr-Check.
-    locked_until = _sq_locked()
-    if locked_until:
-        flash(_("Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.",
-                n=MAX_FAILED_LOGINS,
-                until=locked_until.strftime("%d.%m.%Y, %H:%M")), "error")
-        return redirect(url_for("auth.forgot_password"))
-
     row = db.get_user_by_email(email)
     if not row or not row["security_question"]:
         flash(_("Falscher Benutzername"), "error")
@@ -218,28 +176,29 @@ def forgot_password_question(email):
     if session.get("pw_reset_email") != email:
         return redirect(url_for("auth.forgot_password"))
 
+    # Sperr-Check in der Datenbank (nicht im Cookie -- Cookie-Loeschen hebt sie nicht auf).
+    until = lockout.active_lock(row["id"], lockout.KIND_SECURITY_QUESTION)
+    if until:
+        _flash_locked(until)
+        return redirect(url_for("auth.forgot_password"))
+
     if request.method == "POST":
         answer = request.form.get("answer", "").strip()
         if check_password_hash(row["security_answer_hash"], answer.lower()):
             # Antwort korrekt: Reset-Token erzeugen.
             token = secrets.token_urlsafe(16)
             session["pw_reset_token"] = token
-            session[_SQ_FAILS_KEY] = 0
+            lockout.reset(row["id"], lockout.KIND_SECURITY_QUESTION)
             return redirect(url_for("auth.reset_password", email=email, token=token))
         # Falsche Antwort.
-        fails = session.get(_SQ_FAILS_KEY, 0) + 1
-        session[_SQ_FAILS_KEY] = fails
-        if fails >= MAX_FAILED_LOGINS:
-            until = datetime.now() + LOCK_DURATION
-            session[_SQ_LOCKED_KEY] = until.isoformat(timespec="seconds")
-            session[_SQ_FAILS_KEY] = 0
-            flash(_("Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.",
-                    n=MAX_FAILED_LOGINS,
-                    until=until.strftime("%d.%m.%Y, %H:%M")), "error")
+        until, remaining = lockout.register_failure(row["id"], lockout.KIND_SECURITY_QUESTION)
+        if until:
+            db.log_event("SECURITY_QUESTION_LOCKED", "user", row["id"],
+                         {"ip": lockout.client_ip(), "until": until.isoformat()})
+            _flash_locked(until)
             return redirect(url_for("auth.forgot_password"))
         flash(_("Falsche Antwort") + " "
-              + _("Noch %(n)s Versuch(e) bis zur Sperre.", n=MAX_FAILED_LOGINS - fails),
-              "error")
+              + _("Noch %(n)s Versuch(e) bis zur Sperre.", n=remaining), "error")
 
     return render_template("forgot_password_question.html",
                            email=email,
@@ -251,7 +210,7 @@ def reset_password(email, token):
     # Token validieren.
     if (session.get("pw_reset_email") != email
             or session.get("pw_reset_token") != token):
-        flash(_("Ungueltige oder abgelaufene Sitzung."), "error")
+        flash(_("Ungültige oder abgelaufene Sitzung."), "error")
         return redirect(url_for("auth.forgot_password"))
 
     row = db.get_user_by_email(email)
@@ -266,7 +225,7 @@ def reset_password(email, token):
             flash(_("Neues Passwort darf nicht leer sein."), "error")
             return render_template("reset_password.html", email=email, token=token)
         if new_pw != confirm:
-            flash(_("Passwoerter stimmen nicht ueberein."), "error")
+            flash(_("Passwörter stimmen nicht überein."), "error")
             return render_template("reset_password.html", email=email, token=token)
 
         conn = db.get_conn()
@@ -279,10 +238,10 @@ def reset_password(email, token):
         # Session-Tokens loeschen.
         session.pop("pw_reset_email", None)
         session.pop("pw_reset_token", None)
-        session.pop(_SQ_FAILS_KEY, None)
-        session.pop(_SQ_LOCKED_KEY, None)
+        # Identitaet per Sicherheitsfrage bestaetigt: alle Sperren des Kontos aufheben.
+        lockout.unlock_user(row["id"])
 
-        flash(_("Passwort erfolgreich geaendert"), "success")
+        flash(_("Passwort erfolgreich geändert"), "success")
         return redirect(url_for("auth.login"))
 
     return render_template("reset_password.html", email=email, token=token)
@@ -300,7 +259,7 @@ def change_password():
             flash(_("Neues Passwort darf nicht leer sein."), "error")
             return render_template("change_password.html")
         if new_pw != confirm:
-            flash(_("Passwoerter stimmen nicht ueberein."), "error")
+            flash(_("Passwörter stimmen nicht überein."), "error")
             return render_template("change_password.html")
 
         conn = db.get_conn()
@@ -310,7 +269,7 @@ def change_password():
         conn.close()
         db.log_event("PASSWORD_CHANGED", "user", current_user.id, {"via": "forced_change"})
 
-        flash(_("Passwort erfolgreich geaendert"), "success")
+        flash(_("Passwort erfolgreich geändert"), "success")
         return redirect(url_for("generate.generate_page"))
 
     return render_template("change_password.html")
@@ -339,5 +298,5 @@ def admin_reset_password(user_id):
     db.log_event("ADMIN_PASSWORD_RESET", "user", user_id,
                  {"by_admin": current_user.id})
 
-    flash(_("Das temporaere Passwort lautet:") + " " + temp_pw, "warning")
+    flash(_("Das temporäre Passwort lautet:") + " " + temp_pw, "warning")
     return redirect(url_for("settings_view"))

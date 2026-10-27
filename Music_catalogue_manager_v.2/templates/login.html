@@ -74,7 +74,8 @@
 
     <form method="post" action="{{ url_for('auth.login') }}">
       <label for="email">{{ _('E-Mail') }}</label>
-      <input type="email" id="email" name="email" required autocomplete="email" data-keep>
+      <input type="email" id="email" name="email" required autocomplete="email" data-keep
+             value="{{ request.form.get('email', '') }}">
 
       <label for="password">{{ _('Passwort') }}</label>
       <input type="password" id="password" name="password" required

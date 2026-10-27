@@ -85,7 +85,7 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
         conn.close()
         raise LicenseError(
             _("'%(title)s' wurde bereits exklusiv verkauft und ist "
-              "gesperrt. Keine weitere Lizenzierung moeglich.", title=track["title"])
+              "gesperrt. Keine weitere Lizenzierung möglich.", title=track["title"])
         )
 
     existing_leases = conn.execute(
@@ -95,7 +95,7 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     warning = None
     if kind == "exclusive" and existing_leases > 0:
         # Erlaubt, aber protokolliert (wichtig fuer saubere Historie).
-        warning = _("Achtung: Fuer diesen Track existieren bereits "
+        warning = _("Achtung: Für diesen Track existieren bereits "
                     "%(n)s Lease-Lizenz(en).", n=existing_leases)
 
     # --- Geschaeftsregel: Monats-Bezugslimit ------------------------------

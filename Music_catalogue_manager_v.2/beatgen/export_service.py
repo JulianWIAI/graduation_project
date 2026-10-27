@@ -62,7 +62,7 @@ def export_audio(src_wav: str, format_key: str, dest_path: str) -> str:
     if not ffmpeg:
         raise RuntimeError(
             _("Das Format '%(fmt)s' erfordert ffmpeg. "
-              "Bitte ffmpeg installieren und im PATH verfuegbar machen.", fmt=fmt["label"])
+              "Bitte ffmpeg installieren und im PATH verfügbar machen.", fmt=fmt["label"])
         )
 
     cmd = [ffmpeg, "-y", "-i", src_wav, "-ar", str(fmt.get("sr", 44100))]
@@ -169,7 +169,7 @@ def export_advisory_pdf(advisor: dict, meta: dict, genre: str) -> bytes:
         pass
     raise RuntimeError(
         _("Keine PDF-Bibliothek installiert. "
-          "Bitte 'pip install reportlab' oder 'pip install fpdf2' ausfuehren.")
+          "Bitte 'pip install reportlab' oder 'pip install fpdf2' ausführen.")
     )
 
 

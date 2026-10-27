@@ -59,19 +59,19 @@ _T = {
     "Bereits ein Konto?": ("Already have an account?", "Déjà un compte ?"),
     "E-Mail und Passwort sind erforderlich.": (
         "Email and password are required.", "L'e-mail et le mot de passe sont obligatoires."),
-    "Passwoerter stimmen nicht ueberein.": (
+    "Passwörter stimmen nicht überein.": (
         "Passwords do not match.", "Les mots de passe ne correspondent pas."),
     "Ein Konto mit dieser E-Mail-Adresse existiert bereits.": (
         "An account with this email address already exists.",
         "Un compte avec cette adresse e-mail existe déjà."),
-    "Ungueltige E-Mail oder falsches Passwort.": (
+    "Ungültige E-Mail oder falsches Passwort.": (
         "Invalid email or wrong password.", "E-mail invalide ou mot de passe incorrect."),
     "Noch %(n)s Versuch(e) bis zur Sperre.": (
         "%(n)s attempt(s) left before the account is locked.",
         "Encore %(n)s tentative(s) avant le blocage du compte."),
-    "Konto nach %(n)s falschen Passwoertern gesperrt bis %(until)s Uhr.": (
-        "Account locked after %(n)s wrong passwords until %(until)s.",
-        "Compte bloqué après %(n)s mots de passe erronés jusqu'au %(until)s."),
+    "Zu viele Fehlversuche. Bitte versuche es um %(time)s Uhr erneut.": (
+        "Too many failed attempts. Please try again at %(time)s.",
+        "Trop de tentatives échouées. Veuillez réessayer à %(time)s."),
     "Konto entsperrt.": ("Account unlocked.", "Compte débloqué."),
     "gesperrt bis": ("locked until", "bloqué jusqu'au"),
     "Entsperren": ("Unlock", "Débloquer"),
@@ -117,7 +117,7 @@ _T = {
     "Abo nicht gefunden.": ("Subscription not found.", "Abonnement introuvable."),
     "Dieses Abo ist bereits bezahlt.": (
         "This subscription has already been paid.", "Cet abonnement est déjà payé."),
-    "Ungueltige Laufzeit.": ("Invalid term.", "Durée invalide."),
+    "Ungültige Laufzeit.": ("Invalid term.", "Durée invalide."),
 
     # --- Kontingent & Tokens ------------------------------------------------
     "Monatslimit erreicht (%(limit)s Sounds pro Monat). Kein Token-Guthaben — weitere Sounds sind mit Tokens möglich (%(price)s je Token).": (
@@ -126,33 +126,33 @@ _T = {
     "Monatslimit erreicht: %(name)s hat diesen Monat %(used)s/%(limit)s Bezüge (Generierungen + Lizenzen). In diesem Monat ist kein weiterer Bezug möglich.": (
         "Monthly limit reached: %(name)s has used %(used)s/%(limit)s this month (generations + licenses). No further purchase is possible this month.",
         "Limite mensuelle atteinte : %(name)s a utilisé %(used)s/%(limit)s ce mois-ci (générations + licences). Aucune autre acquisition n'est possible ce mois-ci."),
-    "Kontingent reicht nicht. %(name)s hat diesen Monat %(used)s/%(limit)s Sounds bezogen (noch %(remaining)s moeglich, %(count)s angefragt). Benoetigt: %(needed)s Token(s), Guthaben: %(balance)s. Token-Preis: %(price)s (%(group)s).": (
+    "Kontingent reicht nicht. %(name)s hat diesen Monat %(used)s/%(limit)s Sounds bezogen (noch %(remaining)s möglich, %(count)s angefragt). Benötigt: %(needed)s Token(s), Guthaben: %(balance)s. Token-Preis: %(price)s (%(group)s).": (
         "Quota insufficient. %(name)s has used %(used)s/%(limit)s sounds this month (%(remaining)s left, %(count)s requested). Required: %(needed)s token(s), balance: %(balance)s. Token price: %(price)s (%(group)s).",
         "Quota insuffisant. %(name)s a utilisé %(used)s/%(limit)s sons ce mois-ci (%(remaining)s restants, %(count)s demandés). Requis : %(needed)s jeton(s), solde : %(balance)s. Prix du jeton : %(price)s (%(group)s)."),
-    "[%(mode)s] %(count)s Track(s) fuer %(user)s erzeugt. Diesen Monat %(used)s/%(limit)s (noch %(remaining)s).": (
+    "[%(mode)s] %(count)s Track(s) für %(user)s erzeugt. Diesen Monat %(used)s/%(limit)s (noch %(remaining)s).": (
         "[%(mode)s] %(count)s track(s) created for %(user)s. This month %(used)s/%(limit)s (%(remaining)s left).",
         "[%(mode)s] %(count)s morceau(x) généré(s) pour %(user)s. Ce mois-ci %(used)s/%(limit)s (%(remaining)s restants)."),
     "%(n)s Token(s) verbraucht.": ("%(n)s token(s) used.", "%(n)s jeton(s) consommé(s)."),
-    "Zum Uebernehmen: Scannen.": ("To import them: scan.", "Pour les importer : scanner."),
-    "Token-Preise muessen Zahlen sein.": ("Token prices must be numbers.", "Les prix des jetons doivent être des nombres."),
-    "Token-Preise muessen groesser als 0 sein.": (
+    "Zum Übernehmen: Scannen.": ("To import them: scan.", "Pour les importer : scanner."),
+    "Token-Preise müssen Zahlen sein.": ("Token prices must be numbers.", "Les prix des jetons doivent être des nombres."),
+    "Token-Preise müssen größer als 0 sein.": (
         "Token prices must be greater than 0.", "Les prix des jetons doivent être supérieurs à 0."),
-    "Der Token-Preis fuer Abonnenten muss unter dem Basis-Preis liegen (aktuell %(sub)s ≥ %(basic)s).": (
+    "Der Token-Preis für Abonnenten muss unter dem Basis-Preis liegen (aktuell %(sub)s ≥ %(basic)s).": (
         "The token price for subscribers must be below the basic price (currently %(sub)s ≥ %(basic)s).",
         "Le prix du jeton pour les abonnés doit être inférieur au prix de base (actuellement %(sub)s ≥ %(basic)s)."),
     "Betrag darf nicht 0 sein.": ("Amount must not be 0.", "Le montant ne peut pas être 0."),
     "Das Guthaben darf nicht negativ werden.": (
         "The balance must not become negative.", "Le solde ne peut pas devenir négatif."),
-    "Ungueltige Anzahl.": ("Invalid quantity.", "Quantité invalide."),
-    "Ungueltiger Betrag.": ("Invalid amount.", "Montant invalide."),
-    "Bitte zwischen 1 und %(max)s Tokens waehlen.": (
+    "Ungültige Anzahl.": ("Invalid quantity.", "Quantité invalide."),
+    "Ungültiger Betrag.": ("Invalid amount.", "Montant invalide."),
+    "Bitte zwischen 1 und %(max)s Tokens wählen.": (
         "Please choose between 1 and %(max)s tokens.", "Veuillez choisir entre 1 et %(max)s jetons."),
     "Nutzer nicht gefunden.": ("User not found.", "Utilisateur introuvable."),
     "Bestellung nicht gefunden.": ("Order not found.", "Commande introuvable."),
     "Diese Bestellung ist bereits bezahlt.": (
         "This order has already been paid.", "Cette commande est déjà payée."),
     "Diese Bestellung wurde storniert.": ("This order was cancelled.", "Cette commande a été annulée."),
-    "Nur offene Bestellungen koennen storniert werden.": (
+    "Nur offene Bestellungen können storniert werden.": (
         "Only open orders can be cancelled.", "Seules les commandes en attente peuvent être annulées."),
     "Zahlung bestätigt — %(n)s Token(s) gutgeschrieben.": (
         "Payment confirmed — %(n)s token(s) credited.", "Paiement confirmé — %(n)s jeton(s) crédité(s)."),
@@ -363,17 +363,17 @@ _T = {
         "Aucune licence vendue pour l'instant. Ouvrez un morceau du catalogue et vendez une licence."),
     "Lizenz nicht gefunden.": ("License not found.", "Licence introuvable."),
     "Diese Lizenz ist bereits bezahlt.": ("This license has already been paid.", "Cette licence est déjà payée."),
-    "Bezahlte Lizenzen koennen nicht storniert werden.": (
+    "Bezahlte Lizenzen können nicht storniert werden.": (
         "Paid licenses cannot be cancelled.", "Les licences payées ne peuvent pas être annulées."),
     "Zahlung bestätigt — die Lizenz ist bezahlt.": (
         "Payment confirmed — the license is paid.", "Paiement confirmé — la licence est payée."),
     "Bestellung storniert, Track wieder freigegeben.": (
         "Order cancelled, track released again.", "Commande annulée, morceau de nouveau disponible."),
     "Unbekannte Preis-Stufe: %(tier)s": ("Unknown price tier: %(tier)s", "Niveau de prix inconnu : %(tier)s"),
-    "'%(title)s' wurde bereits exklusiv verkauft und ist gesperrt. Keine weitere Lizenzierung moeglich.": (
+    "'%(title)s' wurde bereits exklusiv verkauft und ist gesperrt. Keine weitere Lizenzierung möglich.": (
         "'%(title)s' has already been sold exclusively and is locked. No further licensing possible.",
         "« %(title)s » a déjà été vendu en exclusivité et est verrouillé. Aucune autre licence n'est possible."),
-    "Achtung: Fuer diesen Track existieren bereits %(n)s Lease-Lizenz(en).": (
+    "Achtung: Für diesen Track existieren bereits %(n)s Lease-Lizenz(en).": (
         "Warning: %(n)s lease license(s) already exist for this track.",
         "Attention : %(n)s licence(s) de location existent déjà pour ce morceau."),
 
@@ -538,7 +538,7 @@ _T = {
     "Katalog gescannt: %(added)s neu, %(updated)s aktualisiert (%(scanned)s Dateien).": (
         "Catalog scanned: %(added)s new, %(updated)s updated (%(scanned)s files).",
         "Catalogue scanné : %(added)s nouveaux, %(updated)s mis à jour (%(scanned)s fichiers)."),
-    "Exporte gescannt: %(linked)s verknuepft, %(unmatched)s ohne Zuordnung.": (
+    "Exporte gescannt: %(linked)s verknüpft, %(unmatched)s ohne Zuordnung.": (
         "Exports scanned: %(linked)s linked, %(unmatched)s unmatched.",
         "Exports scannés : %(linked)s associés, %(unmatched)s sans correspondance."),
     "Demo-Daten erzeugt: %(midi)s MIDI-Dateien, %(exports)s Exporte. Jetzt 'Scannen' klicken.": (
@@ -547,7 +547,7 @@ _T = {
     "Katalog-Ordner nicht gefunden: %(dir)s": ("Catalog folder not found: %(dir)s", "Dossier du catalogue introuvable : %(dir)s"),
     "Export-Ordner nicht gefunden: %(dir)s": ("Export folder not found: %(dir)s", "Dossier d'export introuvable : %(dir)s"),
     "Anzahl muss mindestens 1 sein.": ("Count must be at least 1.", "Le nombre doit être au moins 1."),
-    "Simulation fehlgeschlagen (mido nicht verfuegbar).": (
+    "Simulation fehlgeschlagen (mido nicht verfügbar).": (
         "Simulation failed (mido not available).", "Échec de la simulation (mido non disponible)."),
     "Music Architect endete mit Fehlercode %(code)s.": (
         "Music Architect exited with error code %(code)s.", "Music Architect s'est terminé avec le code d'erreur %(code)s."),
@@ -580,33 +580,33 @@ _T = {
         "Le seed %(seed)s a déjà été vendu en exclusivité et ne peut pas être généré à nouveau."),
     "Der Seed muss eine ganze Zahl sein.": (
         "The seed must be a whole number.", "Le seed doit être un nombre entier."),
-    "Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. Bitte Server-Log pruefen.": (
+    "Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. Bitte Server-Log prüfen.": (
         "Rendering failed: WAV file is missing or empty. Please check the server log.",
         "Échec du rendu : le fichier WAV est absent ou vide. Veuillez consulter le journal du serveur."),
     "Kein generiertes Audio gefunden. Bitte zuerst generieren.": (
         "No generated audio found. Please generate first.", "Aucun audio généré trouvé. Veuillez d'abord générer."),
-    "Temporaere Datei fehlt. Bitte neu generieren.": (
+    "Temporäre Datei fehlt. Bitte neu generieren.": (
         "Temporary file is missing. Please generate again.", "Fichier temporaire manquant. Veuillez générer à nouveau."),
     "Berater-Daten nicht gefunden — bitte neu generieren.": (
         "Advisor data not found — please generate again.", "Données du conseiller introuvables — veuillez générer à nouveau."),
     "Keine Datei empfangen.": ("No file received.", "Aucun fichier reçu."),
     "Keine Datei empfangen": ("No file received", "Aucun fichier reçu"),
     "Nur .sf2-Dateien erlaubt.": ("Only .sf2 files are allowed.", "Seuls les fichiers .sf2 sont autorisés."),
-    "Das Format '%(fmt)s' erfordert ffmpeg. Bitte ffmpeg installieren und im PATH verfuegbar machen.": (
+    "Das Format '%(fmt)s' erfordert ffmpeg. Bitte ffmpeg installieren und im PATH verfügbar machen.": (
         "The format '%(fmt)s' requires ffmpeg. Please install ffmpeg and make it available in the PATH.",
         "Le format « %(fmt)s » nécessite ffmpeg. Veuillez installer ffmpeg et le rendre disponible dans le PATH."),
-    "Keine PDF-Bibliothek installiert. Bitte 'pip install reportlab' oder 'pip install fpdf2' ausfuehren.": (
+    "Keine PDF-Bibliothek installiert. Bitte 'pip install reportlab' oder 'pip install fpdf2' ausführen.": (
         "No PDF library installed. Please run 'pip install reportlab' or 'pip install fpdf2'.",
         "Aucune bibliothèque PDF installée. Veuillez exécuter 'pip install reportlab' ou 'pip install fpdf2'."),
     "audio_uuid fehlt": ("audio_uuid missing", "audio_uuid manquant"),
-    "Ungueltiger Track-Key: '%(key)s'": ("Invalid track key: '%(key)s'", "Clé de piste invalide : « %(key)s »"),
-    "Format '%(ext)s' nicht unterstuetzt. Erlaubt: %(allowed)s": (
+    "Ungültiger Track-Key: '%(key)s'": ("Invalid track key: '%(key)s'", "Clé de piste invalide : « %(key)s »"),
+    "Format '%(ext)s' nicht unterstützt. Erlaubt: %(allowed)s": (
         "Format '%(ext)s' not supported. Allowed: %(allowed)s",
         "Format « %(ext)s » non pris en charge. Autorisés : %(allowed)s"),
     "Kompositions-Session nicht gefunden": ("Composition session not found", "Session de composition introuvable"),
     "Kompositions-Verzeichnis fehlt": ("Composition directory missing", "Répertoire de composition manquant"),
     "Datei konnte nicht gespeichert werden": ("File could not be saved", "Le fichier n'a pas pu être enregistré"),
-    "Datei ueberschreitet 20-MB-Limit (%(mb)s MB empfangen)": (
+    "Datei überschreitet 20-MB-Limit (%(mb)s MB empfangen)": (
         "File exceeds the 20 MB limit (%(mb)s MB received)", "Le fichier dépasse la limite de 20 Mo (%(mb)s Mo reçus)"),
 
     # --- Generator: Oberflaeche (generate.html) -----------------------------
@@ -624,67 +624,67 @@ _T = {
     "Beschreibe deinen Beat auf Englisch oder Deutsch.&#10;Beispiel: &quot;dark trap beat 140 BPM&quot;&#10;Das System erkennt Genre, BPM und Stimmung automatisch.": (
         "Describe your beat in English or German.&#10;Example: &quot;dark trap beat 140 BPM&quot;&#10;The system detects genre, BPM and mood automatically.",
         "Décrivez votre beat en anglais ou en allemand.&#10;Exemple : &quot;dark trap beat 140 BPM&quot;&#10;Le système détecte automatiquement le genre, le BPM et l'ambiance."),
-    "Analysiert den Prompt und fuellt Genre, BPM und andere Parameter automatisch aus.": (
+    "Analysiert den Prompt und füllt Genre, BPM und andere Parameter automatisch aus.": (
         "Analyzes the prompt and fills in genre, BPM and other parameters automatically.",
         "Analyse le prompt et remplit automatiquement le genre, le BPM et d'autres paramètres."),
     "&#9675; Erkennen": ("&#9675; Detect", "&#9675; Détecter"),
     "Basis-Parameter": ("Basic parameters", "Paramètres de base"),
-    "Waehle das musikalische Genre.&#10;Bestimmt Rhythmus-Pattern, Instrumente und Klangcharakter.": (
+    "Wähle das musikalische Genre.&#10;Bestimmt Rhythmus-Pattern, Instrumente und Klangcharakter.": (
         "Choose the musical genre.&#10;Determines rhythm patterns, instruments and sound character.",
         "Choisissez le genre musical.&#10;Détermine les motifs rythmiques, les instruments et le caractère sonore."),
     "Beats pro Minute — Tempo des Beats.&#10;Leer lassen = automatisch aus dem Genre bestimmt.&#10;Typisch: Trap 130-160, House 120-130, Techno 130-150.": (
         "Beats per minute — tempo of the beat.&#10;Leave empty = derived automatically from the genre.&#10;Typical: Trap 130-160, House 120-130, Techno 130-150.",
         "Battements par minute — tempo du beat.&#10;Laisser vide = déterminé automatiquement d'après le genre.&#10;Typique : Trap 130-160, House 120-130, Techno 130-150."),
-    "Wie komplex soll der Beat sein?&#10;1 = minimalistisch (wenige Noten, einfache Pattern)&#10;10 = sehr dicht (viele Noten, komplexe Strukturen)&#10;Empfehlung fuer Einsteiger: 4-6": (
+    "Wie komplex soll der Beat sein?&#10;1 = minimalistisch (wenige Noten, einfache Pattern)&#10;10 = sehr dicht (viele Noten, komplexe Strukturen)&#10;Empfehlung für Einsteiger: 4-6": (
         "How complex should the beat be?&#10;1 = minimalist (few notes, simple patterns)&#10;10 = very dense (many notes, complex structures)&#10;Recommended for beginners: 4-6",
         "Quelle complexité pour le beat ?&#10;1 = minimaliste (peu de notes, motifs simples)&#10;10 = très dense (beaucoup de notes, structures complexes)&#10;Conseil pour débutants : 4-6"),
-    "Komplexitaet (1-10)": ("Complexity (1-10)", "Complexité (1-10)"),
-    "Zufallszahl fuer reproduzierbare Ergebnisse.&#10;Gleicher Seed + gleiche Parameter = gleicher Beat.&#10;Leer lassen fuer einen zufaelligen Seed.": (
+    "Komplexität (1-10)": ("Complexity (1-10)", "Complexité (1-10)"),
+    "Zufallszahl für reproduzierbare Ergebnisse.&#10;Gleicher Seed + gleiche Parameter = gleicher Beat.&#10;Leer lassen für einen zufälligen Seed.": (
         "Random number for reproducible results.&#10;Same seed + same parameters = same beat.&#10;Leave empty for a random seed.",
         "Nombre aléatoire pour des résultats reproductibles.&#10;Même seed + mêmes paramètres = même beat.&#10;Laisser vide pour un seed aléatoire."),
-    "zufaellig": ("random", "aléatoire"),
+    "zufällig": ("random", "aléatoire"),
     "Tonart &amp; Struktur": ("Key &amp; structure", "Tonalité &amp; structure"),
     "Grundton der Melodie und Akkorde.&#10;C = hell und neutral, A-Moll = melancholisch.&#10;&quot;auto&quot; = vom System bestimmt.": (
         "Root note of melody and chords.&#10;C = bright and neutral, A minor = melancholic.&#10;&quot;auto&quot; = chosen by the system.",
         "Note fondamentale de la mélodie et des accords.&#10;Do = clair et neutre, La mineur = mélancolique.&#10;&quot;auto&quot; = choisi par le système."),
     "Ton": ("Note", "Note"),
-    "Tonleiter bestimmt den emotionalen Charakter.&#10;Major = froehlich · Minor = melancholisch&#10;Dorian = jazzig · Phrygian = spanisch/dunkel&#10;Pentatonik = eingaengige Melodien.": (
+    "Tonleiter bestimmt den emotionalen Charakter.&#10;Major = fröhlich · Minor = melancholisch&#10;Dorian = jazzig · Phrygian = spanisch/dunkel&#10;Pentatonik = eingängige Melodien.": (
         "The scale determines the emotional character.&#10;Major = cheerful · Minor = melancholic&#10;Dorian = jazzy · Phrygian = Spanish/dark&#10;Pentatonic = catchy melodies.",
         "La gamme détermine le caractère émotionnel.&#10;Major = joyeux · Minor = mélancolique&#10;Dorian = jazzy · Phrygian = espagnol/sombre&#10;Pentatonique = mélodies accrocheuses."),
     "Tonleiter": ("Scale", "Gamme"),
-    "Gewuenschte Laenge des Beats (90 bis 180 Sekunden).&#10;Intro, Strophen, Refrains und Outro werden anteilig angepasst.&#10;Genau auf etwa einen Takt (2-3 Sekunden).": (
+    "Gewünschte Länge des Beats (90 bis 180 Sekunden).&#10;Intro, Strophen, Refrains und Outro werden anteilig angepasst.&#10;Genau auf etwa einen Takt (2-3 Sekunden).": (
         "Desired length of the beat (90 to 180 seconds).&#10;Intro, verses, choruses and outro are adjusted proportionally.&#10;Accurate to about one bar (2-3 seconds).",
         "Durée souhaitée du beat (90 à 180 secondes).&#10;Intro, couplets, refrains et outro sont ajustés proportionnellement.&#10;Précis à environ une mesure (2-3 secondes)."),
     "Länge": ("Length", "Durée"),
     "Klang &amp; Ausdruck": ("Sound &amp; expression", "Son &amp; expression"),
-    "Macht Noten lebendig durch zufaellige Timing- und Lautstaerkeschwankungen.&#10;0 = Maschinen-perfekt (quantisiert)&#10;0.6 = natuerlich gespielt&#10;1 = stark unpraeziese (Jazz/Live-Feeling)": (
+    "Macht Noten lebendig durch zufällige Timing- und Lautstärkeschwankungen.&#10;0 = Maschinen-perfekt (quantisiert)&#10;0.6 = natürlich gespielt&#10;1 = stark unpräzise (Jazz/Live-Feeling)": (
         "Brings notes to life with random timing and volume variations.&#10;0 = machine-perfect (quantized)&#10;0.6 = naturally played&#10;1 = very loose (jazz/live feel)",
         "Donne vie aux notes par des variations aléatoires de timing et de volume.&#10;0 = perfection mécanique (quantifié)&#10;0.6 = jeu naturel&#10;1 = très imprécis (feeling jazz/live)"),
     "Humanisierung": ("Humanization", "Humanisation"),
-    "Zufaellige Abweichungen in der Akkord-Progression und Melodie.&#10;0 = vorhersehbar und strukturiert&#10;0.5 = gelegentliche Variationen&#10;1 = stark variierendes Arrangement": (
+    "Zufällige Abweichungen in der Akkord-Progression und Melodie.&#10;0 = vorhersehbar und strukturiert&#10;0.5 = gelegentliche Variationen&#10;1 = stark variierendes Arrangement": (
         "Random deviations in chord progression and melody.&#10;0 = predictable and structured&#10;0.5 = occasional variations&#10;1 = strongly varying arrangement",
         "Écarts aléatoires dans la progression d'accords et la mélodie.&#10;0 = prévisible et structuré&#10;0.5 = variations occasionnelles&#10;1 = arrangement très varié"),
     "Emotionale Spannung durch dissonante Akkorde und Noten.&#10;0 = harmonisch und entspannt&#10;0.7 = dramatisch&#10;1.5 = sehr dissonant / experimentell": (
         "Emotional tension through dissonant chords and notes.&#10;0 = harmonious and relaxed&#10;0.7 = dramatic&#10;1.5 = very dissonant / experimental",
         "Tension émotionnelle grâce à des accords et notes dissonants.&#10;0 = harmonieux et détendu&#10;0.7 = dramatique&#10;1.5 = très dissonant / expérimental"),
     "Spannung": ("Tension", "Tension"),
-    "Klangfaerbung durch Effektketten.&#10;Bright = klar, knackig, hochfrequent betont&#10;Neutral = ausgewogen, ohne Faerbung&#10;Dark = dumpf, druckig, tieffrequent betont": (
+    "Klangfärbung durch Effektketten.&#10;Bright = klar, knackig, hochfrequent betont&#10;Neutral = ausgewogen, ohne Färbung&#10;Dark = dumpf, druckig, tieffrequent betont": (
         "Tone coloring through effect chains.&#10;Bright = clear, crisp, emphasized highs&#10;Neutral = balanced, uncolored&#10;Dark = muffled, punchy, emphasized lows",
         "Coloration sonore par des chaînes d'effets.&#10;Bright = clair, incisif, aigus accentués&#10;Neutral = équilibré, sans coloration&#10;Dark = sourd, percutant, graves accentués"),
     "FX-Kette": ("FX chain", "Chaîne FX"),
     "Generierungsmodus": ("Generation mode", "Mode de génération"),
-    "Full Beat = vollstaendiger Beat mit allen Spuren&#10;Vocal-Ready = Melodie und Arpeggio weichen in Strophe und Refrain eine Oktave nach unten aus — Platz fuer Gesang&#10;Beide = derselbe Beat als Full Beat und als Vocal-Ready": (
+    "Full Beat = vollständiger Beat mit allen Spuren&#10;Vocal-Ready = Melodie und Arpeggio weichen in Strophe und Refrain eine Oktave nach unten aus — Platz für Gesang&#10;Beide = derselbe Beat als Full Beat und als Vocal-Ready": (
         "Full Beat = complete beat with all tracks&#10;Vocal-Ready = melody and arpeggio move an octave down in verses and choruses — room for vocals&#10;Both = the same beat as Full Beat and as Vocal-Ready",
         "Full Beat = beat complet avec toutes les pistes&#10;Vocal-Ready = la mélodie et l'arpège descendent d'une octave dans les couplets et refrains — place pour le chant&#10;Les deux = le même beat en Full Beat et en Vocal-Ready"),
-    "<strong>Full Beat</strong> = vollstaendige Komposition · <strong>Vocal-Ready</strong> = Melodie tiefer, Platz fuer Gesang · <strong>Beide</strong> = beide Fassungen desselben Beats": (
+    "<strong>Full Beat</strong> = vollständige Komposition · <strong>Vocal-Ready</strong> = Melodie tiefer, Platz für Gesang · <strong>Beide</strong> = beide Fassungen desselben Beats": (
         "<strong>Full Beat</strong> = complete composition · <strong>Vocal-Ready</strong> = lower melody, room for vocals · <strong>Both</strong> = both versions of the same beat",
         "<strong>Full Beat</strong> = composition complète · <strong>Vocal-Ready</strong> = mélodie plus grave, place pour le chant · <strong>Les deux</strong> = les deux versions du même beat"),
     "Fusion-Modus": ("Fusion mode", "Mode fusion"),
-    "Fusion kombiniert zwei Genres zu einem hybriden Beat.&#10;Aus = normales Genre-Modus&#10;Preset = vordefinierte Genre-Kombination&#10;Custom-Mix = freie Auswahl und Verhaeltnis zweier Genres": (
+    "Fusion kombiniert zwei Genres zu einem hybriden Beat.&#10;Aus = normales Genre-Modus&#10;Preset = vordefinierte Genre-Kombination&#10;Custom-Mix = freie Auswahl und Verhältnis zweier Genres": (
         "Fusion combines two genres into a hybrid beat.&#10;Off = normal genre mode&#10;Preset = predefined genre combination&#10;Custom mix = free choice and ratio of two genres",
         "La fusion combine deux genres en un beat hybride.&#10;Off = mode genre normal&#10;Preset = combinaison de genres prédéfinie&#10;Custom-Mix = choix libre et proportion de deux genres"),
     "Aus": ("Off", "Off"),
-    "Keine Presets verfuegbar": ("No presets available", "Aucun preset disponible"),
+    "Keine Presets verfügbar": ("No presets available", "Aucun preset disponible"),
     "Instrumente &amp; Mixer": ("Instruments &amp; mixer", "Instruments &amp; mixeur"),
     "Soundfont (SF2) bestimmt den Grundklang aller Instrumente.&#10;Genre-Standard = automatisch passende Bibliothek.&#10;Wird auf den Advisor-Mixer-SF2 synchronisiert.": (
         "The soundfont (SF2) determines the basic sound of all instruments.&#10;Genre default = automatically matching library.&#10;Is synchronized with the advisor mixer SF2.",
@@ -694,7 +694,7 @@ _T = {
         "Starts beat generation with the current parameters.&#10;This takes about 10-30 seconds — please wait.",
         "Lance la génération du beat avec les paramètres actuels.&#10;Cela prend environ 10 à 30 secondes — veuillez patienter."),
     "&#9654; Beat generieren": ("&#9654; Generate beat", "&#9654; Générer le beat"),
-    "Generierung laeuft&#8230;": ("Generating&#8230;", "Génération en cours&#8230;"),
+    "Generierung läuft&#8230;": ("Generating&#8230;", "Génération en cours&#8230;"),
     "Vorschau &amp; Speichern": ("Preview &amp; save", "Aperçu &amp; enregistrement"),
     "Ausgabe": ("Output", "Sortie"),
     "Wellenform": ("Waveform", "Forme d'onde"),
@@ -702,7 +702,7 @@ _T = {
     "&#8659; Diesen Re-Render exportieren": ("&#8659; Export this re-render", "&#8659; Exporter ce re-rendu"),
     "&#8617; Als Hauptversion verwenden": ("&#8617; Use as main version", "&#8617; Utiliser comme version principale"),
     "&#8659; Exportieren": ("&#8659; Export", "&#8659; Exporter"),
-    "Noch kein Beat generiert. Parameter links auswaehlen und auf <strong>Beat generieren</strong> klicken.": (
+    "Noch kein Beat generiert. Parameter links auswählen und auf <strong>Beat generieren</strong> klicken.": (
         "No beat generated yet. Choose parameters on the left and click <strong>Generate beat</strong>.",
         "Aucun beat généré pour l'instant. Choisissez les paramètres à gauche et cliquez sur <strong>Générer le beat</strong>."),
     "Seed (optional)": ("Seed (optional)", "Seed (facultatif)"),
@@ -727,52 +727,52 @@ _T = {
     "Frequenzallokation": ("Frequency allocation", "Répartition des fréquences"),
     "BPM-Zeitwerte": ("BPM time values", "Valeurs temporelles BPM"),
     "Export-Ziele": ("Export targets", "Cibles d'export"),
-    "Rendert jede Spur einzeln als separates Audio.&#10;So kannst du jedes Instrument isoliert abhoeren.&#10;Dauert etwas laenger als ein normales Rendering.": (
+    "Rendert jede Spur einzeln als separates Audio.&#10;So kannst du jedes Instrument isoliert abhören.&#10;Dauert etwas länger als ein normales Rendering.": (
         "Renders each track individually as separate audio.&#10;This lets you listen to each instrument in isolation.&#10;Takes a little longer than a normal rendering.",
         "Rend chaque piste séparément en audio distinct.&#10;Vous pouvez ainsi écouter chaque instrument isolément.&#10;Prend un peu plus de temps qu'un rendu normal."),
     "&#9654; ALLE SOLOS RENDERN": ("&#9654; RENDER ALL SOLOS", "&#9654; RENDRE TOUS LES SOLOS"),
-    "Loescht alle Solo-Vorschaufiles und setzt die Solo-Ansicht zurueck.": (
+    "Löscht alle Solo-Vorschaufiles und setzt die Solo-Ansicht zurück.": (
         "Deletes all solo preview files and resets the solo view.",
         "Supprime tous les fichiers d'aperçu solo et réinitialise la vue solo."),
     "&#10005; SOLOS ZURUECKSETZEN": ("&#10005; RESET SOLOS", "&#10005; RÉINITIALISER LES SOLOS"),
     "Swing verschiebt jeden zweiten 16tel-Schlag nach hinten.&#10;50% = gerades Timing (kein Swing)&#10;60-65% = typischer Trap/Hip-Hop Swing&#10;75% = stark geshuffelt (Jazz-Feeling)": (
         "Swing delays every second 16th note.&#10;50% = straight timing (no swing)&#10;60-65% = typical trap/hip-hop swing&#10;75% = heavily shuffled (jazz feel)",
         "Le swing retarde une double croche sur deux.&#10;50% = timing droit (pas de swing)&#10;60-65% = swing typique trap/hip-hop&#10;75% = très shufflé (feeling jazz)"),
-    "Verschiebt alle Noten dieser Spur zeitlich.&#10;Negative Werte = Spur spielt frueh (aggressiver)&#10;Positive Werte = Spur spielt spaet (entspannter)&#10;Bereich: -100 bis +100 Millisekunden": (
+    "Verschiebt alle Noten dieser Spur zeitlich.&#10;Negative Werte = Spur spielt früh (aggressiver)&#10;Positive Werte = Spur spielt spät (entspannter)&#10;Bereich: -100 bis +100 Millisekunden": (
         "Shifts all notes of this track in time.&#10;Negative values = track plays early (more aggressive)&#10;Positive values = track plays late (more relaxed)&#10;Range: -100 to +100 milliseconds",
         "Décale dans le temps toutes les notes de cette piste.&#10;Valeurs négatives = la piste joue en avance (plus agressif)&#10;Valeurs positives = la piste joue en retard (plus détendu)&#10;Plage : -100 à +100 millisecondes"),
-    "Lautstaerke-Untergrenze fuer diese Spur (MIDI-Velocity).&#10;1 = sehr leise, 64 = mittel, 127 = volle Lautstaerke.&#10;Zusammen mit Vel max ergibt sich der Dynamikbereich.": (
+    "Lautstärke-Untergrenze für diese Spur (MIDI-Velocity).&#10;1 = sehr leise, 64 = mittel, 127 = volle Lautstärke.&#10;Zusammen mit Vel max ergibt sich der Dynamikbereich.": (
         "Lower volume limit for this track (MIDI velocity).&#10;1 = very quiet, 64 = medium, 127 = full volume.&#10;Together with Vel max this gives the dynamic range.",
         "Limite inférieure de volume pour cette piste (vélocité MIDI).&#10;1 = très faible, 64 = moyen, 127 = volume maximal.&#10;Avec Vel max, cela définit la plage dynamique."),
-    "Lautstaerke-Obergrenze fuer diese Spur (MIDI-Velocity).&#10;Muss groesser als Vel min sein.&#10;Kleiner Abstand = wenig Dynamik, grosser = viel.": (
+    "Lautstärke-Obergrenze für diese Spur (MIDI-Velocity).&#10;Muss größer als Vel min sein.&#10;Kleiner Abstand = wenig Dynamik, großer = viel.": (
         "Upper volume limit for this track (MIDI velocity).&#10;Must be greater than Vel min.&#10;Small gap = little dynamics, large gap = a lot.",
         "Limite supérieure de volume pour cette piste (vélocité MIDI).&#10;Doit être supérieure à Vel min.&#10;Petit écart = peu de dynamique, grand écart = beaucoup."),
-    "Lautstaerke-Kurve ueber den Takt.&#10;Gleichmaessig = alle Noten gleich laut&#10;Betont = Zaehler 1 und 3 betonter&#10;Crescendo = wird lauter&#10;Diminuendo = wird leiser": (
+    "Lautstärke-Kurve über den Takt.&#10;Gleichmäßig = alle Noten gleich laut&#10;Betont = Zähler 1 und 3 betonter&#10;Crescendo = wird lauter&#10;Diminuendo = wird leiser": (
         "Volume curve across the bar.&#10;Even = all notes equally loud&#10;Accented = beats 1 and 3 emphasized&#10;Crescendo = gets louder&#10;Diminuendo = gets quieter",
         "Courbe de volume sur la mesure.&#10;Uniforme = toutes les notes au même volume&#10;Accentué = temps 1 et 3 accentués&#10;Crescendo = de plus en plus fort&#10;Diminuendo = de plus en plus doux"),
     "Kurve": ("Curve", "Courbe"),
-    "Gleichmaessig": ("Even", "Uniforme"),
+    "Gleichmäßig": ("Even", "Uniforme"),
     "Betont": ("Accented", "Accentué"),
-    "Speichert diese Groove-Parameter fuer die ausgewaehlte Spur.&#10;Erst nach &quot;GROOVE ANWENDEN&quot; werden die Aenderungen gerendert.": (
+    "Speichert diese Groove-Parameter für die ausgewählte Spur.&#10;Erst nach &quot;GROOVE ANWENDEN&quot; werden die Änderungen gerendert.": (
         "Saves these groove parameters for the selected track.&#10;The changes are only rendered after &quot;APPLY GROOVE&quot;.",
         "Enregistre ces paramètres de groove pour la piste sélectionnée.&#10;Les modifications ne sont rendues qu'après &quot;APPLIQUER LE GROOVE&quot;."),
-    "&#10003; Uebernehmen": ("&#10003; Apply", "&#10003; Appliquer"),
+    "&#10003; Übernehmen": ("&#10003; Apply", "&#10003; Appliquer"),
     "HUMANISIERUNG": ("HUMANIZATION", "HUMANISATION"),
-    "Zufaellige Lautstaerkeschwankung pro Note (alle Spuren).&#10;0 = alle Noten exakt gleich laut&#10;±15 = natuerlich, lebendig&#10;±30 = stark variierend (Handgespielt-Feeling)": (
+    "Zufällige Lautstärkeschwankung pro Note (alle Spuren).&#10;0 = alle Noten exakt gleich laut&#10;±15 = natürlich, lebendig&#10;±30 = stark variierend (Handgespielt-Feeling)": (
         "Random volume variation per note (all tracks).&#10;0 = all notes exactly equally loud&#10;±15 = natural, lively&#10;±30 = strongly varying (hand-played feel)",
         "Variation aléatoire du volume par note (toutes les pistes).&#10;0 = toutes les notes exactement au même volume&#10;±15 = naturel, vivant&#10;±30 = très variable (feeling joué à la main)"),
-    "Zufaellige Timing-Abweichung pro Note (alle Spuren).&#10;0 = perfekt quantisiert&#10;±10 ms = leicht menschlich&#10;±50 ms = stark unpraeziese (Vintage-Feeling)": (
+    "Zufällige Timing-Abweichung pro Note (alle Spuren).&#10;0 = perfekt quantisiert&#10;±10 ms = leicht menschlich&#10;±50 ms = stark unpräzise (Vintage-Feeling)": (
         "Random timing deviation per note (all tracks).&#10;0 = perfectly quantized&#10;±10 ms = slightly human&#10;±50 ms = very loose (vintage feel)",
         "Écart de timing aléatoire par note (toutes les pistes).&#10;0 = parfaitement quantifié&#10;±10 ms = légèrement humain&#10;±50 ms = très imprécis (feeling vintage)"),
-    "Zufallszahl fuer reproduzierbare Humanisierung.&#10;Gleicher Seed = gleiche zufaellige Abweichungen.&#10;Leer = bei jedem Rendern neu berechnet.": (
+    "Zufallszahl für reproduzierbare Humanisierung.&#10;Gleicher Seed = gleiche zufällige Abweichungen.&#10;Leer = bei jedem Rendern neu berechnet.": (
         "Random number for reproducible humanization.&#10;Same seed = same random deviations.&#10;Empty = recalculated on every render.",
         "Nombre aléatoire pour une humanisation reproductible.&#10;Même seed = mêmes écarts aléatoires.&#10;Vide = recalculé à chaque rendu."),
     "Seed (leer = neu)": ("Seed (empty = new)", "Seed (vide = nouveau)"),
-    "Generiert einen neuen zufaelligen Seed und rendert sofort neu.": (
+    "Generiert einen neuen zufälligen Seed und rendert sofort neu.": (
         "Generates a new random seed and re-renders immediately.",
         "Génère un nouveau seed aléatoire et relance aussitôt le rendu."),
     "W&#252;rfeln": ("Roll dice", "Lancer les dés"),
-    "Setzt alle Groove-Parameter auf die Standardwerte zurueck.": (
+    "Setzt alle Groove-Parameter auf die Standardwerte zurück.": (
         "Resets all groove parameters to their defaults.",
         "Réinitialise tous les paramètres de groove aux valeurs par défaut."),
     "Leeren": ("Clear", "Vider"),
@@ -781,23 +781,23 @@ _T = {
         "Instrument palette: predefined set of GM instruments matching the genre.&#10;Every palette sounds different — experiment!&#10;Generate a beat first, then switch palette and re-render.",
         "Palette d'instruments : ensemble prédéfini d'instruments GM adapté au genre.&#10;Chaque palette sonne différemment — expérimentez !&#10;Générez d'abord un beat, puis changez de palette et relancez le rendu."),
     "— zuerst Beat generieren —": ("— generate a beat first —", "— générez d'abord un beat —"),
-    "NATURAL: Kein zusaetzlicher EQ oder Kompressor.&#10;Klingt wie direkt aus dem Synthesizer.": (
+    "NATURAL: Kein zusätzlicher EQ oder Kompressor.&#10;Klingt wie direkt aus dem Synthesizer.": (
         "NATURAL: no additional EQ or compressor.&#10;Sounds as if straight from the synthesizer.",
         "NATURAL : pas d'égaliseur ni de compresseur supplémentaire.&#10;Sonne comme directement sorti du synthétiseur."),
-    "POLISHED: Mehr Hoehen, sanfte Kompression.&#10;Professioneller, kommerzieller Sound.": (
+    "POLISHED: Mehr Höhen, sanfte Kompression.&#10;Professioneller, kommerzieller Sound.": (
         "POLISHED: more highs, gentle compression.&#10;Professional, commercial sound.",
         "POLISHED : plus d'aigus, compression douce.&#10;Son professionnel et commercial."),
-    "UNDERGROUND: Tiefpass-Filter, Saettigung.&#10;Rawer, dreckiger, analog-klingender Sound.": (
+    "UNDERGROUND: Tiefpass-Filter, Sättigung.&#10;Rawer, dreckiger, analog-klingender Sound.": (
         "UNDERGROUND: low-pass filter, saturation.&#10;Raw, dirty, analog-sounding.",
         "UNDERGROUND : filtre passe-bas, saturation.&#10;Son brut, sale, de type analogique."),
-    "BDRA-Theoriepruefer: analysiert 5 Klangprinzipien.&#10;P1 Sub-Bass · P2 Register · P3 Attack&#10;P4 Dichte · P5 Helligkeit&#10;Score 80+ = professionell ausgewogen.": (
+    "BDRA-Theorieprüfer: analysiert 5 Klangprinzipien.&#10;P1 Sub-Bass · P2 Register · P3 Attack&#10;P4 Dichte · P5 Helligkeit&#10;Score 80+ = professionell ausgewogen.": (
         "BDRA theory checker: analyzes 5 sound principles.&#10;P1 sub-bass · P2 register · P3 attack&#10;P4 density · P5 brightness&#10;Score 80+ = professionally balanced.",
         "Vérificateur théorique BDRA : analyse 5 principes sonores.&#10;P1 sub-basse · P2 registre · P3 attaque&#10;P4 densité · P5 brillance&#10;Score 80+ = équilibre professionnel."),
     "THEORIE": ("THEORY", "THÉORIE"),
     "Analysiert das aktuelle Beat-Arrangement nach psychoakustischen Regeln.": (
         "Analyzes the current beat arrangement according to psychoacoustic rules.",
         "Analyse l'arrangement actuel du beat selon des règles psychoacoustiques."),
-    "&#10003; Pruefen": ("&#10003; Check", "&#10003; Vérifier"),
+    "&#10003; Prüfen": ("&#10003; Check", "&#10003; Vérifier"),
     "P4 Dichte": ("P4 Density", "P4 Densité"),
     "P5 Helligkeit": ("P5 Brightness", "P5 Brillance"),
     "P1 Sub-Bass": ("P1 Sub-bass", "P1 Sub-basse"),
@@ -805,85 +805,85 @@ _T = {
     "P3 Attack": ("P3 Attack", "P3 Attaque"),
     "Instrumente (vor Re-Rendering &#228;ndern)": (
         "Instruments (change before re-rendering)", "Instruments (à modifier avant le re-rendu)"),
-    "Weise jeder Spur eine eigene Audio-Datei zu.&#10;Die Datei ersetzt den eingebauten Synthesizer fuer diese Spur.&#10;Unterstuetzte Formate: WAV, MP3, OGG, FLAC.": (
+    "Weise jeder Spur eine eigene Audio-Datei zu.&#10;Die Datei ersetzt den eingebauten Synthesizer für diese Spur.&#10;Unterstützte Formate: WAV, MP3, OGG, FLAC.": (
         "Assign your own audio file to each track.&#10;The file replaces the built-in synthesizer for that track.&#10;Supported formats: WAV, MP3, OGG, FLAC.",
         "Attribuez à chaque piste votre propre fichier audio.&#10;Le fichier remplace le synthétiseur intégré pour cette piste.&#10;Formats pris en charge : WAV, MP3, OGG, FLAC."),
     "Samples (eigene Audio-Dateien pro Track)": (
         "Samples (your own audio files per track)", "Samples (vos fichiers audio par piste)"),
-    "Klangsynthese-Editor fuer einzelne Instrumente.&#10;Preset laden = Startwerte fuer das Instrument&#10;Dann mit den Reglern feinabstimmen.&#10;Wirkung erst nach &quot;GROOVE ANWENDEN&quot; sichtbar.": (
+    "Klangsynthese-Editor für einzelne Instrumente.&#10;Preset laden = Startwerte für das Instrument&#10;Dann mit den Reglern feinabstimmen.&#10;Wirkung erst nach &quot;GROOVE ANWENDEN&quot; sichtbar.": (
         "Sound synthesis editor for individual instruments.&#10;Load preset = starting values for the instrument&#10;Then fine-tune with the sliders.&#10;Only takes effect after &quot;APPLY GROOVE&quot;.",
         "Éditeur de synthèse sonore pour chaque instrument.&#10;Charger un preset = valeurs de départ pour l'instrument&#10;Affinez ensuite avec les curseurs.&#10;Effet visible seulement après &quot;APPLIQUER LE GROOVE&quot;."),
     "&#9835; TIMBRE &#8212; Klangsynthese": ("&#9835; TIMBRE &#8212; sound synthesis", "&#9835; TIMBRE &#8212; synthèse sonore"),
-    "Synthesizer-Preset fuer KICK laden.&#10;(none) = eingebaute Standardsynthese.&#10;Nach Auswahl werden die Regler mit Preset-Werten befuellt.": (
+    "Synthesizer-Preset für KICK laden.&#10;(none) = eingebaute Standardsynthese.&#10;Nach Auswahl werden die Regler mit Preset-Werten befüllt.": (
         "Load synthesizer preset for KICK.&#10;(none) = built-in default synthesis.&#10;After selection the sliders are filled with the preset values.",
         "Charger un preset de synthétiseur pour KICK.&#10;(none) = synthèse standard intégrée.&#10;Après sélection, les curseurs prennent les valeurs du preset."),
     "Ziel-Frequenz des Kick-Pitchglides (Sinus-Schwanz).&#10;Tief = dunkler 808-Sub-Kick (20-45 Hz)&#10;Hoch = knackiger, melodischer Kick.": (
         "Target frequency of the kick pitch glide (sine tail).&#10;Low = dark 808 sub kick (20-45 Hz)&#10;High = crisp, melodic kick.",
         "Fréquence cible du glissement de hauteur du kick (queue sinusoïdale).&#10;Bas = kick sub 808 sombre (20-45 Hz)&#10;Haut = kick incisif et mélodique."),
     "Pitch Ende (Hz)": ("Pitch end (Hz)", "Pitch final (Hz)"),
-    "Transienten-Rauschanteil des Kick-Anschlags.&#10;0 = reiner Sinus / 808-Ton&#10;Hoeher = punchigerer, knackigerer Anschlag.": (
+    "Transienten-Rauschanteil des Kick-Anschlags.&#10;0 = reiner Sinus / 808-Ton&#10;Höher = punchigerer, knackigerer Anschlag.": (
         "Transient noise amount of the kick attack.&#10;0 = pure sine / 808 tone&#10;Higher = punchier, crisper attack.",
         "Part de bruit transitoire de l'attaque du kick.&#10;0 = sinus pur / son 808&#10;Plus haut = attaque plus percutante et incisive."),
     "Rauschanteil": ("Noise amount", "Part de bruit"),
-    "Abklingzeit der Kick-Huelle.&#10;50 ms = kurz, trocken, punchig&#10;280 ms = ausgewogen&#10;800 ms = langer Sub-Schwanz (808-Style)": (
+    "Abklingzeit der Kick-Hülle.&#10;50 ms = kurz, trocken, punchig&#10;280 ms = ausgewogen&#10;800 ms = langer Sub-Schwanz (808-Style)": (
         "Decay time of the kick envelope.&#10;50 ms = short, dry, punchy&#10;280 ms = balanced&#10;800 ms = long sub tail (808 style)",
         "Temps de déclin de l'enveloppe du kick.&#10;50 ms = court, sec, percutant&#10;280 ms = équilibré&#10;800 ms = longue queue de sub (style 808)"),
     "Ausklingen (ms)": ("Decay (ms)", "Déclin (ms)"),
-    "Synthesizer-Preset fuer SNARE laden.&#10;(none) = eingebaute Standardsynthese.": (
+    "Synthesizer-Preset für SNARE laden.&#10;(none) = eingebaute Standardsynthese.": (
         "Load synthesizer preset for SNARE.&#10;(none) = built-in default synthesis.",
         "Charger un preset de synthétiseur pour SNARE.&#10;(none) = synthèse standard intégrée."),
-    "Koerper-Pitch der Snare.&#10;80 Hz = tiefer, dumpfer Tom-Charakter&#10;140 Hz = klassische Snare&#10;400 Hz = heller, duenner Klang": (
+    "Körper-Pitch der Snare.&#10;80 Hz = tiefer, dumpfer Tom-Charakter&#10;140 Hz = klassische Snare&#10;400 Hz = heller, dünner Klang": (
         "Body pitch of the snare.&#10;80 Hz = deep, dull tom character&#10;140 Hz = classic snare&#10;400 Hz = bright, thin sound",
         "Hauteur du corps de la caisse claire.&#10;80 Hz = caractère de tom grave et sourd&#10;140 Hz = caisse claire classique&#10;400 Hz = son clair et fin"),
-    "Verhaeltnis Rauschen zu Ton.&#10;0 = reiner Ton (klingt wie Tom)&#10;0.6 = klassische Snare-Mischung&#10;1 = nur Rauschen (Buerstensnare)": (
+    "Verhältnis Rauschen zu Ton.&#10;0 = reiner Ton (klingt wie Tom)&#10;0.6 = klassische Snare-Mischung&#10;1 = nur Rauschen (Bürstensnare)": (
         "Ratio of noise to tone.&#10;0 = pure tone (sounds like a tom)&#10;0.6 = classic snare mix&#10;1 = noise only (brush snare)",
         "Rapport bruit/son.&#10;0 = son pur (sonne comme un tom)&#10;0.6 = mélange classique de caisse claire&#10;1 = bruit seul (caisse claire aux balais)"),
-    "Abklingzeit der Snare-Huelle.&#10;30 ms = sehr kurz, trocken&#10;150 ms = natuerlich&#10;400 ms = langer Nachhall": (
+    "Abklingzeit der Snare-Hülle.&#10;30 ms = sehr kurz, trocken&#10;150 ms = natürlich&#10;400 ms = langer Nachhall": (
         "Decay time of the snare envelope.&#10;30 ms = very short, dry&#10;150 ms = natural&#10;400 ms = long reverb tail",
         "Temps de déclin de l'enveloppe de la caisse claire.&#10;30 ms = très court, sec&#10;150 ms = naturel&#10;400 ms = longue résonance"),
-    "Synthesizer-Preset fuer HI-HAT laden.&#10;(none) = eingebaute Standardsynthese.": (
+    "Synthesizer-Preset für HI-HAT laden.&#10;(none) = eingebaute Standardsynthese.": (
         "Load synthesizer preset for HI-HAT.&#10;(none) = built-in default synthesis.",
         "Charger un preset de synthétiseur pour HI-HAT.&#10;(none) = synthèse standard intégrée."),
-    "Abklingzeit des Hi-Hats.&#10;10-30 ms = geschlossene Hi-Hat (kurz, trocken)&#10;100-400 ms = offene Hi-Hat (laenger, zischend)": (
+    "Abklingzeit des Hi-Hats.&#10;10-30 ms = geschlossene Hi-Hat (kurz, trocken)&#10;100-400 ms = offene Hi-Hat (länger, zischend)": (
         "Decay time of the hi-hat.&#10;10-30 ms = closed hi-hat (short, dry)&#10;100-400 ms = open hi-hat (longer, sizzling)",
         "Temps de déclin du charleston.&#10;10-30 ms = charleston fermé (court, sec)&#10;100-400 ms = charleston ouvert (plus long, sifflant)"),
     "Hochfrequenz-Anteil des Hi-Hats.&#10;0 = dunkle, geschlossene Hi-Hat&#10;1 = helle, schneidende offene Hi-Hat": (
         "High-frequency content of the hi-hat.&#10;0 = dark, closed hi-hat&#10;1 = bright, cutting open hi-hat",
         "Part de hautes fréquences du charleston.&#10;0 = charleston fermé et sombre&#10;1 = charleston ouvert clair et tranchant"),
-    "Soft-Clip-Saettigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung": (
+    "Soft-Clip-Sättigung (analoger Charakter).&#10;0 = sauber und digital&#10;1 = warme harmonische Verzerrung": (
         "Soft-clip saturation (analog character).&#10;0 = clean and digital&#10;1 = warm harmonic distortion",
         "Saturation soft-clip (caractère analogique).&#10;0 = propre et numérique&#10;1 = distorsion harmonique chaleureuse"),
     "S&#228;ttigung": ("Saturation", "Saturation"),
-    "Synthesizer-Preset fuer MELODIC-Stimmen laden.&#10;(none) = eingebaute Standardsynthese.&#10;Gilt fuer Bass, Akkorde, Lead, Pad, Arp, Stabs.": (
+    "Synthesizer-Preset für MELODIC-Stimmen laden.&#10;(none) = eingebaute Standardsynthese.&#10;Gilt für Bass, Akkorde, Lead, Pad, Arp, Stabs.": (
         "Load synthesizer preset for MELODIC voices.&#10;(none) = built-in default synthesis.&#10;Applies to bass, chords, lead, pad, arp, stabs.",
         "Charger un preset de synthétiseur pour les voix MELODIC.&#10;(none) = synthèse standard intégrée.&#10;S'applique à basse, accords, lead, pad, arp, stabs."),
-    "Einschwingzeit melodischer Stimmen.&#10;1 ms = Pluck / Stab (sofort da)&#10;15 ms = natuerlicher Anschlag&#10;200 ms = langsames Pad-Anschwellen": (
+    "Einschwingzeit melodischer Stimmen.&#10;1 ms = Pluck / Stab (sofort da)&#10;15 ms = natürlicher Anschlag&#10;200 ms = langsames Pad-Anschwellen": (
         "Attack time of melodic voices.&#10;1 ms = pluck / stab (instantly there)&#10;15 ms = natural attack&#10;200 ms = slow pad swell",
         "Temps d'attaque des voix mélodiques.&#10;1 ms = pluck / stab (immédiat)&#10;15 ms = attaque naturelle&#10;200 ms = montée lente de pad"),
     "Anschlag (ms)": ("Attack (ms)", "Attaque (ms)"),
-    "Tiefpass-Filter-Grenzfrequenz (Helligkeit).&#10;0 = dunkel / gedaempft (Lo-Fi, Vintage)&#10;0.5 = ausgewogen&#10;1 = hell / offen (klar, strahlend)": (
+    "Tiefpass-Filter-Grenzfrequenz (Helligkeit).&#10;0 = dunkel / gedämpft (Lo-Fi, Vintage)&#10;0.5 = ausgewogen&#10;1 = hell / offen (klar, strahlend)": (
         "Low-pass filter cutoff (brightness).&#10;0 = dark / muffled (lo-fi, vintage)&#10;0.5 = balanced&#10;1 = bright / open (clear, shining)",
         "Fréquence de coupure du filtre passe-bas (brillance).&#10;0 = sombre / étouffé (lo-fi, vintage)&#10;0.5 = équilibré&#10;1 = clair / ouvert (net, éclatant)"),
     "Helligkeit": ("Brightness", "Brillance"),
-    "Genre fuer das Groove-Preset.&#10;Beeinflusst die verfuegbaren Feel-Presets.&#10;Wird automatisch auf das generierte Genre gesetzt.": (
+    "Genre für das Groove-Preset.&#10;Beeinflusst die verfügbaren Feel-Presets.&#10;Wird automatisch auf das generierte Genre gesetzt.": (
         "Genre for the groove preset.&#10;Affects the available feel presets.&#10;Is set automatically to the generated genre.",
         "Genre du preset de groove.&#10;Influence les presets de feel disponibles.&#10;Réglé automatiquement sur le genre généré."),
-    "Benanntes Feel-Preset: laedt einen kuratieren Groove-Charakter.&#10;z.B. Boom Bap, Lo-Fi Chill, Modern Rap (bei Hip-Hop).&#10;Leer = Genre-Standardwerte laden.": (
+    "Benanntes Feel-Preset: lädt einen kuratieren Groove-Charakter.&#10;z.B. Boom Bap, Lo-Fi Chill, Modern Rap (bei Hip-Hop).&#10;Leer = Genre-Standardwerte laden.": (
         "Named feel preset: loads a curated groove character.&#10;e.g. Boom Bap, Lo-Fi Chill, Modern Rap (for hip-hop).&#10;Empty = load genre defaults.",
         "Preset de feel nommé : charge un caractère de groove sélectionné.&#10;p. ex. Boom Bap, Lo-Fi Chill, Modern Rap (pour le hip-hop).&#10;Vide = charger les valeurs par défaut du genre."),
-    "Laedt das ausgewaehlte Genre- oder Feel-Preset in den Mixer.&#10;Ueberschreibt die aktuellen Mixer-Einstellungen.": (
+    "Lädt das ausgewählte Genre- oder Feel-Preset in den Mixer.&#10;Überschreibt die aktuellen Mixer-Einstellungen.": (
         "Loads the selected genre or feel preset into the mixer.&#10;Overwrites the current mixer settings.",
         "Charge dans le mixeur le preset de genre ou de feel sélectionné.&#10;Écrase les réglages actuels du mixeur."),
     "Preset laden": ("Load preset", "Charger le preset"),
-    "Setzt alle Mixer-Spuren auf Standardwerte zurueck&#10;(Mute aus, Lautstaerke 0 dB, keine Swing/Nudge-Abweichung).": (
+    "Setzt alle Mixer-Spuren auf Standardwerte zurück&#10;(Mute aus, Lautstärke 0 dB, keine Swing/Nudge-Abweichung).": (
         "Resets all mixer tracks to their defaults&#10;(mute off, volume 0 dB, no swing/nudge offset).",
         "Réinitialise toutes les pistes du mixeur aux valeurs par défaut&#10;(mute désactivé, volume 0 dB, aucun décalage swing/nudge)."),
     "Zur&#252;cksetzen": ("Reset", "Réinitialiser"),
-    "Soundfont (SF2): die Klangbibliothek fuer die MIDI-Instrumente.&#10;Genre-Standard = automatisch passendes SF2&#10;Eigene SF2 hochladen fuer individuellen Klang.": (
+    "Soundfont (SF2): die Klangbibliothek für die MIDI-Instrumente.&#10;Genre-Standard = automatisch passendes SF2&#10;Eigene SF2 hochladen für individuellen Klang.": (
         "Soundfont (SF2): the sound library for the MIDI instruments.&#10;Genre default = automatically matching SF2&#10;Upload your own SF2 for an individual sound.",
         "Soundfont (SF2) : la bibliothèque de sons des instruments MIDI.&#10;Standard du genre = SF2 adapté automatiquement&#10;Importez votre propre SF2 pour un son personnalisé."),
     "Eigene SF2-Datei:": ("Your own SF2 file:", "Votre fichier SF2 :"),
-    "Eigene SF2-Soundfont-Datei hochladen.&#10;Erlaubt individuelle Instrumentenklaenge jenseits der Genre-Standards.&#10;Dateigroesse: typisch 50 MB - 500 MB.": (
+    "Eigene SF2-Soundfont-Datei hochladen.&#10;Erlaubt individuelle Instrumentenklänge jenseits der Genre-Standards.&#10;Dateigröße: typisch 50 MB - 500 MB.": (
         "Upload your own SF2 soundfont file.&#10;Allows individual instrument sounds beyond the genre defaults.&#10;File size: typically 50 MB - 500 MB.",
         "Importer votre propre fichier soundfont SF2.&#10;Permet des sons d'instruments personnalisés au-delà des standards du genre.&#10;Taille du fichier : généralement 50 Mo - 500 Mo."),
     "&#128190; Laden": ("&#128190; Load", "&#128190; Charger"),
@@ -896,7 +896,7 @@ _T = {
     "Der Production Advisor wird nach der Generierung befullt.": (
         "The Production Advisor is filled after generation.", "Le Production Advisor est rempli après la génération."),
     "AUDIO EXPORTIEREN": ("EXPORT AUDIO", "EXPORTER L'AUDIO"),
-    "Schliessen": ("Close", "Fermer"),
+    "Schließen": ("Close", "Fermer"),
     "&#9888; Formate mit * erfordern <strong>ffmpeg</strong> im System-PATH.": (
         "&#9888; Formats marked with * require <strong>ffmpeg</strong> in the system PATH.",
         "&#9888; Les formats marqués d'un * nécessitent <strong>ffmpeg</strong> dans le PATH système."),
@@ -906,7 +906,7 @@ _T = {
     "WEITERE EXPORTE": ("MORE EXPORTS", "AUTRES EXPORTS"),
     "&#8659; Komposition (.json)": ("&#8659; Composition (.json)", "&#8659; Composition (.json)"),
     "&#8659; Berater (.pdf)": ("&#8659; Advisor (.pdf)", "&#8659; Conseiller (.pdf)"),
-    "MIDI und JSON exportieren die aktive Version (Re-Render wenn ausgewaehlt, sonst Original).": (
+    "MIDI und JSON exportieren die aktive Version (Re-Render wenn ausgewählt, sonst Original).": (
         "MIDI and JSON export the active version (re-render if selected, otherwise the original).",
         "MIDI et JSON exportent la version active (re-rendu si sélectionné, sinon l'original)."),
 
@@ -957,9 +957,9 @@ _T = {
         "Change password — %(brand)s", "Changer le mot de passe — %(brand)s"),
     "Falscher Benutzername": ("Invalid username", "Nom d'utilisateur invalide"),
     "Falsche Antwort": ("Wrong answer", "Réponse incorrecte"),
-    "Passwort erfolgreich geaendert": (
+    "Passwort erfolgreich geändert": (
         "Password changed successfully", "Mot de passe modifié avec succès"),
-    "Temporaeres Passwort": ("Temporary password", "Mot de passe temporaire"),
+    "Temporäres Passwort": ("Temporary password", "Mot de passe temporaire"),
     "Benutzerverwaltung": ("User management", "Gestion des utilisateurs"),
     "Passwort zurücksetzen (Admin)": (
         "Reset password (admin)", "Réinitialiser le mot de passe (admin)"),
@@ -967,14 +967,14 @@ _T = {
     "Beim nächsten Login muss das Passwort geändert werden.": (
         "The password must be changed at the next login.",
         "Le mot de passe doit être changé lors de la prochaine connexion."),
-    "Das temporaere Passwort lautet:": (
+    "Das temporäre Passwort lautet:": (
         "The temporary password is:", "Le mot de passe temporaire est :"),
     "Sicherheitsfrage und Antwort sind erforderlich.": (
         "Security question and answer are required.",
         "La question de sécurité et la réponse sont obligatoires."),
     "z. B. Name des ersten Haustiers": (
         "e.g. name of your first pet", "p. ex. nom de votre premier animal"),
-    "Ungueltige oder abgelaufene Sitzung.": (
+    "Ungültige oder abgelaufene Sitzung.": (
         "Invalid or expired session.", "Session invalide ou expirée."),
     "Neues Passwort darf nicht leer sein.": (
         "New password must not be empty.", "Le nouveau mot de passe ne doit pas être vide."),
@@ -1011,7 +1011,7 @@ _JS = {
     "Vorschau fehlgeschlagen: ": ("Preview failed: ", "Échec de l'aperçu : "),
     "Zuerst neu rendern.": ("Re-render first.", "Relancez d'abord le rendu."),
     "Kein Beat vorhanden.": ("No beat available.", "Aucun beat disponible."),
-    "⚠ ffmpeg nicht gefunden. Bitte ffmpeg installieren oder WAV CD Quality waehlen.": (
+    "⚠ ffmpeg nicht gefunden. Bitte ffmpeg installieren oder WAV CD Quality wählen.": (
         "⚠ ffmpeg not found. Please install ffmpeg or choose WAV CD Quality.",
         "⚠ ffmpeg introuvable. Veuillez installer ffmpeg ou choisir WAV CD Quality."),
     "Wird konvertiert…": ("Converting…", "Conversion en cours…"),
@@ -1036,28 +1036,28 @@ _JS = {
     " (FluidSynth nicht gefunden)": (" (FluidSynth not found)", " (FluidSynth introuvable)"),
     "Server-Fehler": ("Server error", "Erreur serveur"),
     "&#9654; Beat generieren": ("&#9654; Generate beat", "&#9654; Générer le beat"),
-    "— Palette waehlen —": ("— choose palette —", "— choisir une palette —"),
-    "Keine Paletten fuer dieses Genre": ("No palettes for this genre", "Aucune palette pour ce genre"),
+    "— Palette wählen —": ("— choose palette —", "— choisir une palette —"),
+    "Keine Paletten für dieses Genre": ("No palettes for this genre", "Aucune palette pour ce genre"),
     "— Genre-Standard (SF2) —": ("— Genre default (SF2) —", "— Standard du genre (SF2) —"),
     "⚠ Format-Liste konnte nicht geladen werden (HTTP {status}). Bitte neu einloggen.": (
         "⚠ Format list could not be loaded (HTTP {status}). Please sign in again.",
         "⚠ La liste des formats n'a pas pu être chargée (HTTP {status}). Veuillez vous reconnecter."),
     "⚠ Format-Liste Fehler: {msg}": ("⚠ Format list error: {msg}", "⚠ Erreur de la liste des formats : {msg}"),
-    "Format {ext} nicht unterstuetzt.": ("Format {ext} not supported.", "Format {ext} non pris en charge."),
+    "Format {ext} nicht unterstützt.": ("Format {ext} not supported.", "Format {ext} non pris en charge."),
     "Erlaubt: {allowed}": ("Allowed: {allowed}", "Autorisés : {allowed}"),
-    "{label} Solo rendern und abhoeren.&#10;Zeigt nur diese Spur isoliert.": (
+    "{label} Solo rendern und abhören.&#10;Zeigt nur diese Spur isoliert.": (
         "Render and listen to {label} solo.&#10;Shows only this track in isolation.",
         "Rendre et écouter {label} en solo.&#10;N'affiche que cette piste isolée."),
-    "Lautstaerke von {label}.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter": (
+    "Lautstärke von {label}.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter": (
         "Volume of {label}.&#10;-24 dB = very quiet · 0 dB = default · +6 dB = louder",
         "Volume de {label}.&#10;-24 dB = très faible · 0 dB = standard · +6 dB = plus fort"),
     "{label} stummschalten (Mute).&#10;Stumme Spuren werden nicht in den Mix gerendert.": (
         "Mute {label}.&#10;Muted tracks are not rendered into the mix.",
         "Couper {label} (mute).&#10;Les pistes coupées ne sont pas rendues dans le mix."),
-    "{label} solo schalten.&#10;Alle anderen Spuren werden gedaempft.": (
+    "{label} solo schalten.&#10;Alle anderen Spuren werden gedämpft.": (
         "Solo {label}.&#10;All other tracks are muted.",
         "Mettre {label} en solo.&#10;Toutes les autres pistes sont atténuées."),
-    "Lautstaerke (Gain) von {label} in Dezibel.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter": (
+    "Lautstärke (Gain) von {label} in Dezibel.&#10;-24 dB = sehr leise · 0 dB = Standard · +6 dB = lauter": (
         "Volume (gain) of {label} in decibels.&#10;-24 dB = very quiet · 0 dB = default · +6 dB = louder",
         "Volume (gain) de {label} en décibels.&#10;-24 dB = très faible · 0 dB = standard · +6 dB = plus fort"),
     "Stereo-Pan von {label}.&#10;L = links · C = Mitte · R = rechts": (
@@ -1066,15 +1066,15 @@ _JS = {
     "{label} stummschalten. Stumme Spuren fehlen im Re-Render.": (
         "Mute {label}. Muted tracks are missing from the re-render.",
         "Couper {label}. Les pistes coupées sont absentes du re-rendu."),
-    "{label} solo schalten. Alle anderen werden gedaempft.": (
+    "{label} solo schalten. Alle anderen werden gedämpft.": (
         "Solo {label}. All others are muted.", "Mettre {label} en solo. Toutes les autres sont atténuées."),
-    "Audio-Datei fuer {label} auswaehlen.&#10;Unterstuetzte Formate: WAV, AIFF, FLAC, OGG, MP3&#10;Maximale Dateigroesse: 20 MB.": (
+    "Audio-Datei für {label} auswählen.&#10;Unterstützte Formate: WAV, AIFF, FLAC, OGG, MP3&#10;Maximale Dateigröße: 20 MB.": (
         "Choose an audio file for {label}.&#10;Supported formats: WAV, AIFF, FLAC, OGG, MP3&#10;Maximum file size: 20 MB.",
         "Choisir un fichier audio pour {label}.&#10;Formats pris en charge : WAV, AIFF, FLAC, OGG, MP3&#10;Taille maximale : 20 Mo."),
-    "Zugewiesenes Sample vorabhoeren.&#10;Nur verfuegbar wenn eine Datei zugewiesen ist.": (
+    "Zugewiesenes Sample vorabhören.&#10;Nur verfügbar wenn eine Datei zugewiesen ist.": (
         "Preview the assigned sample.&#10;Only available when a file is assigned.",
         "Pré-écouter le sample attribué.&#10;Disponible uniquement si un fichier est attribué."),
-    "Sample-Zuweisung fuer {label} entfernen.&#10;Die Spur verwendet wieder den eingebauten Synthesizer.": (
+    "Sample-Zuweisung für {label} entfernen.&#10;Die Spur verwendet wieder den eingebauten Synthesizer.": (
         "Remove the sample assignment for {label}.&#10;The track uses the built-in synthesizer again.",
         "Retirer le sample attribué à {label}.&#10;La piste réutilise le synthétiseur intégré."),
 

@@ -108,7 +108,7 @@ def apply_volume_db(notes: List[_Note], volume_db: float) -> List[_Note]:
 
 
 def apply_vel_jitter(notes: List[_Note], jitter: int, rng: random.Random) -> List[_Note]:
-    """Streut Velocity-Werte zufaellig um ±jitter."""
+    """Streut Velocity-Werte zufällig um ±jitter."""
     if jitter <= 0:
         return notes
     return [
@@ -145,7 +145,7 @@ def apply_velocity_curve(notes: List[_Note], curve: str, total_beats: float) -> 
 
 def apply_time_jitter(notes: List[_Note], jitter_ms: float, bpm: float,
                       rng: random.Random) -> List[_Note]:
-    """Streut Timing zufaellig um ±jitter_ms (in ms)."""
+    """Streut Timing zufällig um ±jitter_ms (in ms)."""
     if jitter_ms <= 0.0 or bpm <= 0.0:
         return notes
     jitter_beats = (jitter_ms / 1000.0) * (bpm / 60.0)

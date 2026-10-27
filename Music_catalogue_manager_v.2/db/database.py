@@ -69,6 +69,18 @@ CREATE TABLE IF NOT EXISTS users (
     created_at     TEXT NOT NULL
 );
 
+-- Fehlversuche je Nutzer, IP und Vorgang (Login / Sicherheitsfrage), siehe auth/lockout.py.
+CREATE TABLE IF NOT EXISTS login_attempts (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ip           TEXT NOT NULL,
+    kind         TEXT NOT NULL,                 -- 'login' | 'security_question'
+    failed       INTEGER NOT NULL DEFAULT 0,    -- Fehlversuche seit der letzten Sperre
+    level        INTEGER NOT NULL DEFAULT 0,    -- Anzahl bisheriger Sperren (Stufe)
+    locked_until TEXT,                          -- Sperrende (ISO), NULL = nicht gesperrt
+    updated_at   TEXT NOT NULL,
+    PRIMARY KEY (user_id, ip, kind)
+);
+
 -- Abgeschlossene Abos (Freemium-Umsatzstrom, mit Laufzeit).
 CREATE TABLE IF NOT EXISTS subscriptions (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,

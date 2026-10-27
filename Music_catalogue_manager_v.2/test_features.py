@@ -33,7 +33,8 @@ _counter = iter(range(10_000))
 def _register(client):
     """Registriert einen frischen Kunden; gibt (user_id, Antwort) zurueck."""
     email = f"kunde{next(_counter)}@example.com"
-    resp = client.post("/register", data={"email": email, "password": "geheim", "confirm": "geheim"})
+    resp = client.post("/register", data={"email": email, "password": "geheim", "confirm": "geheim",
+                                         "security_question": "Haustier?", "security_answer": "Bello"})
     return db.get_user_by_email(email)["id"], resp
 
 
@@ -376,26 +377,81 @@ def test_login_redirects_only_within_the_site():
         assert resp.headers["Location"] == expected, target
 
 
-def test_three_wrong_passwords_lock_the_account_for_a_day():
+def test_wrong_passwords_lock_with_rising_duration_per_ip():
+    from auth import lockout
     client = main.app.test_client()
     uid, _ = _register(client)
     email = quota.get_user(uid)["email"]
     client.get("/logout")
-    login = lambda pw: client.post("/login", data={"email": email, "password": pw})
-    assert "Noch 2 Versuch" in login("falsch").get_data(as_text=True)
+    login = lambda pw, c=client: c.post("/login", data={"email": email, "password": pw})
+    assert "Ungültige E-Mail" in login("falsch").get_data(as_text=True)
     assert "/generate" in login("geheim").headers["Location"]     # Erfolg setzt Zaehler zurueck
     client.get("/logout")
-    login("falsch"), login("falsch")
-    assert "gesperrt bis" in login("falsch").get_data(as_text=True)
-    assert "gesperrt bis" in login("geheim").get_data(as_text=True)  # auch richtiges Passwort
-    until = datetime.fromisoformat(quota.get_user(uid)["locked_until"])
-    assert timedelta(hours=23, minutes=59) < until - datetime.now() <= timedelta(hours=24)
 
+    def lock_after_three_failures():
+        login("falsch"), login("falsch")
+        assert "Zu viele Fehlversuche" in login("falsch").get_data(as_text=True)
+        assert "Zu viele Fehlversuche" in login("geheim").get_data(as_text=True)  # auch richtiges Passwort
+        return lockout.user_lock_end(uid) - datetime.now()
+
+    def expire_lock():
+        conn = db.get_conn()
+        conn.execute("UPDATE login_attempts SET locked_until = ? WHERE user_id = ?",
+                     ((datetime.now() - timedelta(seconds=1)).isoformat(timespec="seconds"), uid))
+        conn.commit()
+        conn.close()
+
+    # Steigende Sperrdauer: 1 -> 5 -> 15 -> 15 Minuten
+    for step in (*lockout.LOCK_STEPS, lockout.LOCK_STEPS[-1]):
+        remaining = lock_after_three_failures()
+        assert step - timedelta(seconds=5) < remaining <= step, (step, remaining)
+        expire_lock()
+
+    # Sperre gilt nur fuer die IP des Angreifers: von einer anderen IP kommt der Nutzer rein.
+    lock_after_three_failures()
+    other = main.app.test_client()
+    resp = other.post("/login", data={"email": email, "password": "geheim"},
+                      environ_overrides={"REMOTE_ADDR": "10.0.0.2"})
+    assert "/generate" in resp.headers["Location"]
+
+    # Admin kann alle Sperren aufheben.
     admin = main.app.test_client()
     admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
     assert "Entsperren" in admin.get("/users").get_data(as_text=True)
     admin.post(f"/users/{uid}/unlock")
+    assert lockout.user_lock_end(uid) is None
     assert "/generate" in login("geheim").headers["Location"]
+
+
+def test_admin_cannot_be_locked_out_from_another_ip():
+    attacker = main.app.test_client()
+    for _ in range(3):
+        attacker.post("/login", data={"email": "admin@admin.com", "password": "geraten"},
+                      environ_overrides={"REMOTE_ADDR": "203.0.113.9"})
+    admin = main.app.test_client()
+    resp = admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    assert resp.status_code == 302 and "/login" not in resp.headers["Location"]
+    from auth import lockout
+    conn = db.get_conn()
+    conn.execute("DELETE FROM login_attempts")
+    conn.commit()
+    conn.close()
+
+
+def test_security_question_lock_survives_new_session():
+    """Die Sperre liegt in der Datenbank: ein neuer Browser (ohne Cookies) umgeht sie nicht."""
+    uid, _ = _register(main.app.test_client())
+    email = quota.get_user(uid)["email"]
+
+    def answer(client, text):
+        client.post("/forgot-password", data={"email": email})
+        return client.post(f"/forgot-password/{email}", data={"answer": text}, follow_redirects=True)
+
+    browser = main.app.test_client()
+    answer(browser, "falsch"), answer(browser, "falsch")
+    assert "Zu viele Fehlversuche" in answer(browser, "falsch").get_data(as_text=True)
+    fresh = main.app.test_client()                      # Cookies geloescht / neuer Browser
+    assert "Zu viele Fehlversuche" in answer(fresh, "Bello").get_data(as_text=True)
 
 
 def test_unclosed_connection_does_not_lock_the_database():

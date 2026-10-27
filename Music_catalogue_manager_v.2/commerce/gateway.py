@@ -97,8 +97,8 @@ def run_generation(user_id, count=1, simulate=None):
                 "ok": False,
                 "error": _("Kontingent reicht nicht. %(name)s hat diesen Monat "
                            "%(used)s/%(limit)s Sounds bezogen "
-                           "(noch %(remaining)s moeglich, %(count)s angefragt). "
-                           "Benoetigt: %(needed)s Token(s), Guthaben: %(balance)s. "
+                           "(noch %(remaining)s möglich, %(count)s angefragt). "
+                           "Benötigt: %(needed)s Token(s), Guthaben: %(balance)s. "
                            "Token-Preis: %(price)s (%(group)s).",
                            name=user["name"], used=status["used"], limit=status["limit"],
                            remaining=status["remaining"], count=count,
@@ -128,7 +128,7 @@ def run_generation(user_id, count=1, simulate=None):
     if use_sim:
         produced = _simulate_generation(count, catalog_dir)
         if not produced:
-            return _fail({"error": _("Simulation fehlgeschlagen (mido nicht verfuegbar).")})
+            return _fail({"error": _("Simulation fehlgeschlagen (mido nicht verfügbar).")})
     else:
         # Echtbetrieb: externen Befehl ausfuehren. Platzhalter ersetzen.
         cmd = cmd_template.replace("{count}", str(count)).replace(

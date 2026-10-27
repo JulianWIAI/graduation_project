@@ -704,7 +704,7 @@ def generate_track():
         if not wav_path.exists() or wav_path.stat().st_size == 0:
             raise RuntimeError(
                 _("Rendering fehlgeschlagen: WAV-Datei fehlt oder ist leer. "
-                  "Bitte Server-Log pruefen.")
+                  "Bitte Server-Log prüfen.")
             )
 
         # Komposition als JSON speichern — wird fuer Solo-Rendering und Re-Render benoetigt.

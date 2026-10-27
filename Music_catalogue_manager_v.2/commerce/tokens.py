@@ -62,11 +62,11 @@ def validate_prices(basic, subscriber):
         basic = float(basic)
         subscriber = float(subscriber)
     except (TypeError, ValueError):
-        return _("Token-Preise muessen Zahlen sein.")
+        return _("Token-Preise müssen Zahlen sein.")
     if basic <= 0 or subscriber <= 0:
-        return _("Token-Preise muessen groesser als 0 sein.")
+        return _("Token-Preise müssen größer als 0 sein.")
     if subscriber >= basic:
-        return _("Der Token-Preis fuer Abonnenten muss unter dem Basis-Preis liegen "
+        return _("Der Token-Preis für Abonnenten muss unter dem Basis-Preis liegen "
                  "(aktuell %(sub)s ≥ %(basic)s).",
                  sub=fmt_eur(subscriber), basic=fmt_eur(basic))
     return None
@@ -186,9 +186,9 @@ def create_purchase(user_id, quantity):
     try:
         quantity = int(quantity)
     except (TypeError, ValueError):
-        return None, _("Ungueltige Anzahl.")
+        return None, _("Ungültige Anzahl.")
     if not 1 <= quantity <= MAX_QUANTITY:
-        return None, _("Bitte zwischen 1 und %(max)s Tokens waehlen.", max=MAX_QUANTITY)
+        return None, _("Bitte zwischen 1 und %(max)s Tokens wählen.", max=MAX_QUANTITY)
     if not quota.get_user(user_id):
         return None, _("Nutzer nicht gefunden.")
 
@@ -288,6 +288,6 @@ def cancel_purchase(purchase_id):
     conn.commit()
     conn.close()
     if cur.rowcount != 1:
-        return False, _("Nur offene Bestellungen koennen storniert werden.")
+        return False, _("Nur offene Bestellungen können storniert werden.")
     db.log_event("TOKENS_CANCELLED", "token_purchase", purchase_id, None)
     return True, None

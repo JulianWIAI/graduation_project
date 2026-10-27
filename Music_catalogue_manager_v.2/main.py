@@ -36,7 +36,8 @@ from commerce.token_shop import tokens_bp
 from catalog import scanner
 from catalog import watermark_reader
 from db.demo_data import generate as generate_demo
-from auth.auth import auth_bp, User, lock_end, set_login_state
+from auth.auth import auth_bp, User
+from auth import lockout
 from beatgen.generate import generate_bp
 from auth.rbac import require_admin
 from catalog.sample_upload import sample_upload_bp
@@ -364,7 +365,7 @@ def scan():
     if exp.get("error"):
         flash(exp["error"], "error")
     else:
-        flash(_("Exporte gescannt: %(linked)s verknuepft, %(unmatched)s ohne Zuordnung.",
+        flash(_("Exporte gescannt: %(linked)s verknüpft, %(unmatched)s ohne Zuordnung.",
                 linked=exp["linked"], unmatched=exp["unmatched"]), "success")
     return redirect(request.referrer or url_for("dashboard_view"))
 
@@ -395,7 +396,7 @@ def users_view():
     rows = []
     for u in users:
         st = quota.quota_status(u)
-        rows.append({"u": u, "st": st, "locked_until": lock_end(u)})
+        rows.append({"u": u, "st": st, "locked_until": lockout.user_lock_end(u["id"])})
     limits = {"free": db.get_setting("limit_free"),
               "sub": db.get_setting("limit_subscriber"),
               "discount": db.get_setting("discount_pct")}
@@ -417,7 +418,7 @@ def users_tokens(user_id):
                             admin_id=current_user.id)
         flash(_("Token-Guthaben angepasst."), "success")
     except (ValueError, tokens.TokenError) as exc:
-        flash(str(exc) or _("Ungueltiger Betrag."), "error")
+        flash(str(exc) or _("Ungültiger Betrag."), "error")
     return redirect(url_for("users_view"))
 
 
@@ -426,7 +427,7 @@ def users_tokens(user_id):
 @require_admin
 def users_unlock(user_id):
     """Admin: Login-Sperre nach falschen Passwoertern vorzeitig aufheben."""
-    set_login_state(user_id, 0)
+    lockout.unlock_user(user_id)
     db.log_event("LOGIN_UNLOCKED", "user", user_id, {"by": current_user.id})
     flash(_("Konto entsperrt."), "success")
     return redirect(url_for("users_view"))
@@ -527,13 +528,13 @@ def generate_track():
     res = gateway.run_generation(user_id, count=count)
     if res["ok"]:
         st = res["status"]
-        msg = _("[%(mode)s] %(count)s Track(s) fuer %(user)s erzeugt. "
+        msg = _("[%(mode)s] %(count)s Track(s) für %(user)s erzeugt. "
                 "Diesen Monat %(used)s/%(limit)s (noch %(remaining)s).",
                 mode=res["mode"], count=res["count"], user=res["user"],
                 used=st["used"], limit=st["limit"], remaining=st["remaining"])
         if res.get("tokens_used"):
             msg += " " + _("%(n)s Token(s) verbraucht.", n=res["tokens_used"])
-        flash(msg + " " + _("Zum Uebernehmen: Scannen."), "success")
+        flash(msg + " " + _("Zum Übernehmen: Scannen."), "success")
     else:
         flash(res["error"], "error")
     return redirect(request.referrer or url_for("users_view"))

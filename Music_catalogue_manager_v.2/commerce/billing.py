@@ -92,7 +92,7 @@ def cancel_license(license_id):
         return False, _("Lizenz nicht gefunden.")
     if lic["payment_status"] == "paid":
         conn.close()
-        return False, _("Bezahlte Lizenzen koennen nicht storniert werden.")
+        return False, _("Bezahlte Lizenzen können nicht storniert werden.")
     track_id = lic["track_id"]
     conn.execute("DELETE FROM licenses WHERE id = ?", (license_id,))
     conn.commit()
@@ -133,7 +133,7 @@ def subscription_price(term_months):
 def create_subscription(user_id, term_months):
     """Legt ein Abo (Status 'open') mit Laufzeit an. Gibt subscription_id zurueck."""
     if term_months not in config.SUBSCRIPTION_TERMS:
-        return None, _("Ungueltige Laufzeit.")
+        return None, _("Ungültige Laufzeit.")
     price = subscription_price(term_months)
     start = _today()
     conn = db.get_conn()

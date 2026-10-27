@@ -126,7 +126,7 @@ def upload_sample():
     if not audio_uuid:
         return jsonify({"ok": False, "error": _("audio_uuid fehlt")}), 400
     if builder_key not in _GUELTIGE_KEYS:
-        return jsonify({"ok": False, "error": _("Ungueltiger Track-Key: '%(key)s'", key=builder_key)}), 400
+        return jsonify({"ok": False, "error": _("Ungültiger Track-Key: '%(key)s'", key=builder_key)}), 400
     if audio_datei is None:
         return jsonify({"ok": False, "error": _("Keine Datei empfangen")}), 400
 
@@ -134,7 +134,7 @@ def upload_sample():
     if endung not in _ERLAUBTE_ENDUNGEN:
         return jsonify({
             "ok":    False,
-            "error": _("Format '%(ext)s' nicht unterstuetzt. Erlaubt: %(allowed)s",
+            "error": _("Format '%(ext)s' nicht unterstützt. Erlaubt: %(allowed)s",
                        ext=endung, allowed=", ".join(sorted(_ERLAUBTE_ENDUNGEN))),
         }), 415
 
@@ -170,7 +170,7 @@ def upload_sample():
                     ziel_pfad.unlink(missing_ok=True)
                     return jsonify({
                         "ok":    False,
-                        "error": _("Datei ueberschreitet 20-MB-Limit (%(mb)s MB empfangen)",
+                        "error": _("Datei überschreitet 20-MB-Limit (%(mb)s MB empfangen)",
                                    mb=groesse // 1_048_576),
                     }), 413
                 fh.write(chunk)
