@@ -615,9 +615,9 @@ _T = {
     "Das Format '%(fmt)s' erfordert ffmpeg. Bitte ffmpeg installieren und im PATH verfügbar machen.": (
         "The format '%(fmt)s' requires ffmpeg. Please install ffmpeg and make it available in the PATH.",
         "Le format « %(fmt)s » nécessite ffmpeg. Veuillez installer ffmpeg et le rendre disponible dans le PATH."),
-    "Keine PDF-Bibliothek installiert. Bitte 'pip install reportlab' oder 'pip install fpdf2' ausführen.": (
-        "No PDF library installed. Please run 'pip install reportlab' or 'pip install fpdf2'.",
-        "Aucune bibliothèque PDF installée. Veuillez exécuter 'pip install reportlab' ou 'pip install fpdf2'."),
+    "Keine PDF-Bibliothek installiert. Bitte 'pip install reportlab' ausführen.": (
+        "No PDF library installed. Please run 'pip install reportlab'.",
+        "Aucune bibliothèque PDF installée. Veuillez exécuter 'pip install reportlab'."),
     "audio_uuid fehlt": ("audio_uuid missing", "audio_uuid manquant"),
     "Ungültiger Track-Key: '%(key)s'": ("Invalid track key: '%(key)s'", "Clé de piste invalide : « %(key)s »"),
     "Format '%(ext)s' nicht unterstützt. Erlaubt: %(allowed)s": (

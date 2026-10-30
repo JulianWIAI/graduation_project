@@ -15,21 +15,8 @@ Plattformunabhaengig — pathlib, kein Tkinter, keine OS-spezifischen APIs.
 
 from __future__ import annotations
 
-import pathlib
-import sys
 from typing import Any, Dict
 import config
-
-# Pfad zum MA-V7-Quellverzeichnis (relativ zu dieser Datei berechnet).
-_MA_ROOT = pathlib.Path(config.MA_ROOT)
-_MA_SRC  = _MA_ROOT / "src"
-
-
-def _ensure_ma_path() -> None:
-    """Fuegt MA-V7-Pfade zu sys.path hinzu (idempotent)."""
-    for p in (str(_MA_ROOT), str(_MA_SRC)):
-        if p not in sys.path:
-            sys.path.insert(0, p)
 
 
 # Mapping Web-Frontend-Schluessel → MA-V7-interne Track-Bezeichnung.
@@ -98,7 +85,7 @@ def score_instruments(
     }
     """
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from src.composition import bdra_rules as br  # type: ignore
 
         # BDRA-Auswahl und Dichte-Extra aufbauen.

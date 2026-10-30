@@ -5,7 +5,7 @@ Unterstuetzt:
   - Audio: WAV (verschiedene Auflösungen), FLAC, MP3, OGG via ffmpeg (optional)
   - MIDI: Standard MIDI Format 1 via mido
   - JSON: Kompositions-JSON direkt
-  - PDF: Produktionsberater via reportlab oder fpdf2
+  - PDF: Produktionsberater via reportlab
 
 Plattformunabhaengig — kein kompilierter Code, keine Betriebssystem-APIs.
 """
@@ -155,22 +155,16 @@ def export_midi(composition: dict, bpm: float) -> bytes:
 
 def export_advisory_pdf(advisor: dict, meta: dict, genre: str) -> bytes:
     """
-    Erstellt einen Produktionsberater-PDF.
-    Versucht reportlab, dann fpdf2.
-    Wirft RuntimeError wenn keine PDF-Bibliothek installiert ist.
+    Erstellt einen Produktionsberater-PDF via reportlab.
+    Wirft RuntimeError wenn reportlab nicht installiert ist.
     """
     try:
         return _pdf_reportlab(advisor, meta, genre)
     except ImportError:
-        pass
-    try:
-        return _pdf_fpdf2(advisor, meta, genre)
-    except ImportError:
-        pass
-    raise RuntimeError(
-        _("Keine PDF-Bibliothek installiert. "
-          "Bitte 'pip install reportlab' oder 'pip install fpdf2' ausführen.")
-    )
+        raise RuntimeError(
+            _("Keine PDF-Bibliothek installiert. "
+              "Bitte 'pip install reportlab' ausführen.")
+        )
 
 
 def _pdf_reportlab(advisor: dict, meta: dict, genre: str) -> bytes:
@@ -266,81 +260,3 @@ def _pdf_reportlab(advisor: dict, meta: dict, genre: str) -> bytes:
 
     doc.build(story)
     return buf.getvalue()
-
-
-def _pdf_fpdf2(advisor: dict, meta: dict, genre: str) -> bytes:
-    from fpdf import FPDF
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=20)
-
-    def accent():
-        pdf.set_text_color(124, 109, 234)
-
-    def normal():
-        pdf.set_text_color(50, 50, 50)
-
-    pdf.set_font("Helvetica", "B", 16)
-    accent()
-    pdf.cell(0, 10, f"Produktionsberater - {genre.upper()}", ln=True)
-    pdf.set_font("Helvetica", "", 9)
-    normal()
-    pdf.cell(0, 6,
-             f"BPM: {meta.get('bpm','—')}  |  Tonart: {meta.get('key','—')}  |  "
-             f"Takte: {meta.get('total_bars','—')}", ln=True)
-    pdf.ln(3)
-
-    def section(title):
-        pdf.set_font("Helvetica", "B", 11)
-        accent()
-        pdf.cell(0, 8, title, ln=True)
-        pdf.set_font("Helvetica", "", 9)
-        normal()
-
-    def subsection(title):
-        pdf.set_font("Helvetica", "B", 9)
-        accent()
-        pdf.cell(0, 6, title, ln=True)
-        pdf.set_font("Helvetica", "", 8)
-        normal()
-
-    gs = advisor.get("gain_staging", [])
-    if gs:
-        section("GAIN STAGING")
-        for r in gs:
-            pdf.cell(0, 5,
-                     f"  {r.get('label', r.get('track',''))}: "
-                     f"RMS {r.get('rms','—')} dB  Peak {r.get('peak','—')} dB  "
-                     f"Fader {r.get('fader_db','—')} dB", ln=True)
-        pdf.ln(2)
-
-    bpm_times = advisor.get("bpm_times", {})
-    if bpm_times:
-        section("BPM-ZEITWERTE")
-        for k, v in bpm_times.items():
-            pdf.cell(0, 5, f"  {k}: {v}", ln=True)
-        pdf.ln(2)
-
-    chains = advisor.get("effect_chains", {})
-    if chains:
-        section("EFFEKTKETTEN")
-        for track, slots in chains.items():
-            subsection(f"  {track.upper()}")
-            for s in slots:
-                pdf.cell(0, 4,
-                         f"    [{s.get('slot','')}] {s.get('effect','')} "
-                         f"- {s.get('params','')}", ln=True)
-        pdf.ln(2)
-
-    freq = advisor.get("frequency_allocation", [])
-    if freq:
-        section("FREQUENZALLOKATION")
-        for r in freq:
-            pdf.cell(0, 5,
-                     f"  {r.get('label', r.get('track',''))}: "
-                     f"HPF {r.get('hpf','—')}  LPF {r.get('lpf','—')}  "
-                     f"Zone: {r.get('zone','—')}", ln=True)
-        pdf.ln(2)
-
-    return bytes(pdf.output())

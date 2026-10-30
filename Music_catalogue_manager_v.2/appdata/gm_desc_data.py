@@ -8,23 +8,8 @@ Plattformunabhaengig (kein Tkinter, keine OS-spezifischen APIs).
 
 from __future__ import annotations
 
-import pathlib
-import sys
 from typing import Dict, Optional
 import config
-
-# ---------------------------------------------------------------------------
-# MUSIC_ARCHITECT_V7-Pfad — relativ zu dieser Datei berechnet.
-# ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(config.MA_ROOT)
-_MA_SRC  = _MA_ROOT / "src"
-
-
-def _ensure_ma_path() -> None:
-    """Fuegt MA-Pfade zu sys.path hinzu (idempotent)."""
-    for p in (str(_MA_ROOT), str(_MA_SRC)):
-        if p not in sys.path:
-            sys.path.insert(0, p)
 
 
 # Gecachte Referenzen nach erstem Import.
@@ -39,7 +24,7 @@ def _load() -> None:
     if _get_description_fn is not None:
         return
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from composition.gm_descriptions import (  # type: ignore
             GM_DESCRIPTIONS,
             get_description,
