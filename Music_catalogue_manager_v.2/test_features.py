@@ -19,6 +19,7 @@ import config
 
 config.DB_PATH = os.path.join(tempfile.mkdtemp(), "test.db")   # VOR dem App-Import!
 ADMIN_PASSWORD = "nur-fuer-den-test"
+PW = "Sicher-Test-42!"                                          # erfuellt die Passwort-Regeln
 os.environ["SBS_ADMIN_PASSWORD"] = ADMIN_PASSWORD               # ebenfalls vor dem Import
 
 import main                                   # noqa: E402
@@ -33,7 +34,7 @@ _counter = iter(range(10_000))
 def _register(client):
     """Registriert einen frischen Kunden; gibt (user_id, Antwort) zurueck."""
     email = f"kunde{next(_counter)}@example.com"
-    resp = client.post("/register", data={"email": email, "password": "geheim", "confirm": "geheim",
+    resp = client.post("/register", data={"email": email, "password": PW, "confirm": PW,
                                          "security_question": "Haustier?", "security_answer": "Bello"})
     return db.get_user_by_email(email)["id"], resp
 
@@ -143,7 +144,7 @@ def test_login_reminds_about_expiring_subscription():
 
     def login():
         client.get("/logout")
-        return client.post("/login", data={"email": email, "password": "geheim"}).headers["Location"]
+        return client.post("/login", data={"email": email, "password": PW}).headers["Location"]
 
     _set_subscription(uid, today - timedelta(days=27), today + timedelta(days=3))
     assert login().endswith("/plan")
@@ -373,7 +374,7 @@ def test_login_redirects_only_within_the_site():
     for target, expected in (("https://boese.example/x", "/generate"), ("//boese.example", "/generate"),
                              ("/\\boese.example", "/generate"), ("/tokens", "/tokens")):
         client.get("/logout")
-        resp = client.post(f"/login?next={target}", data={"email": email, "password": "geheim"})
+        resp = client.post(f"/login?next={target}", data={"email": email, "password": PW})
         assert resp.headers["Location"] == expected, target
 
 
@@ -385,13 +386,13 @@ def test_wrong_passwords_lock_with_rising_duration_per_ip():
     client.get("/logout")
     login = lambda pw, c=client: c.post("/login", data={"email": email, "password": pw})
     assert "Ungültige E-Mail" in login("falsch").get_data(as_text=True)
-    assert "/generate" in login("geheim").headers["Location"]     # Erfolg setzt Zaehler zurueck
+    assert "/generate" in login(PW).headers["Location"]     # Erfolg setzt Zaehler zurueck
     client.get("/logout")
 
     def lock_after_three_failures():
         login("falsch"), login("falsch")
         assert "Zu viele Fehlversuche" in login("falsch").get_data(as_text=True)
-        assert "Zu viele Fehlversuche" in login("geheim").get_data(as_text=True)  # auch richtiges Passwort
+        assert "Zu viele Fehlversuche" in login(PW).get_data(as_text=True)  # auch richtiges Passwort
         return lockout.user_lock_end(uid) - datetime.now()
 
     def expire_lock():
@@ -410,7 +411,7 @@ def test_wrong_passwords_lock_with_rising_duration_per_ip():
     # Sperre gilt nur fuer die IP des Angreifers: von einer anderen IP kommt der Nutzer rein.
     lock_after_three_failures()
     other = main.app.test_client()
-    resp = other.post("/login", data={"email": email, "password": "geheim"},
+    resp = other.post("/login", data={"email": email, "password": PW},
                       environ_overrides={"REMOTE_ADDR": "10.0.0.2"})
     assert "/generate" in resp.headers["Location"]
 
@@ -420,7 +421,7 @@ def test_wrong_passwords_lock_with_rising_duration_per_ip():
     assert "Entsperren" in admin.get("/users").get_data(as_text=True)
     admin.post(f"/users/{uid}/unlock")
     assert lockout.user_lock_end(uid) is None
-    assert "/generate" in login("geheim").headers["Location"]
+    assert "/generate" in login(PW).headers["Location"]
 
 
 def test_admin_cannot_be_locked_out_from_another_ip():
@@ -452,6 +453,97 @@ def test_security_question_lock_survives_new_session():
     assert "Zu viele Fehlversuche" in answer(browser, "falsch").get_data(as_text=True)
     fresh = main.app.test_client()                      # Cookies geloescht / neuer Browser
     assert "Zu viele Fehlversuche" in answer(fresh, "Bello").get_data(as_text=True)
+
+
+def test_password_rules_on_registration():
+    from auth import password_policy
+    client = main.app.test_client()
+    def register(pw, email=None):
+        email = email or f"regel{next(_counter)}@example.com"
+        client.get("/logout")
+        client.post("/register", data={"email": email, "password": pw, "confirm": pw,
+                                       "security_question": "Haustier?", "security_answer": "Bello"})
+        return db.get_user_by_email(email)
+    for weak in ("Kurz1!", "nurklein-123!", "NURGROSS-123!", "OhneZahl-xyz!", "OhneSonder123",
+                 "Password123!"):
+        assert register(weak) is None, weak
+    assert register("Maxmuster-99!", "maxmuster@example.com") is None   # enthaelt die E-Mail
+    assert register(PW) is not None
+    assert password_policy.validate("kurz", is_admin=True) == []         # Admin vorerst ausgenommen
+
+
+def test_lock_steps_reach_a_day():
+    from auth import lockout
+    assert lockout.LOCK_STEPS[-1] >= timedelta(hours=24)
+
+
+def test_every_user_can_change_password_with_current_one():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    email = quota.get_user(uid)["email"]
+    assert "/change-password" in client.get("/generate").get_data(as_text=True)   # Menue-Eintrag
+    new = "Neues-Pass-77!"
+    form = lambda cur, pw: {"current_password": cur, "new_password": pw, "confirm": pw}
+    page = client.post("/change-password", data=form("falsch", new)).get_data(as_text=True)
+    assert "aktuelle Passwort ist falsch" in page
+    page = client.post("/change-password", data=form(PW, "zu-kurz")).get_data(as_text=True)
+    assert "Anforderungen nicht" in page and "Großbuchstabe" in page
+    assert client.post("/change-password", data=form(PW, new)).status_code == 302
+    client.get("/logout")
+    assert "/generate" in client.post("/login", data={"email": email, "password": new}).headers["Location"]
+    client.post("/change-password", data=form(new, PW))          # zuruecksetzen fuer andere Tests
+
+
+def test_registration_keeps_question_but_not_secrets():
+    client = main.app.test_client()
+    page = client.post("/register", data={"email": "behalt@example.com", "password": "kurz",
+                                          "confirm": "kurz", "security_question": "Lieblingsband?",
+                                          "security_answer": "Geheim"}).get_data(as_text=True)
+    assert 'value="behalt@example.com"' in page and 'value="Lieblingsband?"' in page
+    assert 'value="Geheim"' not in page and 'value="kurz"' not in page
+    assert 'class="pw-rules"' in page and "data-pattern" in page                  # Live-Checkliste
+
+
+def test_users_can_set_security_question_and_are_reminded():
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    email = quota.get_user(uid)["email"]
+    conn = db.get_conn()                                     # Altkonto ohne Sicherheitsfrage simulieren
+    conn.execute("UPDATE users SET security_question = NULL WHERE id = ?", (uid,))
+    conn.commit()
+    conn.close()
+    client.get("/logout")
+    resp = client.post("/login", data={"email": email, "password": PW})
+    assert resp.headers["Location"].endswith("/security-question")
+    form = {"current_password": "falsch", "security_question": "Stadt?", "security_answer": "Rom"}
+    assert "aktuelle Passwort ist falsch" in client.post("/security-question", data=form).get_data(as_text=True)
+    form["current_password"] = PW
+    assert client.post("/security-question", data=form).status_code == 302
+    assert quota.get_user(uid)["security_question"] == "Stadt?"
+    client.get("/logout")
+    client.post("/forgot-password", data={"email": email})          # jetzt funktioniert der Reset
+    page = client.post(f"/forgot-password/{email}", data={"answer": "rom"})
+    assert "/reset-password/" in page.headers["Location"]
+
+
+def test_reset_admin_script():
+    import getpass
+    import reset_admin
+    from werkzeug.security import check_password_hash
+    answers = iter(["kurz", "anders", "Notfall-Admin-1!", "Notfall-Admin-1!"])
+    original, getpass.getpass = getpass.getpass, lambda prompt="": next(answers)
+    try:
+        assert reset_admin.main(["reset_admin.py"]) == 0
+    finally:
+        getpass.getpass = original
+    row = db.get_user_by_email("admin@admin.com")
+    assert check_password_hash(row["password_hash"], "Notfall-Admin-1!")
+    conn = db.get_conn()                                     # Testpasswort wiederherstellen
+    from werkzeug.security import generate_password_hash
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                 (generate_password_hash(ADMIN_PASSWORD), row["id"]))
+    conn.commit()
+    conn.close()
 
 
 def test_unclosed_connection_does_not_lock_the_database():

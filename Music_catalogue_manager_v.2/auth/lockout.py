@@ -21,7 +21,9 @@ from db import database as db
 MAX_FAILED_ATTEMPTS = 3                       # Fehlversuche bis zur naechsten Sperrstufe
 LOCK_STEPS = (timedelta(minutes=1),           # 1. Sperre
               timedelta(minutes=5),           # 2. Sperre
-              timedelta(minutes=15))          # 3. und jede weitere Sperre
+              timedelta(minutes=15),          # 3. Sperre
+              timedelta(hours=1),             # 4. Sperre
+              timedelta(hours=24))            # 5. und jede weitere Sperre
 LEVEL_RESET_AFTER = timedelta(hours=24)       # Stufe verfaellt nach so langer Ruhe
 
 KIND_LOGIN = "login"                          # Passwort bei der Anmeldung

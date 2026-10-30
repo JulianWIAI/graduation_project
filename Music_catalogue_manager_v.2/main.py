@@ -66,6 +66,17 @@ app.secret_key = _secret_key()
 
 
 @app.context_processor
+def _inject_password_policy():
+    """Passwort-Hinweis und Mindestlaenge fuer die Formulare (Werte aus auth/password_policy.py)."""
+    from auth import password_policy
+    is_admin = current_user.is_authenticated and current_user.is_admin
+    return {"pw_policy": {"hint": password_policy.hint(),
+                          "min_length": password_policy.MIN_LENGTH,
+                          "rules": password_policy.checklist(),
+                          "applies": password_policy.applies_to(is_admin)}}
+
+
+@app.context_processor
 def _inject_brand():
     """Stellt Name und Logo der Suite allen Templates als `brand` bereit."""
     return {"brand": {"name": config.BRAND_NAME, "logo_mark": config.BRAND_LOGO_MARK}}

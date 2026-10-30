@@ -14,7 +14,7 @@ from flask import (Blueprint, flash, redirect, render_template,
 from flask_login import UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from auth import lockout
+from auth import lockout, password_policy
 from auth.rbac import require_admin
 from commerce import quota
 from db import database as db
@@ -75,6 +75,10 @@ def register():
         if password != confirm:
             flash(_("Passwörter stimmen nicht überein."), "error")
             return render_template("register.html")
+        problems = password_policy.validate(password, email)
+        if problems:
+            flash(password_policy.message(problems), "error")
+            return render_template("register.html")
         if not security_question or not security_answer:
             flash(_("Sicherheitsfrage und Antwort sind erforderlich."), "error")
             return render_template("register.html")
@@ -123,6 +127,13 @@ def login():
 
         lockout.reset(row["id"], lockout.KIND_LOGIN)
         login_user(User(row))
+
+        # Ohne Sicherheitsfrage funktioniert "Passwort vergessen" nicht -> Hinweis.
+        if not row["security_question"]:
+            flash(_("Bitte lege eine Sicherheitsfrage fest, damit du dein Passwort zurücksetzen kannst."),
+                  "warning")
+            if not row["must_change_pw"]:
+                return redirect(url_for("auth.security_question"))
 
         # Muss das Passwort geaendert werden? (Admin-Reset)
         if row["must_change_pw"]:
@@ -227,6 +238,10 @@ def reset_password(email, token):
         if new_pw != confirm:
             flash(_("Passwörter stimmen nicht überein."), "error")
             return render_template("reset_password.html", email=email, token=token)
+        problems = password_policy.validate(new_pw, email, bool(row["is_admin"]))
+        if problems:
+            flash(password_policy.message(problems), "error")
+            return render_template("reset_password.html", email=email, token=token)
 
         conn = db.get_conn()
         conn.execute("UPDATE users SET password_hash = ?, must_change_pw = 0 WHERE id = ?",
@@ -247,6 +262,56 @@ def reset_password(email, token):
     return render_template("reset_password.html", email=email, token=token)
 
 
+# --- Aktuelles Passwort bestaetigen (Passwort aendern, Sicherheitsfrage) ----
+
+def _confirm_current_password():
+    """
+    Prueft das Feld current_password gegen das Konto des angemeldeten Nutzers.
+    Fehlversuche zaehlen wie beim Login (gleiche Sperre), damit hier nicht
+    geraten werden kann. Bei Fehler wird eine Meldung geflasht.
+    """
+    until = lockout.active_lock(current_user.id, lockout.KIND_LOGIN)
+    if until:
+        _flash_locked(until)
+        return False
+    if not check_password_hash(current_user.password_hash or "",
+                               request.form.get("current_password", "")):
+        until, _remaining = lockout.register_failure(current_user.id, lockout.KIND_LOGIN)
+        if until:
+            _flash_locked(until)
+        else:
+            flash(_("Das aktuelle Passwort ist falsch."), "error")
+        return False
+    lockout.reset(current_user.id, lockout.KIND_LOGIN)
+    return True
+
+
+# --- Sicherheitsfrage festlegen / aendern -----------------------------------
+
+@auth_bp.route("/security-question", methods=["GET", "POST"])
+@login_required
+def security_question():
+    row = db.get_user_by_id(current_user.id)
+    if request.method == "POST":
+        question = request.form.get("security_question", "").strip()
+        answer = request.form.get("security_answer", "").strip()
+        if not _confirm_current_password():
+            return render_template("security_question.html", question=question)
+        if not question or not answer:
+            flash(_("Sicherheitsfrage und Antwort sind erforderlich."), "error")
+            return render_template("security_question.html", question=question)
+        conn = db.get_conn()
+        conn.execute("UPDATE users SET security_question = ?, security_answer_hash = ? WHERE id = ?",
+                     (question, generate_password_hash(answer.lower()), current_user.id))
+        conn.commit()
+        conn.close()
+        db.log_event("SECURITY_QUESTION_SET", "user", current_user.id)
+        flash(_("Sicherheitsfrage gespeichert."), "success")
+        return redirect(url_for("generate.generate_page"))
+    return render_template("security_question.html",
+                           question=row["security_question"] if row else "")
+
+
 # --- Erzwungene Passwortaenderung (nach Admin-Reset) ------------------------
 
 @auth_bp.route("/change-password", methods=["GET", "POST"])
@@ -255,11 +320,18 @@ def change_password():
     if request.method == "POST":
         new_pw = request.form.get("new_password", "")
         confirm = request.form.get("confirm", "")
+        # Freiwillige Aenderung: aktuelles Passwort bestaetigen.
+        if not current_user.must_change_pw and not _confirm_current_password():
+            return render_template("change_password.html")
         if not new_pw:
             flash(_("Neues Passwort darf nicht leer sein."), "error")
             return render_template("change_password.html")
         if new_pw != confirm:
             flash(_("Passwörter stimmen nicht überein."), "error")
+            return render_template("change_password.html")
+        problems = password_policy.validate(new_pw, current_user.email, current_user.is_admin)
+        if problems:
+            flash(password_policy.message(problems), "error")
             return render_template("change_password.html")
 
         conn = db.get_conn()
@@ -267,7 +339,8 @@ def change_password():
                      (generate_password_hash(new_pw), current_user.id))
         conn.commit()
         conn.close()
-        db.log_event("PASSWORD_CHANGED", "user", current_user.id, {"via": "forced_change"})
+        db.log_event("PASSWORD_CHANGED", "user", current_user.id,
+                     {"via": "forced_change" if current_user.must_change_pw else "user"})
 
         flash(_("Passwort erfolgreich geändert"), "success")
         return redirect(url_for("generate.generate_page"))

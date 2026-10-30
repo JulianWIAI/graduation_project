@@ -73,6 +73,26 @@ _T = {
         "Too many failed attempts. Please try again at %(time)s.",
         "Trop de tentatives échouées. Veuillez réessayer à %(time)s."),
     "Konto entsperrt.": ("Account unlocked.", "Compte débloqué."),
+    "Speichern": ("Save", "Enregistrer"),
+    "Damit kannst du dein Passwort zurücksetzen, falls du es vergisst.": ('It lets you reset your password if you forget it.', "Elle vous permet de réinitialiser votre mot de passe en cas d'oubli."),
+    "Bitte lege eine Sicherheitsfrage fest, damit du dein Passwort zurücksetzen kannst.": ("Please set a security question so you can reset your password.", "Veuillez définir une question de sécurité pour pouvoir réinitialiser votre mot de passe."),
+    "Sicherheitsfrage gespeichert.": ("Security question saved.", "Question de sécurité enregistrée."),
+    "Mindestens %(n)s Zeichen": ("At least %(n)s characters", "Au moins %(n)s caractères"),
+    "Großbuchstabe": ("Uppercase letter", "Majuscule"),
+    "Kleinbuchstabe": ("Lowercase letter", "Minuscule"),
+    "Zahl": ("Digit", "Chiffre"),
+    "Sonderzeichen": ("Special character", "Caractère spécial"),
+    "Aktuelles Passwort": ("Current password", "Mot de passe actuel"),
+    "Das aktuelle Passwort ist falsch.": ("The current password is wrong.", "Le mot de passe actuel est incorrect."),
+    "Das Passwort erfüllt die Anforderungen nicht:": (
+        "The password does not meet the requirements:", "Le mot de passe ne respecte pas les exigences :"),
+    "Dieses Passwort ist zu häufig und leicht zu erraten.": (
+        "This password is too common and easy to guess.", "Ce mot de passe est trop courant et facile à deviner."),
+    "Das Passwort darf die E-Mail-Adresse nicht enthalten.": (
+        "The password must not contain the email address.", "Le mot de passe ne doit pas contenir l'adresse e-mail."),
+    "Mindestens %(n)s Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.": (
+        "At least %(n)s characters with upper- and lowercase letters, a digit and a special character.",
+        "Au moins %(n)s caractères avec majuscules et minuscules, un chiffre et un caractère spécial."),
     "gesperrt bis": ("locked until", "bloqué jusqu'au"),
     "Entsperren": ("Unlock", "Débloquer"),
 
