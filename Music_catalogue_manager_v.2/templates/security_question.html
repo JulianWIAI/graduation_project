@@ -16,8 +16,13 @@
              autocomplete="current-password" style="width:100%;padding:.6rem .8rem;background:#13131a;border:1px solid #2e2e3e;border-radius:6px;color:#e2e2e2;font-size:.95rem;">
 
       <label for="security_question" style="display:block;font-size:.8rem;color:#999;margin:.9rem 0 .3rem;">{{ _('Sicherheitsfrage') }}</label>
-      <input type="text" id="security_question" name="security_question" required
-             value="{{ question or '' }}" placeholder="{{ _('z. B. Name des ersten Haustiers') }}" style="width:100%;padding:.6rem .8rem;background:#13131a;border:1px solid #2e2e3e;border-radius:6px;color:#e2e2e2;font-size:.95rem;">
+      <select id="security_question" name="security_question" required
+              style="width:100%;padding:.6rem .8rem;background:#13131a;border:1px solid #2e2e3e;border-radius:6px;color:#e2e2e2;font-size:.95rem;">
+        <option value="">{{ _('— Frage wählen —') }}</option>
+        {% for q in security_questions %}
+        <option value="{{ q }}"{{ ' selected' if question == q }}>{{ _(q) }}</option>
+        {% endfor %}
+      </select>
 
       <label for="security_answer" style="display:block;font-size:.8rem;color:#999;margin:.9rem 0 .3rem;">{{ _('Antwort') }}</label>
       <input type="text" id="security_answer" name="security_answer" required autocomplete="off"

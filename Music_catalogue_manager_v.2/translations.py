@@ -973,6 +973,7 @@ _T = {
     "Neues Passwort — %(brand)s": ("New password — %(brand)s", "Nouveau mot de passe — %(brand)s"),
     "Neues Passwort": ("New password", "Nouveau mot de passe"),
     "Passwort ändern": ("Change password", "Changer le mot de passe"),
+    "Zahlungsmethoden": ("Payment methods", "Moyens de paiement"),
     "Passwort ändern — %(brand)s": (
         "Change password — %(brand)s", "Changer le mot de passe — %(brand)s"),
     "Falscher Benutzername": ("Invalid username", "Nom d'utilisateur invalide"),
@@ -994,6 +995,35 @@ _T = {
         "La question de sécurité et la réponse sont obligatoires."),
     "z. B. Name des ersten Haustiers": (
         "e.g. name of your first pet", "p. ex. nom de votre premier animal"),
+    "Bitte wähle eine der vorgegebenen Sicherheitsfragen.": (
+        "Please select one of the predefined security questions.",
+        "Veuillez sélectionner l'une des questions de sécurité prédéfinies."),
+    "Bitte wähle eine der vorgegebenen Sicherheitsfragen und gib eine Antwort ein.": (
+        "Please select one of the predefined security questions and enter an answer.",
+        "Veuillez sélectionner l'une des questions de sécurité prédéfinies et saisir une réponse."),
+    "— Frage wählen —": ("— Select a question —", "— Choisir une question —"),
+    # Predefined security questions (stored in DB as German keys; translated for display)
+    "Wie hieß dein erstes Haustier?": (
+        "What was the name of your first pet?",
+        "Comment s'appelait votre premier animal de compagnie ?"),
+    "In welcher Stadt bist du aufgewachsen?": (
+        "In which city did you grow up?",
+        "Dans quelle ville avez-vous grandi ?"),
+    "Wie lautet der Mädchenname deiner Mutter?": (
+        "What is your mother's maiden name?",
+        "Quel est le nom de jeune fille de votre mère ?"),
+    "Wie hieß deine erste Schule?": (
+        "What was the name of your first school?",
+        "Comment s'appelait votre première école ?"),
+    "Was war das Modell deines ersten Autos?": (
+        "What was the model of your first car?",
+        "Quel était le modèle de votre première voiture ?"),
+    "Was ist dein Lieblingsfilm?": (
+        "What is your favourite film?",
+        "Quel est votre film préféré ?"),
+    "Was war dein Kindheits-Spitzname?": (
+        "What was your childhood nickname?",
+        "Quel était votre surnom d'enfance ?"),
     "Ungültige oder abgelaufene Sitzung.": (
         "Invalid or expired session.", "Session invalide ou expirée."),
     "Neues Passwort darf nicht leer sein.": (
@@ -1003,6 +1033,93 @@ _T = {
     "Ja": ("Yes", "Oui"),
     "Nein": ("No", "Non"),
     "Benutzername": ("Username", "Nom d'utilisateur"),
+
+    # --- Zahlungsmethoden (payment.html, checkout.html, users.html, main.py) --
+    "Zahlungsmethoden · %(brand)s": (
+        "Payment methods · %(brand)s", "Moyens de paiement · %(brand)s"),
+    "Hinterlege eine Zahlungsmethode für Abos und Lizenzkäufe.": (
+        "Add a payment method for subscriptions and licence purchases.",
+        "Ajoutez un moyen de paiement pour les abonnements et les achats de licences."),
+    "Hinweis: Kartendaten werden nicht vollständig gespeichert. Es werden nur die letzten vier Stellen sowie Ablaufdatum und Kartentyp hinterlegt — identisch zur Tokenisierung bei echten Zahlungsdienstleistern (z. B. Stripe). Vollständige Kartennummern verlassen niemals diesen Server.": (
+        "Note: Card data is not stored in full. Only the last four digits, expiry date and card type are saved — identical to tokenisation used by real payment providers (e.g. Stripe). Full card numbers never leave this server.",
+        "Remarque : les données de carte ne sont pas stockées intégralement. Seuls les quatre derniers chiffres, la date d'expiration et le type de carte sont conservés — identique à la tokenisation des vrais prestataires de paiement (ex. Stripe). Les numéros de carte complets ne quittent jamais ce serveur."),
+    "Gespeicherte Zahlungsmethoden": (
+        "Saved payment methods", "Moyens de paiement enregistrés"),
+    "Standard": ("Default", "Par défaut"),
+    "Als Standard": ("Set as default", "Définir par défaut"),
+    "Löschen": ("Delete", "Supprimer"),
+    "Zahlungsmethode wirklich löschen?": (
+        "Really delete this payment method?",
+        "Supprimer ce moyen de paiement ?"),
+    "Noch keine Zahlungsmethode hinterlegt.": (
+        "No payment method saved yet.",
+        "Aucun moyen de paiement enregistré pour l'instant."),
+    "Neue Zahlungsmethode hinzufügen": (
+        "Add a new payment method", "Ajouter un nouveau moyen de paiement"),
+    "Kreditkarte": ("Credit card", "Carte de crédit"),
+    "SEPA-Lastschrift": ("SEPA direct debit", "Prélèvement SEPA"),
+    "Kartennummer": ("Card number", "Numéro de carte"),
+    "Ablaufdatum (MM/JJ)": ("Expiry date (MM/YY)", "Date d'expiration (MM/AA)"),
+    "Sicherheitscode — wird nicht gespeichert": (
+        "Security code — not stored", "Code de sécurité — non enregistré"),
+    "Name auf der Karte": ("Name on card", "Nom sur la carte"),
+    "CVC und vollständige Kartennummer werden nicht gespeichert — nur die letzten vier Ziffern werden hinterlegt.": (
+        "CVC and full card number are not stored — only the last four digits are saved.",
+        "Le CVC et le numéro de carte complet ne sont pas enregistrés — seuls les quatre derniers chiffres sont conservés."),
+    "Karte hinzufügen": ("Add card", "Ajouter la carte"),
+    "IBAN": ("IBAN", "IBAN"),
+    "BIC (optional)": ("BIC (optional)", "BIC (facultatif)"),
+    "Kontoinhaber": ("Account holder", "Titulaire du compte"),
+    "Die IBAN wird maskiert gespeichert (nur die ersten und letzten vier Zeichen sind sichtbar).": (
+        "The IBAN is stored in masked form (only the first and last four characters are visible).",
+        "L'IBAN est enregistré masqué (seuls les quatre premiers et quatre derniers caractères sont visibles)."),
+    "SEPA-Konto hinzufügen": ("Add SEPA account", "Ajouter le compte SEPA"),
+    "Hinzugefügt": ("Added", "Ajouté"),
+    "Kreditkarte erfolgreich hinzugefügt.": (
+        "Credit card added successfully.", "Carte de crédit ajoutée avec succès."),
+    "SEPA-Konto erfolgreich hinzugefügt.": (
+        "SEPA account added successfully.", "Compte SEPA ajouté avec succès."),
+    "Standardzahlungsmethode aktualisiert.": (
+        "Default payment method updated.", "Moyen de paiement par défaut mis à jour."),
+    "Zahlungsmethode gelöscht.": (
+        "Payment method deleted.", "Moyen de paiement supprimé."),
+    "Zahlungsmethoden der Nutzer": (
+        "Users' payment methods", "Moyens de paiement des utilisateurs"),
+    "Aus Datenschutzgründen werden nur maskierte Daten angezeigt. Vollständige Kartennummern oder IBANs werden nie gespeichert.": (
+        "For privacy reasons, only masked data is shown. Full card numbers or IBANs are never stored.",
+        "Pour des raisons de confidentialité, seules les données masquées sont affichées. Les numéros de carte complets ou les IBAN ne sont jamais enregistrés."),
+    "Keine Zahlungsmethoden hinterlegt.": (
+        "No payment methods saved.", "Aucun moyen de paiement enregistré."),
+    "Zahlungsmethode:": ("Payment method:", "Moyen de paiement :"),
+    "Zahlungsmethode hinterlegen →": (
+        "Add a payment method →", "Ajouter un moyen de paiement →"),
+    "Ändern": ("Change", "Modifier"),
+    "Auswählen": ("Select", "Sélectionner"),
+    "Neue Methode hinzufügen →": (
+        "Add new method →", "Ajouter un nouveau moyen →"),
+    "← Zurück zum Checkout": (
+        "← Back to checkout", "← Retour au paiement"),
+    "Ohne Abo — Basisplan wählen": (
+        "Without subscription — choose basic plan",
+        "Sans abonnement — choisir le plan de base"),
+    "Abo-Verlauf": ("Subscription history", "Historique d'abonnements"),
+    "Zeitraum": ("Period", "Période"),
+    "Standard-Zahlungsmethode:": (
+        "Default payment method:", "Moyen de paiement par défaut :"),
+    "Zahlungsmethoden verwalten": (
+        "Manage payment methods", "Gérer les moyens de paiement"),
+    # payment.py error messages
+    "Die letzte Zahlungsmethode kann nicht gelöscht werden. Bitte hinterlege zuerst eine neue.": (
+        "The last payment method cannot be deleted. Please add a new one first.",
+        "Le dernier moyen de paiement ne peut pas être supprimé. Veuillez d'abord en ajouter un nouveau."),
+    "Ungültige Kartennummer.": ("Invalid card number.", "Numéro de carte invalide."),
+    "Ungültiges Ablaufdatum (MM/JJ).": (
+        "Invalid expiry date (MM/YY).", "Date d'expiration invalide (MM/AA)."),
+    "Name des Karteninhabers ist erforderlich.": (
+        "Cardholder name is required.", "Le nom du titulaire de la carte est obligatoire."),
+    "Ungültige IBAN.": ("Invalid IBAN.", "IBAN invalide."),
+    "Name des Kontoinhabers ist erforderlich.": (
+        "Account holder name is required.", "Le nom du titulaire du compte est obligatoire."),
 }
 
 # ---------------------------------------------------------------------------

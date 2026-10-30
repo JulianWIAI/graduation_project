@@ -15,7 +15,7 @@ import config
 # Alle verfuegbaren Genre-Voreinstellungen (muss mit GroovePresetLibrary uebereinstimmen).
 AVAILABLE_GENRES: List[str] = [
     "trap", "hiphop", "house", "edm", "techno",
-    "dnb", "phonk", "pop", "jpop", "cinematic",
+    "dnb", "phonk", "pop", "jpop", "cinematic", "classical",
 ]
 
 

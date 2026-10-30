@@ -250,6 +250,37 @@ def init_db():
     if "user_id" not in track_cols:
         conn.execute("ALTER TABLE tracks ADD COLUMN user_id INTEGER REFERENCES users(id)")
 
+    # --- Zahlungsmethoden (simuliert: nur maskierte Daten werden gespeichert) -
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS payment_methods (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            method_type     TEXT    NOT NULL CHECK (method_type IN ('card', 'sepa')),
+            card_type       TEXT,
+            card_last4      TEXT,
+            card_expiry     TEXT,
+            card_holder     TEXT,
+            iban_masked     TEXT,
+            bic             TEXT,
+            account_holder  TEXT,
+            is_default      INTEGER NOT NULL DEFAULT 0,
+            created_at      TEXT    NOT NULL
+        )
+    """)
+
+    # --- payment_method_id auf Bestelltabellen (Nachverfolgung welche Karte/IBAN genutzt) -
+    sub_cols = {row["name"] for row in
+                conn.execute("PRAGMA table_info(subscriptions)").fetchall()}
+    if "payment_method_id" not in sub_cols:
+        conn.execute("ALTER TABLE subscriptions ADD COLUMN payment_method_id INTEGER "
+                     "REFERENCES payment_methods(id)")
+
+    tp_cols = {row["name"] for row in
+               conn.execute("PRAGMA table_info(token_purchases)").fetchall()}
+    if "payment_method_id" not in tp_cols:
+        conn.execute("ALTER TABLE token_purchases ADD COLUMN payment_method_id INTEGER "
+                     "REFERENCES payment_methods(id)")
+
     # --- Zwei Demo-Nutzer anlegen, damit Rabatt & Limit sofort erlebbar sind -
     user_count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
     if user_count == 0:

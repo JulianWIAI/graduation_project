@@ -20,6 +20,51 @@
     </tbody>
   </table>
 
+  <!-- Zahlungsmethode -->
+  <div style="margin-top:14px;padding:10px 12px;background:#13131a;border:1px solid #2e2e3e;border-radius:6px;font-size:.88rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+      <span style="color:#888;">{{ _('Zahlungsmethode:') }}</span>
+      {% if payment_method %}
+        <strong>{{ payment_method }}</strong>
+        {% if user_methods and user_methods | length > 1 %}
+          <button type="button" class="btn btn-ghost btn-sm"
+                  onclick="document.getElementById('pm-switch').hidden=!document.getElementById('pm-switch').hidden">
+            {{ _('Ändern') }}
+          </button>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('payment_view') }}?next={{ request.url | urlencode }}" style="color:#7c6dea;">
+          {{ _('Zahlungsmethode hinterlegen →') }}
+        </a>
+      {% endif %}
+    </div>
+
+    {% if user_methods %}
+    <div id="pm-switch" hidden style="margin-top:10px;border-top:1px solid #2e2e3e;padding-top:10px;">
+      {% for m in user_methods %}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+        <span>
+          {% if m.method_type == 'card' %}{{ m.card_type }} •••• {{ m.card_last4 }} ({{ m.card_expiry }})
+          {% else %}SEPA {{ m.iban_masked }}{% endif %}
+        </span>
+        {% if m.is_default %}
+          <span class="badge badge-exclusive_sold">{{ _('Standard') }}</span>
+        {% else %}
+          <form method="post" action="{{ url_for('payment_set_default', method_id=m.id) }}" style="margin:0;">
+            <input type="hidden" name="next" value="{{ request.url }}">
+            <button class="btn btn-ghost btn-sm" type="submit">{{ _('Auswählen') }}</button>
+          </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <a href="{{ url_for('payment_view') }}?next={{ request.url | urlencode }}"
+         style="font-size:.82rem;color:#7c6dea;display:inline-block;margin-top:4px;">
+        {{ _('Neue Methode hinzufügen →') }}
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
   {% if ctx.status == 'paid' %}
     <div class="hint-box" style="margin-top:16px;">{{ _('Bereits bezahlt.') }}</div>
     <div class="row-actions" style="margin-top:16px;">

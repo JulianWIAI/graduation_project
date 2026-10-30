@@ -239,7 +239,7 @@ def list_purchases(user_id=None, limit=50):
     return rows
 
 
-def pay_purchase(purchase_id):
+def pay_purchase(purchase_id, payment_method_id=None):
     """
     Bestaetigt die (simulierte) Zahlung und schreibt die Tokens gut.
     Statuswechsel und Gutschrift sind eine Transaktion -> keine Doppelgutschrift.
@@ -258,9 +258,9 @@ def pay_purchase(purchase_id):
                            if p["status"] == "paid" else _("Diese Bestellung wurde storniert."))
         now = _now()
         conn.execute(
-            "UPDATE token_purchases SET status = 'paid', paid_at = ? "
+            "UPDATE token_purchases SET status = 'paid', paid_at = ?, payment_method_id = ? "
             "WHERE id = ? AND status = 'open'",
-            (now, purchase_id),
+            (now, payment_method_id, purchase_id),
         )
         conn.execute(
             "INSERT INTO token_ledger (user_id, delta, reason, purchase_id, created_at) "

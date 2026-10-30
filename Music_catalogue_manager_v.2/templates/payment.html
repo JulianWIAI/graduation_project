@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Zahlungsmethoden · %(brand)s', brand=brand.name) }}{% endblock %}
+{% block content %}
+<h1>{{ _('Zahlungsmethoden') }}</h1>
+<p class="subtitle">{{ _('Hinterlege eine Zahlungsmethode für Abos und Lizenzkäufe.') }}</p>
+
+{% set next_url = request.args.get('next') %}
+{% if next_url %}
+<div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+  <a class="btn btn-ghost" href="{{ next_url }}">{{ _('← Zurück zum Checkout') }}</a>
+  <a class="btn btn-ghost" href="{{ url_for('generate.generate_page') }}">{{ _('Ohne Abo — Basisplan wählen') }}</a>
+</div>
+{% endif %}
+
+<div class="hint-box" style="margin-bottom:20px;">
+  {{ _('Hinweis: Kartendaten werden nicht vollständig gespeichert. Es werden nur die letzten vier Stellen sowie Ablaufdatum und Kartentyp hinterlegt — identisch zur Tokenisierung bei echten Zahlungsdienstleistern (z. B. Stripe). Vollständige Kartennummern verlassen niemals diesen Server.') }}
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% if methods %}
+<div class="panel">
+  <h2>{{ _('Gespeicherte Zahlungsmethoden') }}</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>{{ _('Typ') }}</th>
+        <th>{{ _('Details') }}</th>
+        <th>{{ _('Standard') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in methods %}
+      <tr>
+        <td>
+          {% if m.method_type == 'card' %}
+            <span class="badge badge-leased">{{ m.card_type }}</span>
+          {% else %}
+            <span class="badge badge-available">SEPA</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if m.method_type == 'card' %}
+            •••• {{ m.card_last4 }} &nbsp;·&nbsp; {{ m.card_expiry }}<br>
+            <span class="muted small">{{ m.card_holder }}</span>
+          {% else %}
+            {{ m.iban_masked }}<br>
+            <span class="muted small">{{ m.account_holder }}{% if m.bic %} · {{ m.bic }}{% endif %}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if m.is_default %}
+            <span class="badge badge-exclusive_sold">{{ _('Standard') }}</span>
+          {% else %}
+            <form method="post" action="{{ url_for('payment_set_default', method_id=m.id) }}" style="margin:0;">
+              <button class="btn btn-ghost btn-sm" type="submit">{{ _('Als Standard') }}</button>
+            </form>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('payment_delete', method_id=m.id) }}" style="margin:0;">
+            <button class="btn btn-ghost btn-sm" type="submit"
+                    onclick="return confirm('{{ _('Zahlungsmethode wirklich löschen?') }}')">
+              {{ _('Löschen') }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="muted" style="margin-bottom:20px;">{{ _('Noch keine Zahlungsmethode hinterlegt.') }}</p>
+{% endif %}
+
+<!-- Neue Zahlungsmethode hinzufügen -->
+<div class="panel" style="max-width:560px;">
+  <h2>{{ _('Neue Zahlungsmethode hinzufügen') }}</h2>
+
+  <!-- Typ-Auswahl -->
+  <div class="row-actions" style="margin-bottom:16px;">
+    <button type="button" id="btnCard" class="btn btn-primary"
+            onclick="showTab('card')">{{ _('Kreditkarte') }}</button>
+    <button type="button" id="btnSepa" class="btn btn-ghost"
+            onclick="showTab('sepa')">{{ _('SEPA-Lastschrift') }}</button>
+  </div>
+
+  <!-- Kreditkarten-Formular -->
+  <div id="tabCard">
+    <form method="post" action="{{ url_for('payment_add_card') }}">
+      {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+      <label>{{ _('Kartennummer') }}</label>
+      <input type="text" name="card_number" placeholder="1234 5678 9012 3456"
+             maxlength="19" autocomplete="cc-number" required>
+
+      <div class="grid grid-2" style="gap:12px;margin-top:0;">
+        <div>
+          <label>{{ _('Ablaufdatum (MM/JJ)') }}</label>
+          <input type="text" name="expiry" placeholder="08/28"
+                 maxlength="5" autocomplete="cc-exp" required>
+        </div>
+        <div>
+          <label>CVC</label>
+          <input type="text" name="cvc" placeholder="123"
+                 maxlength="4" autocomplete="cc-csc"
+                 title="{{ _('Sicherheitscode — wird nicht gespeichert') }}">
+        </div>
+      </div>
+
+      <label>{{ _('Name auf der Karte') }}</label>
+      <input type="text" name="holder" placeholder="{{ _('Max Mustermann') }}"
+             autocomplete="cc-name" required>
+
+      <p class="muted small" style="margin-top:8px;">
+        {{ _('CVC und vollständige Kartennummer werden nicht gespeichert — nur die letzten vier Ziffern werden hinterlegt.') }}
+      </p>
+      <button class="btn btn-primary" type="submit" style="margin-top:12px;">
+        {{ _('Karte hinzufügen') }}
+      </button>
+    </form>
+  </div>
+
+  <!-- SEPA-Formular -->
+  <div id="tabSepa" hidden>
+    <form method="post" action="{{ url_for('payment_add_sepa') }}">
+      {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+      <label>{{ _('IBAN') }}</label>
+      <input type="text" name="iban" placeholder="DE49 1234 5678 9012 3456 78"
+             autocomplete="off" required>
+
+      <label>{{ _('BIC (optional)') }}</label>
+      <input type="text" name="bic" placeholder="DEUTDEDBXXX"
+             autocomplete="off" maxlength="11">
+
+      <label>{{ _('Kontoinhaber') }}</label>
+      <input type="text" name="holder" placeholder="{{ _('Max Mustermann') }}"
+             autocomplete="off" required>
+
+      <p class="muted small" style="margin-top:8px;">
+        {{ _('Die IBAN wird maskiert gespeichert (nur die ersten und letzten vier Zeichen sind sichtbar).') }}
+      </p>
+      <button class="btn btn-primary" type="submit" style="margin-top:12px;">
+        {{ _('SEPA-Konto hinzufügen') }}
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function showTab(tab) {
+  document.getElementById('tabCard').hidden = (tab !== 'card');
+  document.getElementById('tabSepa').hidden = (tab !== 'sepa');
+  document.getElementById('btnCard').className = 'btn ' + (tab === 'card' ? 'btn-primary' : 'btn-ghost');
+  document.getElementById('btnSepa').className = 'btn ' + (tab === 'sepa' ? 'btn-primary' : 'btn-ghost');
+}
+</script>
+{% endblock %}

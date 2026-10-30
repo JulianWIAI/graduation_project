@@ -58,6 +58,19 @@ class User(UserMixin):
         return User(row) if row else None
 
 
+# --- Vordefinierte Sicherheitsfragen ----------------------------------------
+
+SECURITY_QUESTIONS = [
+    "Wie hieß dein erstes Haustier?",
+    "In welcher Stadt bist du aufgewachsen?",
+    "Wie lautet der Mädchenname deiner Mutter?",
+    "Wie hieß deine erste Schule?",
+    "Was war das Modell deines ersten Autos?",
+    "Was ist dein Lieblingsfilm?",
+    "Was war dein Kindheits-Spitzname?",
+]
+
+
 # --- Routen -----------------------------------------------------------------
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -71,20 +84,23 @@ def register():
 
         if not email or not password:
             flash(_("E-Mail und Passwort sind erforderlich."), "error")
-            return render_template("register.html")
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
         if password != confirm:
             flash(_("Passwörter stimmen nicht überein."), "error")
-            return render_template("register.html")
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
         problems = password_policy.validate(password, email)
         if problems:
             flash(password_policy.message(problems), "error")
-            return render_template("register.html")
-        if not security_question or not security_answer:
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
+        if not security_question or security_question not in SECURITY_QUESTIONS:
+            flash(_("Bitte wähle eine der vorgegebenen Sicherheitsfragen."), "error")
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
+        if not security_answer:
             flash(_("Sicherheitsfrage und Antwort sind erforderlich."), "error")
-            return render_template("register.html")
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
         if db.get_user_by_email(email):
             flash(_("Ein Konto mit dieser E-Mail-Adresse existiert bereits."), "error")
-            return render_template("register.html")
+            return render_template("register.html", security_questions=SECURITY_QUESTIONS)
 
         hashed = generate_password_hash(password)
         answer_hash = generate_password_hash(security_answer.lower())
@@ -96,7 +112,7 @@ def register():
         # Neukunden waehlen direkt nach der Registrierung ihren Tarif (Basis/Abo).
         return redirect(url_for("plan"))
 
-    return render_template("register.html")
+    return render_template("register.html", security_questions=SECURITY_QUESTIONS)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -296,10 +312,12 @@ def security_question():
         question = request.form.get("security_question", "").strip()
         answer = request.form.get("security_answer", "").strip()
         if not _confirm_current_password():
-            return render_template("security_question.html", question=question)
-        if not question or not answer:
-            flash(_("Sicherheitsfrage und Antwort sind erforderlich."), "error")
-            return render_template("security_question.html", question=question)
+            return render_template("security_question.html", question=question,
+                                   security_questions=SECURITY_QUESTIONS)
+        if not question or question not in SECURITY_QUESTIONS or not answer:
+            flash(_("Bitte wähle eine der vorgegebenen Sicherheitsfragen und gib eine Antwort ein."), "error")
+            return render_template("security_question.html", question=question,
+                                   security_questions=SECURITY_QUESTIONS)
         conn = db.get_conn()
         conn.execute("UPDATE users SET security_question = ?, security_answer_hash = ? WHERE id = ?",
                      (question, generate_password_hash(answer.lower()), current_user.id))
@@ -309,7 +327,8 @@ def security_question():
         flash(_("Sicherheitsfrage gespeichert."), "success")
         return redirect(url_for("generate.generate_page"))
     return render_template("security_question.html",
-                           question=row["security_question"] if row else "")
+                           question=row["security_question"] if row else "",
+                           security_questions=SECURITY_QUESTIONS)
 
 
 # --- Erzwungene Passwortaenderung (nach Admin-Reset) ------------------------

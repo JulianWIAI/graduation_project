@@ -17,6 +17,7 @@ from flask_login import current_user, login_required
 
 import config
 from commerce import billing
+from commerce import payment
 from commerce import tokens
 from i18n import _
 
@@ -75,14 +76,18 @@ def checkout(purchase_id):
         flash(_("Diese Bestellung wurde storniert."), "error")
         return redirect(url_for("tokens.shop"))
     ctx = billing.invoice_context("tokens", p)
-    return render_template("checkout.html", purchase=p, ctx=ctx)
+    pm = payment.get_default(current_user.id)
+    return render_template("checkout.html", purchase=p, ctx=ctx,
+                           payment_method=payment.label(pm) if pm else None,
+                           user_methods=payment.get_methods(current_user.id))
 
 
 @tokens_bp.route("/tokens/<int:purchase_id>/pay", methods=["POST"])
 @login_required
 def pay(purchase_id):
     p = _own_purchase_or_404(purchase_id)
-    ok, err = tokens.pay_purchase(purchase_id)
+    pm = payment.get_default(current_user.id)
+    ok, err = tokens.pay_purchase(purchase_id, payment_method_id=pm["id"] if pm else None)
     if ok:
         flash(_("Zahlung bestätigt — %(n)s Token(s) gutgeschrieben.", n=p["quantity"]), "success")
         return redirect(url_for("tokens.invoice", purchase_id=purchase_id))

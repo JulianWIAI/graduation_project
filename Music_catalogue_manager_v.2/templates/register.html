@@ -86,9 +86,13 @@
              autocomplete="new-password">
 
       <label for="security_question">{{ _('Sicherheitsfrage') }}</label>
-      <input type="text" id="security_question" name="security_question" required
-             value="{{ request.form.get('security_question', '') }}" data-keep
-             autocomplete="off" placeholder="{{ _('z. B. Name des ersten Haustiers') }}">
+      <select id="security_question" name="security_question" required
+              style="width:100%;padding:.6rem .8rem;background:#13131a;border:1px solid #2e2e3e;border-radius:6px;color:#e2e2e2;font-size:.95rem;">
+        <option value="">{{ _('— Frage wählen —') }}</option>
+        {% for q in security_questions %}
+        <option value="{{ q }}"{{ ' selected' if request.form.get('security_question') == q }}>{{ _(q) }}</option>
+        {% endfor %}
+      </select>
 
       <label for="security_answer">{{ _('Antwort') }}</label>
       <input type="text" id="security_answer" name="security_answer" required

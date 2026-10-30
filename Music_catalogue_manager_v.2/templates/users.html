@@ -114,6 +114,51 @@
 </div>
 
 <div class="panel">
+  <h2>{{ _('Zahlungsmethoden der Nutzer') }}</h2>
+  <p class="muted small">{{ _('Aus Datenschutzgründen werden nur maskierte Daten angezeigt. Vollständige Kartennummern oder IBANs werden nie gespeichert.') }}</p>
+  {% if payment_methods %}
+  <table>
+    <thead>
+      <tr>
+        <th>{{ _('Nutzer') }}</th>
+        <th>{{ _('Typ') }}</th>
+        <th>{{ _('Details') }}</th>
+        <th>{{ _('Standard') }}</th>
+        <th>{{ _('Hinzugefügt') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in payment_methods %}
+      <tr>
+        <td>{{ m.user_name }}<div class="muted small">{{ m.email }}</div></td>
+        <td>
+          {% if m.method_type == 'card' %}
+            <span class="badge badge-leased">{{ m.card_type }}</span>
+          {% else %}
+            <span class="badge badge-available">SEPA</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if m.method_type == 'card' %}
+            •••• {{ m.card_last4 }} · {{ m.card_expiry }}<br>
+            <span class="muted small">{{ m.card_holder }}</span>
+          {% else %}
+            {{ m.iban_masked }}<br>
+            <span class="muted small">{{ m.account_holder }}{% if m.bic %} · {{ m.bic }}{% endif %}</span>
+          {% endif %}
+        </td>
+        <td>{% if m.is_default %}<span class="badge badge-exclusive_sold">{{ _('Standard') }}</span>{% endif %}</td>
+        <td class="muted small">{{ m.created_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">{{ _('Keine Zahlungsmethoden hinterlegt.') }}</p>
+  {% endif %}
+</div>
+
+<div class="panel">
   <h2>{{ _('Neuen Nutzer anlegen') }}</h2>
   <form method="post" action="{{ url_for('users_add') }}">
     <div class="grid grid-3">

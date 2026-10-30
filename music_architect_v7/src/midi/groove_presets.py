@@ -179,6 +179,24 @@ _PRESETS: Dict[str, Dict[str, dict]] = {
         'percussion': dict(vel_min=68, vel_max=98,  gain_db=-5.0, pan=  0, swing_pct=51.0),
     },
 
+    # ─────────────────────── CLASSICAL ───────────────────────────────────────
+    # No swing, expressive dynamics — orchestral balance, humanised timing.
+    'classical': {
+        'drums':      dict(vel_min=40, vel_max=100, gain_db=-2.0, pan=  0, swing_pct=50.0,
+                           vel_curve='crescendo'),
+        'bass':       dict(vel_min=55, vel_max=90,  gain_db=-6.0, pan=  0, swing_pct=50.0),
+        'chords':     dict(vel_min=45, vel_max=88,  gain_db=-5.0, pan=  0, swing_pct=50.0,
+                           vel_curve='crescendo'),
+        'lead':       dict(vel_min=52, vel_max=102, gain_db=-3.0, pan=  0, swing_pct=50.0,
+                           vel_curve='crescendo'),
+        'pad':        dict(vel_min=40, vel_max=85,  gain_db=-8.0, pan=  0),
+        'arp':        dict(vel_min=52, vel_max=82,  gain_db=-8.0, pan=  0, swing_pct=50.0),
+        'stabs':      dict(vel_min=60, vel_max=88,  gain_db=-7.0, pan=  0),
+        'texture':    dict(vel_min=35, vel_max=72,  gain_db=-10.0,pan=  0),
+        'fx':         dict(vel_min=42, vel_max=82,  gain_db=-9.0, pan=  0),
+        'percussion': dict(vel_min=55, vel_max=92,  gain_db=-6.0, pan=  0, swing_pct=50.0),
+    },
+
     # ─────────────────────── CINEMATIC ────────────────────────────────────────
     # Moderate swing (52 %), orchestral balance — wide dynamic range preserved.
     'cinematic': {
@@ -392,6 +410,75 @@ _NAMED_PRESETS: Dict[str, Dict[str, Dict[str, dict]]] = {
         'Dance Pop': {
             'drums': dict(swing_pct=50.0, vel_min=85, vel_max=112),
             'arp':   dict(vel_min=60, vel_max=88),
+        },
+    },
+
+    # ──────────────────────────── CINEMATIC ───────────────────────────────────
+    'cinematic': {
+        # Epic orchestral impact — powerful drums, soaring lead, bold chords.
+        'Epic': {
+            'drums':  dict(swing_pct=52.0, vel_min=80, vel_max=118),
+            'lead':   dict(vel_min=80, vel_max=110, vel_curve='crescendo'),
+            'chords': dict(vel_min=68, vel_max=98),
+        },
+        # Suspense: restrained dynamics, deep pocket bass, atmospheric pad.
+        'Suspense': {
+            'drums': dict(swing_pct=52.0, vel_min=45, vel_max=82),
+            'bass':  dict(timing_nudge_ms=-12.0, vel_min=55, vel_max=88),
+            'pad':   dict(vel_min=28, vel_max=62),
+        },
+        # Action trailer: maximum energy, straight grid, wide velocity contrast.
+        'Action': {
+            'drums':  dict(swing_pct=50.0, vel_min=90, vel_max=120),
+            'lead':   dict(vel_min=82, vel_max=112),
+            'chords': dict(vel_min=70, vel_max=100),
+        },
+    },
+
+    # ──────────────────────────── J-POP ───────────────────────────────────────
+    'jpop': {
+        # Kawaii: bright, bouncy — light swing, sparkling lead and arpeggio.
+        'Kawaii': {
+            'drums': dict(swing_pct=52.0, vel_min=70, vel_max=98),
+            'lead':  dict(vel_min=78, vel_max=105, vel_curve='crescendo'),
+            'arp':   dict(vel_min=62, vel_max=88),
+        },
+        # Ballad: soft and expressive, wide dynamic range, humanised timing.
+        'Ballad': {
+            'drums': dict(swing_pct=51.0, vel_min=50, vel_max=82,
+                          timing_humanize_ms=10.0),
+            'pad':   dict(vel_min=40, vel_max=75),
+            'lead':  dict(vel_min=62, vel_max=98, vel_curve='crescendo'),
+        },
+        # City Pop: retro 80s groove, moderate swing, warm bass pocket, pads.
+        'City Pop': {
+            'drums':  dict(swing_pct=53.0, vel_min=72, vel_max=102),
+            'bass':   dict(timing_nudge_ms=-8.0, vel_min=80, vel_max=108),
+            'chords': dict(vel_min=50, vel_max=80),
+        },
+    },
+
+    # ──────────────────────────── CLASSICAL ───────────────────────────────────
+    'classical': {
+        # Chamber: intimate ensemble feel, wide dynamics, gentle humanise.
+        'Chamber': {
+            'drums':  dict(swing_pct=50.0, vel_min=42, vel_max=88,
+                           timing_humanize_ms=12.0),
+            'chords': dict(vel_min=45, vel_max=85),
+            'lead':   dict(vel_min=52, vel_max=100, vel_curve='crescendo'),
+        },
+        # Romantic: expressive and sweeping, prominent pad, high dynamic range.
+        'Romantic': {
+            'drums': dict(swing_pct=50.0, vel_min=48, vel_max=102,
+                          timing_humanize_ms=15.0),
+            'pad':   dict(vel_min=52, vel_max=95),
+            'lead':  dict(vel_min=58, vel_max=108, vel_curve='crescendo'),
+        },
+        # Baroque: strict tempo, layered arpeggios, moderate velocity contrast.
+        'Baroque': {
+            'drums':  dict(swing_pct=50.0, vel_min=62, vel_max=90),
+            'arp':    dict(vel_min=60, vel_max=85),
+            'chords': dict(vel_min=52, vel_max=80),
         },
     },
 }

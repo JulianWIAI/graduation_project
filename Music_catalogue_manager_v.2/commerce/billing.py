@@ -161,6 +161,21 @@ def create_subscription(user_id, term_months):
     return sub_id, None
 
 
+def get_user_subscriptions(user_id):
+    """Gibt alle Abos eines Nutzers zurueck (neueste zuerst), inkl. Zahlungsmethoden-Label."""
+    conn = db.get_conn()
+    rows = conn.execute(
+        "SELECT s.*, pm.method_type, pm.card_type, pm.card_last4, pm.card_expiry, "
+        "pm.iban_masked "
+        "FROM subscriptions s "
+        "LEFT JOIN payment_methods pm ON pm.id = s.payment_method_id "
+        "WHERE s.user_id = ? ORDER BY s.id DESC",
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return rows
+
+
 def get_subscription(sub_id):
     conn = db.get_conn()
     row = conn.execute(
@@ -172,7 +187,7 @@ def get_subscription(sub_id):
     return row
 
 
-def pay_subscription(sub_id):
+def pay_subscription(sub_id, payment_method_id=None):
     """Bestaetigt die (simulierte) Abo-Zahlung und aktiviert das Abo."""
     conn = db.get_conn()
     sub = conn.execute("SELECT * FROM subscriptions WHERE id = ?", (sub_id,)).fetchone()
@@ -182,8 +197,9 @@ def pay_subscription(sub_id):
     if sub["status"] == "paid":
         conn.close()
         return False, _("Dieses Abo ist bereits bezahlt.")
-    conn.execute("UPDATE subscriptions SET status = 'paid', paid_at = ? WHERE id = ?",
-                 (datetime.now().isoformat(timespec="seconds"), sub_id))
+    conn.execute(
+        "UPDATE subscriptions SET status = 'paid', paid_at = ?, payment_method_id = ? WHERE id = ?",
+        (datetime.now().isoformat(timespec="seconds"), payment_method_id, sub_id))
     # Nutzer als aktiven Abonnenten mit Laufzeit setzen. Bei einer nahtlosen
     # Verlaengerung bleibt der urspruengliche Beginn erhalten, damit die
     # Abo-Monate (Kontingent-Zeitraeume) ihren Stichtag behalten.

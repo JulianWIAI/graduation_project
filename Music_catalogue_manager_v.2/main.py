@@ -30,6 +30,7 @@ from commerce import billing
 from commerce import economics
 from commerce import gateway
 from commerce import licensing
+from commerce import payment
 from commerce import quota
 from commerce import tokens
 from commerce.token_shop import tokens_bp
@@ -244,7 +245,10 @@ def checkout(license_id):
         flash(_("Bestellung nicht gefunden."), "error")
         return redirect(url_for("catalog"))
     ctx = billing.invoice_context("license", lic)
-    return render_template("checkout.html", lic=lic, ctx=ctx)
+    pm = payment.get_default(current_user.id)
+    return render_template("checkout.html", lic=lic, ctx=ctx,
+                           payment_method=payment.label(pm) if pm else None,
+                           user_methods=payment.get_methods(current_user.id))
 
 
 @app.route("/license/<int:license_id>/pay", methods=["POST"])
@@ -416,7 +420,8 @@ def users_view():
     token_prices = tokens.get_prices()
     return render_template("users.html", rows=rows, limits=limits, terms=terms,
                            token_prices=token_prices,
-                           token_purchases=tokens.list_purchases(limit=20))
+                           token_purchases=tokens.list_purchases(limit=20),
+                           payment_methods=payment.get_all_methods_for_admin())
 
 
 @app.route("/users/<int:user_id>/tokens", methods=["POST"])
@@ -464,11 +469,14 @@ def plan():
     limits = {"free": db.get_setting("limit_free"),
               "sub": db.get_setting("limit_subscriber"),
               "discount": db.get_setting("discount_pct")}
+    default_pm = payment.get_default(current_user.id)
     return render_template("plan.html", user=user, terms=terms, limits=limits,
                            active=quota.is_active_subscriber(user),
                            notice=quota.subscription_notice(user),
                            status=quota.quota_status(user),
-                           token_prices=tokens.get_prices())
+                           token_prices=tokens.get_prices(),
+                           user_subs=billing.get_user_subscriptions(current_user.id),
+                           default_pm_label=payment.label(default_pm) if default_pm else None)
 
 
 @app.route("/subscription/start", methods=["POST"])
@@ -491,14 +499,18 @@ def subscription_start():
 def subscription_checkout(sub_id):
     sub = _own_subscription_or_404(sub_id)
     ctx = billing.invoice_context("subscription", sub)
-    return render_template("checkout.html", sub=sub, ctx=ctx)
+    pm = payment.get_default(current_user.id)
+    return render_template("checkout.html", sub=sub, ctx=ctx,
+                           payment_method=payment.label(pm) if pm else None,
+                           user_methods=payment.get_methods(current_user.id))
 
 
 @app.route("/subscription/<int:sub_id>/pay", methods=["POST"])
 @login_required
 def subscription_pay(sub_id):
     _own_subscription_or_404(sub_id)
-    ok, err = billing.pay_subscription(sub_id)
+    pm = payment.get_default(current_user.id)
+    ok, err = billing.pay_subscription(sub_id, payment_method_id=pm["id"] if pm else None)
     flash(_("Abo bezahlt und aktiviert.") if ok else err, "success" if ok else "error")
     return redirect(url_for("subscription_invoice", sub_id=sub_id))
 
@@ -509,6 +521,64 @@ def subscription_invoice(sub_id):
     sub = _own_subscription_or_404(sub_id)
     ctx = billing.invoice_context("subscription", sub)
     return render_template("invoice.html", ctx=ctx)
+
+
+@app.route("/payment")
+@login_required
+def payment_view():
+    methods = payment.get_methods(current_user.id)
+    return render_template("payment.html", methods=methods)
+
+
+@app.route("/payment/add-card", methods=["POST"])
+@login_required
+def payment_add_card():
+    number = request.form.get("card_number", "")
+    expiry = request.form.get("expiry", "").strip()
+    holder = request.form.get("holder", "").strip()
+    method_id, err = payment.add_card(current_user.id, number, expiry, holder)
+    if err:
+        flash(err, "error")
+    else:
+        flash(_("Kreditkarte erfolgreich hinzugefügt."), "success")
+    next_url = request.form.get("next") or url_for("payment_view")
+    return redirect(next_url)
+
+
+@app.route("/payment/add-sepa", methods=["POST"])
+@login_required
+def payment_add_sepa():
+    iban   = request.form.get("iban", "").strip()
+    bic    = request.form.get("bic", "").strip()
+    holder = request.form.get("holder", "").strip()
+    method_id, err = payment.add_sepa(current_user.id, iban, bic, holder)
+    if err:
+        flash(err, "error")
+    else:
+        flash(_("SEPA-Konto erfolgreich hinzugefügt."), "success")
+    next_url = request.form.get("next") or url_for("payment_view")
+    return redirect(next_url)
+
+
+@app.route("/payment/<int:method_id>/default", methods=["POST"])
+@login_required
+def payment_set_default(method_id):
+    payment.set_default(method_id, current_user.id)
+    flash(_("Standardzahlungsmethode aktualisiert."), "success")
+    next_url = request.form.get("next") or url_for("payment_view")
+    return redirect(next_url)
+
+
+@app.route("/payment/<int:method_id>/delete", methods=["POST"])
+@login_required
+def payment_delete(method_id):
+    ok, err = payment.delete_method(method_id, current_user.id)
+    if ok:
+        flash(_("Zahlungsmethode gelöscht."), "success")
+    elif err:
+        flash(err, "error")
+    next_url = request.form.get("next") or url_for("payment_view")
+    return redirect(next_url)
 
 
 @app.route("/users/add", methods=["POST"])
@@ -628,4 +698,4 @@ def datum(value):
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False, threaded=True)
+    app.run(host="127.0.0.1", port=5001, debug=False, use_reloader=False, threaded=True)

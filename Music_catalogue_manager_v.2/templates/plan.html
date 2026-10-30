@@ -63,4 +63,53 @@
 <p class="muted small" style="margin-top:12px;">
   {{ _('Im Basis-Tarif gilt das Kontingent je Kalendermonat, im Abo je Abo-Monat ab dem Abschlussdatum. Das Abo verlängert sich nicht automatisch. Gezählt werden gespeicherte bzw. exportierte Sounds — Vorhören ist immer kostenlos. Alle Preise netto zzgl. USt.') }}
 </p>
+
+{% if default_pm_label %}
+<div class="hint-box" style="margin-top:16px;font-size:.88rem;">
+  {{ _('Standard-Zahlungsmethode:') }} <strong>{{ default_pm_label }}</strong>
+  &nbsp;·&nbsp; <a href="{{ url_for('payment_view') }}" style="color:#7c6dea;">{{ _('Zahlungsmethoden verwalten') }}</a>
+</div>
+{% endif %}
+
+{% if user_subs %}
+<div class="panel" style="margin-top:20px;">
+  <h2>{{ _('Abo-Verlauf') }}</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>{{ _('Zeitraum') }}</th>
+        <th>{{ _('Betrag') }}</th>
+        <th>{{ _('Status') }}</th>
+        <th>{{ _('Zahlungsmethode') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in user_subs %}
+      <tr>
+        <td>{{ s.start_date }} – {{ s.end_date }}</td>
+        <td class="num">{{ s.price | euro }}</td>
+        <td>
+          {% if s.status == 'paid' %}
+            <span class="badge badge-available">{{ _('bezahlt') }}</span>
+          {% elif s.status == 'open' %}
+            <span class="badge badge-leased">{{ _('offen') }}</span>
+          {% else %}
+            <span class="badge">{{ s.status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if s.method_type == 'card' %}
+            {{ s.card_type }} •••• {{ s.card_last4 }} ({{ s.card_expiry }})
+          {% elif s.method_type == 'sepa' %}
+            SEPA {{ s.iban_masked }}
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 {% endblock %}

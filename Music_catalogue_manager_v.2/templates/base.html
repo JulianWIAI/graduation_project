@@ -99,6 +99,8 @@
                class="{{ 'active' if request.endpoint == 'auth.change_password' }}">{{ _('Passwort ändern') }}</a>
             <a href="{{ url_for('auth.security_question') }}"
                class="{{ 'active' if request.endpoint == 'auth.security_question' }}">{{ _('Sicherheitsfrage') }}</a>
+            <a href="{{ url_for('payment_view') }}"
+               class="{{ 'active' if request.endpoint == 'payment_view' }}">{{ _('Zahlungsmethoden') }}</a>
             <a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a>
           </div>
         </details>
