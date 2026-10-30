@@ -166,24 +166,9 @@ def _fit_structure(structure, bpm, seconds):
         i += 1
     return [(t, 2 * u) for (t, _), u in zip(parts, units)]
 
-
-# ---------------------------------------------------------------------------
-# Music-Architect-Pfad — relativ zu dieser Datei aufgeloest, damit die App
-# unabhaengig vom Startverzeichnis funktioniert.
-# ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(config.MA_ROOT)
-_MA_SRC  = _MA_ROOT / "src"
-
-
 def _ensure_ma_path():
-    """Fuegt MA-Pfade einmalig zu sys.path hinzu (idempotent)."""
-    ma_root = str(_MA_ROOT)
-    ma_src  = str(_MA_SRC)
-    if ma_root not in sys.path:
-        sys.path.insert(0, ma_root)
-    if ma_src not in sys.path:
-        sys.path.insert(0, ma_src)
-    # Ohne kompiliertes synth_core den reinen Python-Renderer erzwingen.
+    """MA-Pfade setzen und ohne kompiliertes synth_core den Python-Renderer erzwingen."""
+    config.ensure_ma_path()
     synth_core_fix.ensure_python_fallback()
 
 
@@ -553,20 +538,6 @@ def generate_track():
         if decoded_prompt.get("scale_hint") and not key_scale:
             key_scale = decoded_prompt["scale_hint"]
 
-    # --- Instrument-Auswahl pro Spur ---
-    instr_bass       = data.get("instr_bass",       None)
-    instr_chords     = data.get("instr_chords",     None)
-    instr_lead       = data.get("instr_lead",       None)
-    instr_pad        = data.get("instr_pad",        None)
-    instr_arp        = data.get("instr_arp",        None)
-
-    # --- Lautstaerke pro Spur (0.0–1.0) ---
-    vol_bass       = data.get("vol_bass",       None)
-    vol_chords     = data.get("vol_chords",     None)
-    vol_lead       = data.get("vol_lead",       None)
-    vol_pad        = data.get("vol_pad",        None)
-    vol_arp        = data.get("vol_arp",        None)
-
     # --- Fusion-Parameter ---
     fusion_mode   = data.get("fusion_mode",   "off")     # 'off' | 'preset' | 'custom'
     fusion_preset = data.get("fusion_preset", None)
@@ -628,19 +599,10 @@ def generate_track():
             vocal_mask        = vocal_mask,
         )
 
-        # Instrument-Auswahl in das tracks-Dict eintragen.
-        _set_instr(cfg, "bass",       instr_bass)
-        _set_instr(cfg, "chords",     instr_chords)
-        _set_instr(cfg, "lead",       instr_lead)
-        _set_instr(cfg, "pad",        instr_pad)
-        _set_instr(cfg, "arp",        instr_arp)
-
-        # Lautstaerke pro Spur setzen.
-        _set_volume(cfg, "bass",       vol_bass)
-        _set_volume(cfg, "chords",     vol_chords)
-        _set_volume(cfg, "lead",       vol_lead)
-        _set_volume(cfg, "pad",        vol_pad)
-        _set_volume(cfg, "arp",        vol_arp)
+        # Instrument (GM-Index) und Lautstaerke (0.0–1.0) pro Spur setzen.
+        for track in ("bass", "chords", "lead", "pad", "arp"):
+            _set_instr(cfg, track, data.get(f"instr_{track}"))
+            _set_volume(cfg, track, data.get(f"vol_{track}"))
 
         # Fusion-Modus: Preset oder Custom-Mix setzen (kein dict -- waere AttributeError).
         fusion_cfg = fusion_data.build_fusion_config(
@@ -654,7 +616,7 @@ def generate_track():
             cfg.fusion = fusion_cfg
 
         # Absoluten Seeds-Pfad uebergeben, damit die Web-App die 129.963 Seeds findet.
-        engine      = CompositionEngine(seeds_dir=str(_MA_ROOT / "seeds"))
+        engine      = CompositionEngine(seeds_dir=os.path.join(config.MA_ROOT, "seeds"))
         # Kopie VOR dem Komponieren: compose() veraendert die Config (z.B. BPM).
         # Laenge: Der Motor ignoriert duration_bars, beachtet aber eine
         # vorgegebene Abschnittsfolge. Also einmal komponieren, Abschnitte auf

@@ -8,23 +8,8 @@ Plattformunabhaengig (kein Tkinter, keine OS-spezifischen APIs).
 
 from __future__ import annotations
 
-import pathlib
-import sys
 from typing import Any, Dict, List
 import config
-
-# ---------------------------------------------------------------------------
-# MUSIC_ARCHITECT_V7-Pfad — relativ zu dieser Datei berechnet.
-# ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(config.MA_ROOT)
-_MA_SRC  = _MA_ROOT / "src"
-
-
-def _ensure_ma_path() -> None:
-    """Fuegt MA-Pfade zu sys.path hinzu (idempotent)."""
-    for p in (str(_MA_ROOT), str(_MA_SRC)):
-        if p not in sys.path:
-            sys.path.insert(0, p)
 
 
 # Alle verfuegbaren Genre-Voreinstellungen (muss mit GroovePresetLibrary uebereinstimmen).
@@ -55,7 +40,7 @@ def get_groove_preset(genre: str) -> Dict[str, Dict[str, Any]]:
     Gibt ein leeres Dict zurueck, wenn die Bibliothek nicht verfuegbar ist.
     """
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from midi.groove_presets import GroovePresetLibrary  # type: ignore
         lib        = GroovePresetLibrary()
         song_cfg   = lib.get(genre)
@@ -108,7 +93,7 @@ def get_named_presets_map() -> Dict[str, List[str]]:
     Gibt ein leeres Dict zurueck, wenn die Bibliothek nicht verfuegbar ist.
     """
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from midi.groove_presets import NamedGroovePresetLibrary  # type: ignore
         lib = NamedGroovePresetLibrary()
         return {genre: lib.genre_names(genre) for genre in lib.all_genres()}
@@ -130,7 +115,7 @@ def get_named_groove_preset(genre: str, preset_name: str) -> Dict[str, Dict[str,
     Gibt ein leeres Dict zurueck, wenn Genre oder Preset nicht gefunden wird.
     """
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from midi.groove_presets import NamedGroovePresetLibrary  # type: ignore
         lib      = NamedGroovePresetLibrary()
         song_cfg = lib.get_named(genre, preset_name)

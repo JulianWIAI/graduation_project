@@ -9,12 +9,20 @@ müsst ihr einmalig auf eure echten Ausgabeordner setzen (oder im Reiter
 """
 
 import os
+import sys
 
 # Basisverzeichnis dieses Moduls
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Music Architect V7 (Beat-Motor) liegt im Gesamtprojekt neben diesem Modul.
 MA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "music_architect_v7")
+
+
+def ensure_ma_path():
+    """Fuegt MA-V7-Pfade zu sys.path hinzu (idempotent)."""
+    for p in (MA_ROOT, os.path.join(MA_ROOT, "src")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
 
 # SQLite-Datei (eine einzige Datei, kein Server, keine Einrichtung).
 DB_PATH = os.path.join(BASE_DIR, "instance", "catalog.db")

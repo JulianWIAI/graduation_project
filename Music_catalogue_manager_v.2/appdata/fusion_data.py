@@ -8,24 +8,9 @@ Plattformunabhaengig (kein Tkinter, keine OS-spezifischen APIs).
 
 from __future__ import annotations
 
-import pathlib
-import sys
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import config
-
-# ---------------------------------------------------------------------------
-# MUSIC_ARCHITECT_V7-Pfad — relativ zu dieser Datei berechnet.
-# ---------------------------------------------------------------------------
-_MA_ROOT = pathlib.Path(config.MA_ROOT)
-_MA_SRC  = _MA_ROOT / "src"
-
-
-def _ensure_ma_path() -> None:
-    """Fuegt MA-Pfade zu sys.path hinzu (idempotent)."""
-    for p in (str(_MA_ROOT), str(_MA_SRC)):
-        if p not in sys.path:
-            sys.path.insert(0, p)
 
 
 @dataclass
@@ -69,7 +54,7 @@ def load_presets() -> List[FusionPreset]:
     Gibt eine leere Liste zurueck, wenn das Modul nicht verfuegbar ist.
     """
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from src.arrangement.fusion_presets import FUSION_PRESETS  # type: ignore
     except (ImportError, ModuleNotFoundError):
         return []
@@ -109,7 +94,7 @@ def build_fusion_config(
         return None
 
     try:
-        _ensure_ma_path()
+        config.ensure_ma_path()
         from src.arrangement.fusion_config import FusionConfig  # type: ignore
 
         if mode == "preset" and preset_key:
