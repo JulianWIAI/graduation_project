@@ -40,7 +40,7 @@
   padding: 7px 11px;
 
   font-size: 0.69rem;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: var(--sans, system-ui, sans-serif);
   line-height: 1.55;
   white-space: pre-line;   /* \n in data-tooltip-Werten als Zeilenumbruch */
   max-width: 290px;

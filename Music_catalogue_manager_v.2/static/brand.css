@@ -1,0 +1,52 @@
+/* ------------------------------------------------------------------ *
+ * Beat Collage — Schriften und plastische Buttons                     *
+ * Wird von base.html und den Anmeldeseiten geladen (vor style.css).   *
+ * Schriften liegen lokal in static/fonts (SIL Open Font License),     *
+ * damit keine Anfrage an Google geht und alles offline funktioniert.  *
+ * ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("fonts/inter-variable.woff2") format("woff2-variations"),
+       url("fonts/inter-variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sora Variable";
+  font-style: normal; font-display: swap; font-weight: 100 800;
+  src: url("fonts/sora-variable.woff2") format("woff2-variations"),
+       url("fonts/sora-variable.woff2") format("woff2");
+}
+
+:root {
+  /* Fliesstext und Bedienelemente / Ueberschriften (Schrift des Logos) */
+  --sans:    "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: "Sora Variable", var(--sans);
+
+  /* Plastische Buttons: Verlauf von hell (oben) nach dunkel (unten),
+     Lichtkante oben, Schattenkante unten, weicher Schlagschatten. */
+  --btn-primary-bg:       linear-gradient(180deg, #978afa 0%, #7464f2 52%, #5e4fdb 100%);
+  --btn-primary-bg-hover: linear-gradient(180deg, #a497fc 0%, #8171f6 52%, #6757e3 100%);
+  --btn-primary-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.38),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    0 1px 2px rgba(0,0,0,0.45),
+    0 8px 20px -6px rgba(109,93,240,0.70);
+  --btn-primary-shadow-hover:
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    inset 0 -2px 0 rgba(0,0,0,0.22),
+    0 2px 4px rgba(0,0,0,0.45),
+    0 12px 28px -6px rgba(109,93,240,0.85);
+
+  --btn-ghost-bg:       linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 100%);
+  --btn-ghost-bg-hover: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 100%);
+  --btn-ghost-border:   rgba(255,255,255,0.10);
+  --btn-ghost-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 1px 2px rgba(0,0,0,0.55),
+    0 6px 14px -6px rgba(0,0,0,0.75);
+
+  /* Gedrueckt: Licht verschwindet, Schatten wandert nach innen */
+  --btn-pressed-shadow: inset 0 2px 6px rgba(0,0,0,0.40), 0 1px 1px rgba(0,0,0,0.30);
+  --btn-focus-ring:     0 0 0 3px rgba(167,139,250,0.55);
+}
