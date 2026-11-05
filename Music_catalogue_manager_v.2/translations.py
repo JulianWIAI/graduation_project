@@ -479,6 +479,12 @@ _T = {
     "Generieren": ("Generate", "Générer"),
     "Abo buchen": ("Book subscription", "Souscrire un abonnement"),
     "bis": ("until", "jusqu'au"),
+    "seit": ("since", "depuis le"),
+    "Passwort wiederholen": ("Repeat password", "Répéter le mot de passe"),
+    "für Login nötig": ("required for login", "nécessaire pour la connexion"),
+    "Für ein Passwort wird eine E-Mail-Adresse benötigt.": (
+        "A password requires an email address.",
+        "Un mot de passe nécessite une adresse e-mail."),
     "frei)": ("left)", "restants)"),
     "Positiv = gutschreiben, negativ = abziehen": (
         "Positive = credit, negative = deduct", "Positif = créditer, négatif = déduire"),

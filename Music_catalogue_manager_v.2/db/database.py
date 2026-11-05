@@ -225,6 +225,12 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN sub_start TEXT")
     if "sub_end" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN sub_end TEXT")
+    # Zeitpunkt, an dem das (letzte) Abo abgeschlossen wurde.
+    if "sub_booked_at" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN sub_booked_at TEXT")
+        # Bestehende Abonnenten: Datum der letzten bezahlten Abo-Buchung nachtragen.
+        conn.execute("UPDATE users SET sub_booked_at = (SELECT MAX(paid_at) FROM subscriptions s "
+                     "WHERE s.user_id = users.id AND s.status = 'paid')")
     # Auth-Spalten fuer Web-Login — nullable, damit Demo-Nutzer unveraendert bleiben.
     if "password_hash" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")

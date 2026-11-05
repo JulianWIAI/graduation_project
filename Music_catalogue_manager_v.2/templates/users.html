@@ -40,6 +40,7 @@
         <td>
           {% if r.u.is_subscriber %}
             <span class="badge badge-exclusive_sold">{{ _('Abo') }}</span>
+            {% if r.u.sub_booked_at %}<div class="muted small">{{ _('seit') }} {{ r.u.sub_booked_at[:10] }}</div>{% endif %}
             {% if r.u.sub_end %}<div class="muted small">{{ _('bis') }} {{ r.u.sub_end }}</div>{% endif %}
           {% else %}
             <span class="badge badge-leased">{{ _('Basis') }}</span>
@@ -168,7 +169,16 @@
       </div>
       <div>
         <label>{{ _('E-Mail') }}</label>
-        <input type="email" name="email" placeholder="{{ _('optional') }}">
+        <input type="email" name="email" placeholder="{{ _('für Login nötig') }}">
+      </div>
+      <div>
+        <label>{{ _('Passwort') }}</label>
+        <input type="password" name="password" autocomplete="new-password"
+               placeholder="{{ _('optional') }}">
+      </div>
+      <div>
+        <label>{{ _('Passwort wiederholen') }}</label>
+        <input type="password" name="confirm" autocomplete="new-password">
       </div>
       <div>
         <label>{{ _('Abo') }}</label>

@@ -39,6 +39,8 @@ from catalog import watermark_reader
 from db.demo_data import generate as generate_demo
 from auth.auth import auth_bp, User
 from auth import lockout
+from auth import password_policy
+from werkzeug.security import generate_password_hash
 from beatgen.generate import generate_bp
 from auth.rbac import require_admin
 from catalog.sample_upload import sample_upload_bp
@@ -586,12 +588,23 @@ def payment_delete(method_id):
 @require_admin
 def users_add():
     name = request.form.get("name", "").strip()
-    email = request.form.get("email", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
     is_sub = request.form.get("is_subscriber") == "on"
+    problems = password_policy.validate(password, email) if password else []
     if not name:
         flash(_("Bitte einen Namen angeben."), "error")
+    elif password and not email:
+        flash(_("Für ein Passwort wird eine E-Mail-Adresse benötigt."), "error")
+    elif password != request.form.get("confirm", ""):
+        flash(_("Passwörter stimmen nicht überein."), "error")
+    elif problems:
+        flash(password_policy.message(problems), "error")
+    elif email and db.get_user_by_email(email):
+        flash(_("Ein Konto mit dieser E-Mail-Adresse existiert bereits."), "error")
     else:
-        quota.add_user(name, email, is_sub)
+        quota.add_user(name, email, is_sub,
+                       generate_password_hash(password) if password else None)
         flash(_("Nutzer '%(name)s' angelegt (Abo).", name=name) if is_sub
               else _("Nutzer '%(name)s' angelegt.", name=name), "success")
     return redirect(url_for("users_view"))

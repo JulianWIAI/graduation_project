@@ -197,9 +197,10 @@ def pay_subscription(sub_id, payment_method_id=None):
     if sub["status"] == "paid":
         conn.close()
         return False, _("Dieses Abo ist bereits bezahlt.")
+    now = datetime.now().isoformat(timespec="seconds")
     conn.execute(
         "UPDATE subscriptions SET status = 'paid', paid_at = ?, payment_method_id = ? WHERE id = ?",
-        (datetime.now().isoformat(timespec="seconds"), payment_method_id, sub_id))
+        (now, payment_method_id, sub_id))
     # Nutzer als aktiven Abonnenten mit Laufzeit setzen. Bei einer nahtlosen
     # Verlaengerung bleibt der urspruengliche Beginn erhalten, damit die
     # Abo-Monate (Kontingent-Zeitraeume) ihren Stichtag behalten.
@@ -207,9 +208,9 @@ def pay_subscription(sub_id, payment_method_id=None):
         "UPDATE users SET "
         "sub_start = CASE WHEN is_subscriber = 1 AND sub_end >= ? "
         "                 THEN COALESCE(sub_start, ?) ELSE ? END, "
-        "is_subscriber = 1, sub_end = ? WHERE id = ?",
+        "is_subscriber = 1, sub_end = ?, sub_booked_at = ? WHERE id = ?",
         (sub["start_date"], sub["start_date"], sub["start_date"],
-         sub["end_date"], sub["user_id"]),
+         sub["end_date"], now, sub["user_id"]),
     )
     conn.commit()
     conn.close()
