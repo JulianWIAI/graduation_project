@@ -22,9 +22,13 @@ ADMIN_PASSWORD = "nur-fuer-den-test"
 PW = "Sicher-Test-42!"                                          # erfuellt die Passwort-Regeln
 os.environ["SBS_ADMIN_PASSWORD"] = ADMIN_PASSWORD               # ebenfalls vor dem Import
 
+import html                                   # noqa: E402
 import main                                   # noqa: E402
 from commerce import billing, quota, tokens   # noqa: E402
 from db import database as db                 # noqa: E402
+from auth.auth import SECURITY_QUESTIONS     # noqa: E402
+
+Q1, Q2 = SECURITY_QUESTIONS[0], SECURITY_QUESTIONS[1]
 from translations import _JS, _T              # noqa: E402
 
 main.app.config["TESTING"] = True
@@ -35,7 +39,7 @@ def _register(client):
     """Registriert einen frischen Kunden; gibt (user_id, Antwort) zurueck."""
     email = f"kunde{next(_counter)}@example.com"
     resp = client.post("/register", data={"email": email, "password": PW, "confirm": PW,
-                                         "security_question": "Haustier?", "security_answer": "Bello"})
+                                         "security_question": Q1, "security_answer": "Bello"})
     return db.get_user_by_email(email)["id"], resp
 
 
@@ -462,7 +466,7 @@ def test_password_rules_on_registration():
         email = email or f"regel{next(_counter)}@example.com"
         client.get("/logout")
         client.post("/register", data={"email": email, "password": pw, "confirm": pw,
-                                       "security_question": "Haustier?", "security_answer": "Bello"})
+                                       "security_question": Q1, "security_answer": "Bello"})
         return db.get_user_by_email(email)
     for weak in ("Kurz1!", "nurklein-123!", "NURGROSS-123!", "OhneZahl-xyz!", "OhneSonder123",
                  "Password123!"):
@@ -497,9 +501,9 @@ def test_every_user_can_change_password_with_current_one():
 def test_registration_keeps_question_but_not_secrets():
     client = main.app.test_client()
     page = client.post("/register", data={"email": "behalt@example.com", "password": "kurz",
-                                          "confirm": "kurz", "security_question": "Lieblingsband?",
+                                          "confirm": "kurz", "security_question": Q1,
                                           "security_answer": "Geheim"}).get_data(as_text=True)
-    assert 'value="behalt@example.com"' in page and 'value="Lieblingsband?"' in page
+    assert 'value="behalt@example.com"' in page and f'value="{html.escape(Q1)}" selected' in page
     assert 'value="Geheim"' not in page and 'value="kurz"' not in page
     assert 'class="pw-rules"' in page and "data-pattern" in page                  # Live-Checkliste
 
@@ -515,11 +519,11 @@ def test_users_can_set_security_question_and_are_reminded():
     client.get("/logout")
     resp = client.post("/login", data={"email": email, "password": PW})
     assert resp.headers["Location"].endswith("/security-question")
-    form = {"current_password": "falsch", "security_question": "Stadt?", "security_answer": "Rom"}
+    form = {"current_password": "falsch", "security_question": Q2, "security_answer": "Rom"}
     assert "aktuelle Passwort ist falsch" in client.post("/security-question", data=form).get_data(as_text=True)
     form["current_password"] = PW
     assert client.post("/security-question", data=form).status_code == 302
-    assert quota.get_user(uid)["security_question"] == "Stadt?"
+    assert quota.get_user(uid)["security_question"] == Q2
     client.get("/logout")
     client.post("/forgot-password", data={"email": email})          # jetzt funktioniert der Reset
     page = client.post(f"/forgot-password/{email}", data={"answer": "rom"})
