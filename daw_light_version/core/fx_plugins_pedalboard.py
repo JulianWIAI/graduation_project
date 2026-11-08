@@ -29,13 +29,8 @@ from .fx_plugin_base import FxPluginBase
 logger = logging.getLogger(__name__)
 
 # Crystal bioluminescence palette -- local copy avoids circular imports.
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "cyan":     "#00E5FF",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 
 # ---------------------------------------------------------------------------
@@ -60,29 +55,23 @@ def _make_param_row(parent, label: str, lo: int, hi: int, init: int):
     # Fixed-width label so all sliders line up across rows.
     name_lbl = QLabel(label)
     name_lbl.setFixedWidth(72)
-    name_lbl.setStyleSheet(
-        f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-    )
+    themed(name_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
 
     slider = QSlider(Qt.Horizontal)
     slider.setRange(lo, hi)
     slider.setValue(init)
-    slider.setStyleSheet(
-        "QSlider::groove:horizontal { height:4px; background:rgba(0,229,255,0.15);"
+    themed(slider, lambda: f"QSlider::groove:horizontal {{ height:4px; background:{rgba(_C['accent_hi'], 0.15)};"
         " border-radius:2px; }"
         "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-        " background:#00E5FF; border-radius:6px; }"
-        "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.4);"
-        " border-radius:2px; }"
-    )
+        f" background:{_C['accent_hi']}; border-radius:6px; }}"
+        f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.4)};"
+        " border-radius:2px; }")
 
     # Right-aligned numeric readout.
     val_lbl = QLabel(str(init))
     val_lbl.setFixedWidth(36)
     val_lbl.setAlignment(__import__("PySide6.QtCore", fromlist=["Qt"]).Qt.AlignRight)
-    val_lbl.setStyleSheet(
-        f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-    )
+    themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
 
     row.addWidget(name_lbl)
     row.addWidget(slider)
@@ -94,13 +83,11 @@ def _group_box(title: str):
     """Return a styled QGroupBox matching the crystal theme."""
     from PySide6.QtWidgets import QGroupBox
     g = QGroupBox(title)
-    g.setStyleSheet(
-        f"QGroupBox {{ border:1px solid rgba(0,229,255,0.2); border-radius:6px;"
+    themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent_hi'], 0.2)}; border-radius:6px;"
         f" margin-top:10px; padding-top:6px; color:{_C['text_dim']};"
         f" font-size:9px; letter-spacing:1px; background:{_C['abyss']}; }}"
         f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-        f" color:rgba(0,229,255,0.7); }}"
-    )
+        f" color:{rgba(_C['accent_hi'], 0.7)}; }}")
     return g
 
 
@@ -234,17 +221,13 @@ class EQPlugin(_PedalboardPlugin):
             slider.setRange(-24, 24)      # ±12 dB stored as ±24 int (×0.5 dB/unit)
             slider.setValue(int(getattr(self, attr) * 2))
             slider.setFixedHeight(80)
-            slider.setStyleSheet(
-                "QSlider::groove:vertical { width:4px; background:rgba(0,229,255,0.15);"
+            themed(slider, lambda: f"QSlider::groove:vertical {{ width:4px; background:{rgba(_C['accent_hi'], 0.15)};"
                 " border-radius:2px; }"
                 "QSlider::handle:vertical { height:10px; width:10px; margin:0 -3px;"
-                " background:#00E5FF; border-radius:5px; }"
-            )
+                f" background:{_C['accent_hi']}; border-radius:5px; }}")
 
             val_lbl = QLabel("0.0")
-            val_lbl.setStyleSheet(
-                f"color:{_C['cyan']}; font-size:8px; background:transparent;"
-            )
+            themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:8px; background:transparent;")
             val_lbl.setAlignment(Qt.AlignCenter)
 
             def _on_band(v, a=attr, lbl=val_lbl):

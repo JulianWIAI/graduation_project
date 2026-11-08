@@ -40,6 +40,8 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import (
     QPainter, QColor, QPen, QFont,
 )
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
+from .branding import BRAND_NAME  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -181,11 +183,11 @@ class KnobWidget(QWidget):
 
         # Dark background circle
         p.setPen(Qt.NoPen)
-        p.setBrush(QColor("#0A0E22"))
+        p.setBrush(QColor(_C["field"]))
         p.drawEllipse(cx - r, cy - r, r * 2, r * 2)
 
         # Full track arc (dim)
-        p.setPen(QPen(QColor(61, 90, 128), 2, Qt.SolidLine, Qt.RoundCap))
+        p.setPen(QPen(qcolor(_C["text_dim"]), 2, Qt.SolidLine, Qt.RoundCap))
         p.setBrush(Qt.NoBrush)
         p.drawArc(cx - r + 3, cy - r + 3, (r - 3) * 2, (r - 3) * 2,
                   int(self.ARC_START * 16), int(-self.ARC_SPAN * 16))
@@ -193,7 +195,7 @@ class KnobWidget(QWidget):
         # Value arc (cyan)
         norm  = (self._val - self._min) / max(1e-9, self._max - self._min)
         sweep = int(norm * self.ARC_SPAN * 16)
-        p.setPen(QPen(QColor("#00E5FF"), 2, Qt.SolidLine, Qt.RoundCap))
+        p.setPen(QPen(QColor(_C["accent_hi"]), 2, Qt.SolidLine, Qt.RoundCap))
         p.drawArc(cx - r + 3, cy - r + 3, (r - 3) * 2, (r - 3) * 2,
                   int(self.ARC_START * 16), -sweep)
 
@@ -202,12 +204,12 @@ class KnobWidget(QWidget):
         dot_x = cx + math.cos(angle_rad) * (r - 5)
         dot_y = cy - math.sin(angle_rad) * (r - 5)
         p.setPen(Qt.NoPen)
-        p.setBrush(QColor("#00E5FF"))
+        p.setBrush(QColor(_C["accent_hi"]))
         p.drawEllipse(int(dot_x) - 2, int(dot_y) - 2, 4, 4)
 
         # Label text below the circle
         if self._label:
-            p.setPen(QColor(61, 90, 128))
+            p.setPen(qcolor(_C["text_dim"]))
             p.setFont(QFont("Arial", 7))
             p.drawText(0, H - 6, W, 12, Qt.AlignCenter, self._label)
 
@@ -258,22 +260,22 @@ class StepButton(QPushButton):
 
     def _apply_style(self) -> None:
         # Beat-group left border makes 4/4 structure visible
-        grp_left = ("2px solid rgba(0,229,255,0.35)"
+        grp_left = (f"2px solid {rgba(_C['accent_hi'], 0.35)}"
                     if self._step_idx % 4 == 0
-                    else "1px solid rgba(0,229,255,0.25)")
+                    else f"1px solid {rgba(_C['accent_hi'], 0.25)}")
 
         if self._scanning:
-            bg, border, color = "#00E5FF", "#00E5FF", "#030308"
+            bg, border, color = _C["accent_hi"], _C["accent_hi"], _C["bg"]
         elif self._active:
-            bg     = "rgba(0,229,255,0.30)"
-            border = "#00E5FF"
-            color  = "#00E5FF"
+            bg     = f"{rgba(_C['accent_hi'], 0.30)}"
+            border = _C["accent_hi"]
+            color  = _C["accent_hi"]
         else:
-            bg     = "#0A0E22"
-            border = "rgba(0,229,255,0.20)"
-            color  = "#3D5A80"
+            bg     = _C["field"]
+            border = f"{rgba(_C['accent_hi'], 0.20)}"
+            color  = _C["text_dim"]
 
-        self.setStyleSheet(f"""
+        themed(self, lambda bg=bg, border=border, color=color, grp_left=grp_left: f"""
             QPushButton {{
                 background: {bg};
                 border: 1px solid {border};
@@ -282,8 +284,8 @@ class StepButton(QPushButton):
                 color: {color};
             }}
             QPushButton:hover {{
-                border-color: #00E5FF;
-                background: rgba(0,229,255,0.18);
+                border-color: {_C['accent_hi']};
+                background: {rgba(_C['accent_hi'], 0.18)};
             }}
         """)
 
@@ -324,8 +326,7 @@ class ChannelRackRow(QWidget):
         # Track name label (truncated to 12 chars)
         name_lbl = QLabel(self._data.name[:12])
         name_lbl.setFixedWidth(84)
-        name_lbl.setStyleSheet(
-            "color:#C8E6FF; font-size:10px; background:transparent;")
+        themed(name_lbl, lambda: f"color:{_C['text']}; font-size:10px; background:transparent;")
         lay.addWidget(name_lbl)
 
         # Mute toggle button
@@ -351,8 +352,7 @@ class ChannelRackRow(QWidget):
         self._note_lbl = QLabel(_midi_to_name(self._data.note))
         self._note_lbl.setFixedWidth(26)
         self._note_lbl.setAlignment(Qt.AlignCenter)
-        self._note_lbl.setStyleSheet(
-            "color:#9945FF; font-size:8px; background:transparent;")
+        themed(self._note_lbl, lambda: f"color:{_C['accent']}; font-size:8px; background:transparent;")
         self._note_lbl.setToolTip("Scroll to change root note")
         lay.addWidget(self._note_lbl)
 
@@ -363,11 +363,10 @@ class ChannelRackRow(QWidget):
         self._sample_btn.setToolTip(
             "Click to load an audio sample for this row.\n"
             "The sample plays whenever this step fires.")
-        self._sample_btn.setStyleSheet(
-            "QPushButton { background:#0A0E22; color:#9945FF;"
-            " border:1px solid rgba(153,69,255,0.4); border-radius:3px;"
+        themed(self._sample_btn, lambda: f"QPushButton {{ background:{_C['field']}; color:{_C['accent']};"
+            f" border:1px solid {rgba(_C['accent'], 0.4)}; border-radius:3px;"
             " font-size:8px; padding:0 2px; }"
-            "QPushButton:hover { background:rgba(153,69,255,0.18); }")
+            f"QPushButton:hover {{ background:{rgba(_C['accent'], 0.18)}; }}")
         self._sample_btn.clicked.connect(self._on_load_sample)
         lay.addWidget(self._sample_btn)
 
@@ -428,12 +427,12 @@ class ChannelRackRow(QWidget):
     @staticmethod
     def _mute_style(muted: bool) -> str:
         if muted:
-            return ("QPushButton { background:#FF2D9E; color:#030308;"
-                    " border:1px solid #FF2D9E; border-radius:3px; font-size:9px; }")
-        return ("QPushButton { background:#0A0E22; color:#3D5A80;"
-                " border:1px solid rgba(0,229,255,0.22); border-radius:3px;"
+            return (f"QPushButton {{ background:{_C['pink']}; color:{_C['bg']};"
+                    f" border:1px solid {_C['pink']}; border-radius:3px; font-size:9px; }}")
+        return (f"QPushButton {{ background:{_C['field']}; color:{_C['text_dim']};"
+                f" border:1px solid {rgba(_C['accent_hi'], 0.22)}; border-radius:3px;"
                 " font-size:9px; }"
-                "QPushButton:hover { border-color:#00E5FF; color:#00E5FF; }")
+                f"QPushButton:hover {{ border-color:{_C['accent_hi']}; color:{_C['accent_hi']}; }}")
 
     def wheelEvent(self, ev) -> None:
         """Scroll over the note label to shift the root note up or down."""
@@ -449,12 +448,12 @@ class ChannelRackRow(QWidget):
 # ChannelRackWindow -- main dialog
 # ---------------------------------------------------------------------------
 
-_DIALOG_STYLE = """
-    QDialog {
-        background: #030308;
-        border: 1px solid rgba(0,229,255,0.28);
-    }
-    QScrollArea { background: #060A18; border: none; }
+_DIALOG_STYLE = f"""
+    QDialog {{
+        background: {_C['bg']};
+        border: 1px solid {rgba(_C['accent_hi'], 0.28)};
+    }}
+    QScrollArea {{ background: {_C['panel']}; border: none; }}
 """
 
 
@@ -483,7 +482,7 @@ class ChannelRackWindow(QDialog):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent, Qt.Window | Qt.WindowCloseButtonHint)
-        self.setWindowTitle("Crystal DAW  ·  Channel Rack")
+        self.setWindowTitle(f"{BRAND_NAME}  ·  Channel Rack")
         self.resize(1000, 380)
 
         self._rows:        List[ChannelStepData]  = []
@@ -607,10 +606,9 @@ class ChannelRackWindow(QDialog):
         # Title bar
         title = QLabel("  ⟡  CHANNEL RACK  /  STEP SEQUENCER")
         title.setFixedHeight(28)
-        title.setStyleSheet(
-            "background:#060A18; color:#00E5FF; font-size:12px;"
+        themed(title, lambda: f"background:{_C['panel']}; color:{_C['accent_hi']}; font-size:12px;"
             " font-weight:bold; padding-left:4px;"
-            " border-bottom:1px solid rgba(0,229,255,0.25);")
+            f" border-bottom:1px solid {rgba(_C['accent_hi'], 0.25)};")
         outer.addWidget(title)
 
         # Column header labels aligned with row layout
@@ -637,8 +635,7 @@ class ChannelRackWindow(QDialog):
         """Thin header bar with column labels aligned to ChannelRackRow layout."""
         hdr = QWidget()
         hdr.setFixedHeight(18)
-        hdr.setStyleSheet(
-            "background:#0A0E22; border-bottom:1px solid rgba(0,229,255,0.15);")
+        themed(hdr, lambda: f"background:{_C['field']}; border-bottom:1px solid {rgba(_C['accent_hi'], 0.15)};")
         lay = QHBoxLayout(hdr)
         lay.setContentsMargins(4, 0, 4, 0)
         lay.setSpacing(3)
@@ -646,7 +643,7 @@ class ChannelRackWindow(QDialog):
         def _lbl(text: str, w: int) -> QLabel:
             l = QLabel(text)
             l.setFixedWidth(w)
-            l.setStyleSheet("color:#3D5A80; font-size:8px; background:transparent;")
+            themed(l, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
             l.setAlignment(Qt.AlignCenter)
             return l
 
@@ -663,7 +660,7 @@ class ChannelRackWindow(QDialog):
             l = QLabel(str(i + 1))
             l.setFixedSize(26, 18)
             l.setAlignment(Qt.AlignCenter)
-            color = "#00E5FF" if i % 4 == 0 else "#3D5A80"
+            color = _C["accent_hi"] if i % 4 == 0 else _C["text_dim"]
             l.setStyleSheet(
                 f"color:{color}; font-size:7px; background:transparent;")
             lay.addWidget(l)
@@ -675,14 +672,14 @@ class ChannelRackWindow(QDialog):
     def _play_btn_style(playing: bool) -> str:
         """Return the stylesheet for the PLAY/STOP button."""
         if playing:
-            return ("QPushButton { background:#FF2D9E; color:#030308;"
-                    " border:1px solid #FF2D9E; border-radius:4px;"
+            return (f"QPushButton {{ background:{_C['pink']}; color:{_C['bg']};"
+                    f" border:1px solid {_C['pink']}; border-radius:4px;"
                     " padding:0 14px; font-size:10px; font-weight:bold; }"
                     "QPushButton:hover { background:#FF5AB8; }")
-        return ("QPushButton { background:rgba(0,229,255,0.12); color:#00E5FF;"
-                " border:1px solid rgba(0,229,255,0.5); border-radius:4px;"
+        return (f"QPushButton {{ background:{rgba(_C['accent_hi'], 0.12)}; color:{_C['accent_hi']};"
+                f" border:1px solid {rgba(_C['accent_hi'], 0.5)}; border-radius:4px;"
                 " padding:0 14px; font-size:10px; font-weight:bold; }"
-                "QPushButton:hover { background:rgba(0,229,255,0.25); }")
+                f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.25)}; }}")
 
     def _build_toolbar(self) -> QWidget:
         """
@@ -694,13 +691,12 @@ class ChannelRackWindow(QDialog):
         """
         bar = QWidget()
         bar.setFixedHeight(36)
-        bar.setStyleSheet(
-            "background:#060A18; border-top:1px solid rgba(0,229,255,0.18);")
+        themed(bar, lambda: f"background:{_C['panel']}; border-top:1px solid {rgba(_C['accent_hi'], 0.18)};")
         lay = QHBoxLayout(bar)
         lay.setContentsMargins(8, 4, 8, 4)
         lay.setSpacing(6)
 
-        def _btn(label: str, tip: str, cb, color: str = "#00E5FF") -> QPushButton:
+        def _btn(label: str, tip: str, cb, color: str = _C["accent_hi"]) -> QPushButton:
             r, g, b = self._hex_to_rgb(color)
             b_ = QPushButton(label)
             b_.setFixedHeight(24)
@@ -728,12 +724,12 @@ class ChannelRackWindow(QDialog):
                                  len(self._rows) % 16)))
         lay.addWidget(_btn(
             "CLEAR ALL", "Clear all steps in every row",
-            self._on_clear_all, "#FF2D9E"))
+            self._on_clear_all, _C["pink"]))
         lay.addStretch()
         lay.addWidget(_btn(
             "COPY TO TIMELINE",
             "Export current 1-bar pattern as MIDI clips on the main timeline",
-            self._on_copy_to_timeline, "#9945FF"))
+            self._on_copy_to_timeline, _C["accent"]))
         return bar
 
     # ── Row widget management ─────────────────────────────────────────────────

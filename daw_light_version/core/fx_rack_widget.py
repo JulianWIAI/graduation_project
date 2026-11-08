@@ -47,18 +47,8 @@ from .fx_slot_widget import FxSlotWidget
 logger = logging.getLogger(__name__)
 
 # Crystal bioluminescence palette -- local copy.
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "purple":   "#9945FF",
-    "pink":     "#FF2D9E",
-    "gold":     "#FFD700",
-    "orange":   "#FF6B2B",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402
 
 _MIN_SLOTS = 4   # Rack always shows at least this many slots.
 _MAX_SLOTS = 8   # Hard upper limit on insert slots.
@@ -66,13 +56,11 @@ _MAX_SLOTS = 8   # Hard upper limit on insert slots.
 
 def _group_box(title: str) -> QGroupBox:
     g = QGroupBox(title)
-    g.setStyleSheet(
-        f"QGroupBox {{ border:1px solid rgba(0,229,255,0.15); border-radius:6px;"
+    themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent_hi'], 0.15)}; border-radius:6px;"
         f" margin-top:10px; padding-top:6px; color:{_C['text_dim']};"
         f" font-size:9px; letter-spacing:1px; background:{_C['abyss']}; }}"
         f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-        f" color:rgba(0,229,255,0.6); }}"
-    )
+        f" color:{rgba(_C['accent_hi'], 0.6)}; }}")
     return g
 
 
@@ -80,23 +68,19 @@ def _hslider(lo: int, hi: int, init: int) -> QSlider:
     s = QSlider(Qt.Horizontal)
     s.setRange(lo, hi)
     s.setValue(init)
-    s.setStyleSheet(
-        "QSlider::groove:horizontal { height:4px;"
-        " background:rgba(0,229,255,0.12); border-radius:2px; }"
+    themed(s, lambda: "QSlider::groove:horizontal { height:4px;"
+        f" background:{rgba(_C['accent_hi'], 0.12)}; border-radius:2px; }}"
         "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-        " background:#00E5FF; border-radius:6px; }"
-        "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.35);"
-        " border-radius:2px; }"
-    )
+        f" background:{_C['accent_hi']}; border-radius:6px; }}"
+        f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.35)};"
+        " border-radius:2px; }")
     return s
 
 
 def _param_label(text: str) -> QLabel:
     lbl = QLabel(text)
     lbl.setFixedWidth(52)
-    lbl.setStyleSheet(
-        f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-    )
+    themed(lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
     return lbl
 
 
@@ -132,9 +116,7 @@ class FxRackWidget(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet(
-            f"QScrollArea {{ background:{_C['abyss']}; border:none; }}"
-        )
+        themed(scroll, lambda: f"QScrollArea {{ background:{_C['abyss']}; border:none; }}")
         root_lay.addWidget(scroll)
 
         inner = QWidget()
@@ -147,10 +129,8 @@ class FxRackWidget(QWidget):
         # -- Track label -------------------------------------------------------
         self._track_label = QLabel("No audio track selected")
         self._track_label.setAlignment(Qt.AlignCenter)
-        self._track_label.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:11px; font-weight:bold;"
-            f" background:transparent; letter-spacing:0.5px;"
-        )
+        themed(self._track_label, lambda: f"color:{_C['cyan']}; font-size:11px; font-weight:bold;"
+            f" background:transparent; letter-spacing:0.5px;")
         self._inner_lay.addWidget(self._track_label)
 
         # -- Routing (volume, pan, mute, solo) ---------------------------------
@@ -172,9 +152,7 @@ class FxRackWidget(QWidget):
         # Placeholder shown when nothing is selected.
         self._param_placeholder = QLabel("Click an effect slot\nto edit its parameters.")
         self._param_placeholder.setAlignment(Qt.AlignCenter)
-        self._param_placeholder.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(self._param_placeholder, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         self._param_lay.addWidget(self._param_placeholder)
         self._current_param_widget: Optional[QWidget] = None
 
@@ -237,9 +215,7 @@ class FxRackWidget(QWidget):
         self._vol_slider = _hslider(0, 200, 100)
         self._vol_val    = QLabel("1.00")
         self._vol_val.setFixedWidth(32)
-        self._vol_val.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-        )
+        themed(self._vol_val, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
         vol_row.addWidget(self._vol_slider)
         vol_row.addWidget(self._vol_val)
         routing_lay.addLayout(vol_row)
@@ -250,9 +226,7 @@ class FxRackWidget(QWidget):
         self._pan_slider = _hslider(-50, 50, 0)
         self._pan_val    = QLabel("0")
         self._pan_val.setFixedWidth(32)
-        self._pan_val.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-        )
+        themed(self._pan_val, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
         pan_row.addWidget(self._pan_slider)
         pan_row.addWidget(self._pan_val)
         routing_lay.addLayout(pan_row)
@@ -262,24 +236,20 @@ class FxRackWidget(QWidget):
         self._mute_btn = QPushButton("MUTE")
         self._mute_btn.setCheckable(True)
         self._mute_btn.setFixedHeight(24)
-        self._mute_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(255,107,43,0.3); border-radius:4px;"
+        themed(self._mute_btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['danger'], 0.3)}; border-radius:4px;"
             f" color:{_C['text_dim']}; font-size:9px; }}"
-            f"QPushButton:checked {{ background:rgba(255,107,43,0.3);"
-            f" border-color:{_C['orange']}; color:{_C['orange']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['danger'], 0.3)};"
+            f" border-color:{_C['orange']}; color:{_C['orange']}; }}")
 
         self._solo_btn = QPushButton("SOLO")
         self._solo_btn.setCheckable(True)
         self._solo_btn.setFixedHeight(24)
-        self._solo_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(255,215,0,0.3); border-radius:4px;"
+        themed(self._solo_btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['warning'], 0.3)}; border-radius:4px;"
             f" color:{_C['text_dim']}; font-size:9px; }}"
-            f"QPushButton:checked {{ background:rgba(255,215,0,0.25);"
-            f" border-color:{_C['gold']}; color:{_C['gold']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['warning'], 0.25)};"
+            f" border-color:{_C['gold']}; color:{_C['gold']}; }}")
 
         ms_row.addWidget(self._mute_btn)
         ms_row.addWidget(self._solo_btn)

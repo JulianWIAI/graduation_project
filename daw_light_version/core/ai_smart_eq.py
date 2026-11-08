@@ -40,6 +40,7 @@ from PySide6.QtWidgets import (
 )
 
 from .fx_plugin_base import FxPluginBase
+from .theme import C as _THEME_C, rgba, qcolor, themed  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -340,36 +341,27 @@ class SmartEQPlugin(FxPluginBase):
     # ── UI ───────────────────────────────────────────────────────────────────
 
     def create_parameter_widget(self) -> QWidget:
-        # Palette constants.
-        _C = {
-            "abyss": "#060A18", "deep": "#0A0E22",
-            "cyan": "#00E5FF", "purple": "#9945FF",
-            "text": "#C8E6FF", "text_dim": "#3D5A80",
-            "gold": "#FFD700", "pink": "#FF2D9E",
-        }
+        # Shared live palette (core/theme.py).
+        _C = _THEME_C
 
         def _grp(title: str) -> QGroupBox:
             g = QGroupBox(title)
-            g.setStyleSheet(
-                f"QGroupBox {{ border:1px solid rgba(153,69,255,0.3);"
+            themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent'], 0.3)};"
                 f" border-radius:6px; margin-top:10px; padding-top:6px;"
                 f" color:{_C['text_dim']}; font-size:9px; background:{_C['abyss']}; }}"
                 f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-                f" color:rgba(153,69,255,0.9); }}"
-            )
+                f" color:{rgba(_C['accent'], 0.9)}; }}")
             return g
 
         def _btn(text: str, color: str) -> QPushButton:
             b = QPushButton(text)
             b.setFixedHeight(28)
-            b.setStyleSheet(
-                f"QPushButton {{ background:{_C['deep']};"
+            themed(b, lambda color=color: f"QPushButton {{ background:{_C['deep']};"
                 f" border:1px solid {color}; border-radius:5px;"
                 f" color:{color}; font-size:10px; font-weight:bold; }}"
-                f"QPushButton:hover {{ background:rgba(0,229,255,0.08); }}"
+                f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.08)}; }}"
                 f"QPushButton:disabled {{ color:{_C['text_dim']};"
-                f" border-color:{_C['text_dim']}; }}"
-            )
+                f" border-color:{_C['text_dim']}; }}")
             return b
 
         root = QWidget()
@@ -383,9 +375,7 @@ class SmartEQPlugin(FxPluginBase):
 
         if not (_LIBROSA_OK and _SKLEARN_OK):
             warn = QLabel("⚠  librosa + scikit-learn required.\npip install librosa scikit-learn")
-            warn.setStyleSheet(
-                f"color:{_C['gold']}; font-size:9px; background:transparent;"
-            )
+            themed(warn, lambda: f"color:{_C['gold']}; font-size:9px; background:transparent;")
             ana_lay.addWidget(warn)
 
         self._analyse_btn = _btn("⚡ ANALYSE TRACK", _C["cyan"])
@@ -395,9 +385,7 @@ class SmartEQPlugin(FxPluginBase):
 
         self._status_lbl = QLabel("Ready — click Analyse to classify this track.")
         self._status_lbl.setWordWrap(True)
-        self._status_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(self._status_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         ana_lay.addWidget(self._status_lbl)
         lay.addWidget(ana_grp)
 
@@ -407,10 +395,8 @@ class SmartEQPlugin(FxPluginBase):
 
         self._result_lbl = QLabel("No analysis yet.")
         self._result_lbl.setWordWrap(True)
-        self._result_lbl.setStyleSheet(
-            f"color:{_C['text']}; font-size:9px; background:transparent;"
-            f" padding:4px;"
-        )
+        themed(self._result_lbl, lambda: f"color:{_C['text']}; font-size:9px; background:transparent;"
+            f" padding:4px;")
         res_lay.addWidget(self._result_lbl)
 
         self._apply_btn = _btn("✓ APPLY TO CHAIN", _C["purple"])

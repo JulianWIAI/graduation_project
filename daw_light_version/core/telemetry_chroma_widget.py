@@ -11,15 +11,16 @@ import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen, QColor
 from PySide6.QtWidgets import QWidget
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _W, _H    = 300, 150
-_BG       = QColor("#0a0a14")
+_BG       = QColor(_C["panel"])
 _GRID_COL = QColor("#1a1a2e")
 _TEXT_COL = QColor("#88aacc")
 
 _NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
 _NOTE_COLS  = [
-    QColor("#ff4444"), QColor("#ff7744"), QColor("#ffaa44"), QColor("#ffdd44"),
+    QColor(_C["danger"]), QColor("#ff7744"), QColor("#ffaa44"), QColor("#ffdd44"),
     QColor("#bbff44"), QColor("#44ff88"), QColor("#44ffcc"), QColor("#44ccff"),
     QColor("#4488ff"), QColor("#8844ff"), QColor("#cc44ff"), QColor("#ff44cc"),
 ]

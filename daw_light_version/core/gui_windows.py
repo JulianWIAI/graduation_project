@@ -31,10 +31,10 @@ import numpy as np
 from PySide6.QtCore import Qt, QPoint, QRectF, QPointF, QTimer, Signal, Slot, QSettings
 from PySide6.QtGui import (
     QColor, QPainter, QPen, QBrush, QFont, QKeyEvent,
-    QLinearGradient, QRadialGradient, QPainterPath, QPolygonF,
+    QLinearGradient, QRadialGradient, QPainterPath, QPolygonF, QIcon, QActionGroup,
 )
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabBar, QTabWidget,
     QLabel, QSlider, QPushButton, QSpinBox, QDoubleSpinBox, QComboBox,
     QScrollArea, QScrollBar, QFrame, QDockWidget, QStatusBar, QToolBar,
     QDialog, QGridLayout, QLineEdit, QMessageBox, QFileDialog, QInputDialog,
@@ -95,282 +95,17 @@ logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# CRYSTAL BIOLUMINESCENCE PALETTE
+# PALETTE + STYLESHEET  — defined centrally in core/theme.py
+# (Catalogue-Manager look; re-exported here for modules that import from gui_windows)
 # ═══════════════════════════════════════════════════════════════════════════
 
-C = {
-    # Backgrounds — layers of dark void
-    "void":      "#030308",   # main window background
-    "abyss":     "#060A18",   # panel backgrounds
-    "deep":      "#0A0E22",   # widget backgrounds
-    "surface":   "#0E1430",   # hover / elevated surface
-
-    # Neon crystal accents
-    "cyan":      "#00E5FF",   # primary — electric crystal blue
-    "pink":      "#FF2D9E",   # secondary — alien blossom magenta
-    "purple":    "#9945FF",   # tertiary — deep crystal purple
-    "lime":      "#39FF14",   # active / playing — bioluminescent green
-    "gold":      "#FFD700",   # markers / special — rare crystal gold
-    "orange":    "#FF6B2B",   # warning / record
-
-    # Text
-    "text":      "#C8E6FF",   # primary text — ice white-blue
-    "text_dim":  "#3D5A80",   # secondary text — muted ocean blue
-
-    # Piano roll keys
-    "key_black":    "#0F1223",   # black piano keys
-    "key_white_hi": "#1E2841",   # white key highlight edge
-    "key_white_lo": "#141A32",   # white key shadow edge
-    # Piano roll grid rows
-    "grid_black":   "#08060A",   # black-note rows (dark purple-black)
-    "grid_white":   "#080A1C",   # white-note rows (dark navy)
-
-    # Track neons (per-lane colour sequence)
-    "tracks": [
-        "#00E5FF",  # 0  cyan
-        "#FF2D9E",  # 1  hot pink
-        "#39FF14",  # 2  lime
-        "#FFD700",  # 3  gold
-        "#9945FF",  # 4  purple
-        "#FF6B2B",  # 5  orange
-        "#00FFB3",  # 6  teal
-        "#FF4444",  # 7  red
-        "#44AAFF",  # 8  sky blue
-        "#FF88CC",  # 9  light pink
-        "#AAFF44",  # 10 yellow-green
-        "#FF8844",  # 11 amber
-        "#AA44FF",  # 12 violet
-        "#44FFAA",  # 13 mint
-        "#FF4488",  # 14 rose
-        "#44FFFF",  # 15 aqua
-    ],
-}
-
-# Frozen copy of the dark palette — used to restore C when switching back to dark.
-DARK_PALETTE: dict = {k: (list(v) if isinstance(v, list) else v) for k, v in C.items()}
-
-# ═══════════════════════════════════════════════════════════════════════════
-# LIGHT THEME PALETTE
-# ═══════════════════════════════════════════════════════════════════════════
-
-LIGHT_PALETTE: dict = {
-    "void":      "#F0F2F5",   # main window background
-    "abyss":     "#E4E7ED",   # panel backgrounds
-    "deep":      "#FFFFFF",   # widget backgrounds
-    "surface":   "#D8DCE8",   # hover / elevated surface
-    "cyan":      "#0077CC",   # primary — professional blue
-    "pink":      "#D4006A",   # secondary — deep rose
-    "purple":    "#6633CC",   # tertiary — muted purple
-    "lime":      "#1A9E00",   # active / playing — natural green
-    "gold":      "#B8860B",   # markers / special — dark gold
-    "orange":    "#CC4400",   # warning / record
-    "text":      "#1A1F2E",   # primary text — dark navy
-    "text_dim":  "#6B7A99",   # secondary text — medium slate
-    # Piano roll keys
-    "key_black":    "#1A1A22",   # black piano keys (always dark)
-    "key_white_hi": "#FFFFFF",   # white key highlight edge
-    "key_white_lo": "#E8EAF0",   # white key shadow edge
-    # Piano roll grid rows
-    "grid_black":   "#D8DCE8",   # black-note rows (light grey)
-    "grid_white":   "#FFFFFF",   # white-note rows (white)
-    "tracks": [
-        "#0077CC", "#CC0055", "#1A9E00", "#B8860B",
-        "#6633CC", "#CC4400", "#008866", "#CC2222",
-        "#3366CC", "#CC6688", "#5A8800", "#CC7722",
-        "#7744CC", "#227755", "#CC3366", "#1188AA",
-    ],
-}
-
-
-def _hex_to_rgb(h: str) -> tuple[int, int, int]:
-    h = h.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-
-
-def build_stylesheet(p: dict) -> str:
-    """Generate a complete QSS stylesheet from a palette dict *p*."""
-    cy_r, cy_g, cy_b = _hex_to_rgb(p["cyan"])
-    pk_r, pk_g, pk_b = _hex_to_rgb(p["pink"])
-    return f"""
-/* ─── Global ─────────────────────────────────────────────────────────── */
-QMainWindow, QWidget {{
-    background-color: {p["void"]};
-    color: {p["text"]};
-    font-family: 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 13px;
-}}
-QDockWidget {{
-    background: {p["abyss"]};
-    titlebar-close-icon: none;
-}}
-QDockWidget::title {{
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 {p["deep"]}, stop:1 {p["abyss"]});
-    padding: 5px 10px;
-    font-weight: bold; font-size: 11px; letter-spacing: 2px;
-    color: {p["cyan"]};
-    border-bottom: 1px solid rgba({cy_r},{cy_g},{cy_b},0.3);
-}}
-
-/* ─── Buttons ─────────────────────────────────────────────────────────── */
-QPushButton {{
-    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 {p["surface"]}, stop:1 {p["deep"]});
-    color: {p["text"]};
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.25);
-    border-radius: 5px;
-    padding: 5px 14px;
-    font-size: 12px; letter-spacing: 0.5px;
-}}
-QPushButton:hover {{
-    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 rgba({cy_r},{cy_g},{cy_b},0.18), stop:1 rgba({cy_r},{cy_g},{cy_b},0.08));
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.7);
-    color: {p["cyan"]};
-}}
-QPushButton:pressed {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.25);
-    border: 1px solid {p["cyan"]};
-}}
-QPushButton:checked {{
-    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
-        stop:0 rgba({pk_r},{pk_g},{pk_b},0.4), stop:1 rgba({pk_r},{pk_g},{pk_b},0.15));
-    border: 1px solid {p["pink"]};
-    color: {p["pink"]};
-}}
-
-/* ─── Sliders ─────────────────────────────────────────────────────────── */
-QSlider::groove:horizontal {{
-    height: 3px;
-    background: rgba({cy_r},{cy_g},{cy_b},0.12);
-    border-radius: 1px;
-}}
-QSlider::sub-page:horizontal {{
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 {p["purple"]}, stop:1 {p["cyan"]});
-    border-radius: 1px;
-}}
-QSlider::handle:horizontal {{
-    background: {p["cyan"]};
-    border: 2px solid {p["abyss"]};
-    width: 13px; height: 13px;
-    border-radius: 7px; margin: -5px 0;
-}}
-QSlider::groove:vertical {{
-    width: 3px;
-    background: rgba({cy_r},{cy_g},{cy_b},0.12);
-    border-radius: 1px;
-}}
-QSlider::sub-page:vertical {{
-    background: qlineargradient(x1:0,y1:1,x2:0,y2:0,
-        stop:0 {p["purple"]}, stop:1 {p["cyan"]});
-    border-radius: 1px;
-}}
-QSlider::handle:vertical {{
-    background: {p["cyan"]};
-    border: 2px solid {p["abyss"]};
-    width: 13px; height: 13px;
-    border-radius: 7px; margin: 0 -5px;
-}}
-
-/* ─── Combos / Spinboxes ─────────────────────────────────────────────── */
-QComboBox, QSpinBox, QDoubleSpinBox {{
-    background: {p["deep"]};
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
-    border-radius: 4px; padding: 3px 8px;
-    color: {p["text"]};
-}}
-QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-    border-color: rgba({cy_r},{cy_g},{cy_b},0.6);
-}}
-QComboBox::drop-down {{ border: none; }}
-QComboBox QAbstractItemView {{
-    background: {p["deep"]};
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.3);
-    selection-background-color: rgba({cy_r},{cy_g},{cy_b},0.2);
-    color: {p["text"]};
-}}
-
-/* ─── Scroll bars ────────────────────────────────────────────────────── */
-QScrollBar:vertical {{
-    background: {p["abyss"]}; width: 7px; border-radius: 3px;
-}}
-QScrollBar::handle:vertical {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.3); border-radius: 3px; min-height: 20px;
-}}
-QScrollBar:horizontal {{
-    background: {p["abyss"]}; height: 7px; border-radius: 3px;
-}}
-QScrollBar::handle:horizontal {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.3); border-radius: 3px; min-width: 20px;
-}}
-QScrollBar::add-line, QScrollBar::sub-line {{ border: none; background: none; }}
-
-/* ─── List widgets ───────────────────────────────────────────────────── */
-QListWidget {{
-    background: {p["deep"]}; border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.18);
-    border-radius: 4px; color: {p["text"]}; outline: none;
-}}
-QListWidget::item:selected {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.2);
-    color: {p["cyan"]};
-}}
-QListWidget::item:hover {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.08);
-}}
-
-/* ─── Line edit ──────────────────────────────────────────────────────── */
-QLineEdit {{
-    background: {p["deep"]}; border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
-    border-radius: 4px; padding: 5px 10px; color: {p["text"]};
-}}
-QLineEdit:focus {{ border-color: rgba({cy_r},{cy_g},{cy_b},0.6); }}
-
-/* ─── Group box ──────────────────────────────────────────────────────── */
-QGroupBox {{
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.2);
-    border-radius: 6px; margin-top: 10px; padding-top: 6px;
-    color: {p["text_dim"]}; font-size: 11px; letter-spacing: 1px;
-}}
-QGroupBox::title {{
-    subcontrol-origin: margin; left: 10px; padding: 0 5px;
-    color: rgba({cy_r},{cy_g},{cy_b},0.7);
-}}
-
-/* ─── Status bar ─────────────────────────────────────────────────────── */
-QStatusBar {{
-    background: {p["abyss"]};
-    border-top: 1px solid rgba({cy_r},{cy_g},{cy_b},0.1);
-}}
-QStatusBar QLabel {{ padding: 0 8px; }}
-
-/* ─── Tool bar ───────────────────────────────────────────────────────── */
-QToolBar {{
-    background: {p["abyss"]};
-    border-bottom: 1px solid rgba({cy_r},{cy_g},{cy_b},0.15);
-    spacing: 4px; padding: 3px 6px;
-}}
-QToolBar::separator {{
-    background: rgba({cy_r},{cy_g},{cy_b},0.15); width: 1px; margin: 4px 6px;
-}}
-
-/* ─── Checkboxes ─────────────────────────────────────────────────────── */
-QCheckBox {{ color: {p["text"]}; spacing: 6px; }}
-QCheckBox::indicator {{
-    width: 14px; height: 14px;
-    border: 1px solid rgba({cy_r},{cy_g},{cy_b},0.4); border-radius: 3px;
-    background: {p["deep"]};
-}}
-QCheckBox::indicator:checked {{
-    background: {p["cyan"]};
-    border-color: {p["cyan"]};
-}}
-
-/* ─── Dial ───────────────────────────────────────────────────────────── */
-QDial {{
-    background: transparent;
-}}
-"""
+from .theme import (  # noqa: E402
+    C, DARK_PALETTE, LIGHT_PALETTE, build_stylesheet, rgba, qcolor,
+    themed, refresh_themed_styles,
+)
+from .branding import BRAND_NAME, APP_NAME, WINDOW_TITLE, LOGO_MARK  # noqa: E402
+from . import help_mode  # noqa: E402
+from .help_mode import set_help  # noqa: E402
 
 
 # Backward-compatible alias (dark theme is default)
@@ -398,14 +133,15 @@ def _make_hslider(min_val: int, max_val: int, init: int,
     return s
 
 
-def _label(text: str, color: str = C["text_dim"],
+def _label(text: str, color: str = "text_dim",
            size: int = 10, bold: bool = False) -> QLabel:
+    """Small caption label. *color* = palette key (follows the theme) or a fixed colour."""
     lbl = QLabel(text)
     weight = "bold" if bold else "normal"
-    lbl.setStyleSheet(
-        f"color:{color}; font-size:{size}px; font-weight:{weight};"
+    themed(lbl, lambda: (
+        f"color:{C.get(color, color)}; font-size:{size}px; font-weight:{weight};"
         " background:transparent; letter-spacing:0.5px;"
-    )
+    ))
     lbl.setAlignment(Qt.AlignCenter)
     return lbl
 
@@ -443,7 +179,7 @@ class EffectsPanel(QWidget):
         root.setSpacing(6)
 
         # ── Track label ────────────────────────────────────────────────
-        self._track_label = _label("No track selected", C["cyan"], 11, True)
+        self._track_label = _label("No track selected", "cyan", 11, True)
         root.addWidget(self._track_label)
 
         # ── EQ section ────────────────────────────────────────────────
@@ -453,6 +189,7 @@ class EffectsPanel(QWidget):
         eq_inner.setSpacing(2)
 
         self._eq_enable = QCheckBox("Active")
+        set_help(self._eq_enable, "fx_active")
         self._eq_enable.setChecked(True)
         self._eq_enable.toggled.connect(self._push)
         eq_inner.addWidget(self._eq_enable)
@@ -470,65 +207,72 @@ class EffectsPanel(QWidget):
             sl.valueChanged.connect(self._push)
             self._eq_sliders.append(sl)
             col.addWidget(sl, alignment=Qt.AlignCenter)
-            col.addWidget(_label(freq_label, C["text_dim"], 9))
+            freq_lbl = _label(freq_label, "text_dim", 9)
+            col.addWidget(freq_lbl)
+            set_help(sl, f"eq_{freq_label}")       # one explanation per band
+            set_help(freq_lbl, f"eq_{freq_label}")
             bands_layout.addLayout(col)
 
         eq_inner.addWidget(bands_widget)
+        set_help(bands_widget, "eq")
         eq_grp.setLayout(eq_inner)
         root.addWidget(eq_grp)
 
         # ── Reverb section ─────────────────────────────────────────────
-        rev_grp = self._make_group("REVERB")
+        rev_grp = self._make_group("REVERB", "reverb")
         rev_inner = QVBoxLayout(rev_grp)
         rev_inner.setContentsMargins(4, 4, 4, 4)
         rev_inner.setSpacing(4)
 
         self._rev_enable = QCheckBox("Active")
+        set_help(self._rev_enable, "fx_active")
         self._rev_enable.setChecked(True)
         self._rev_enable.toggled.connect(self._push)
         rev_inner.addWidget(self._rev_enable)
 
-        self._rev_room  = self._make_param_row(rev_inner, "Room",  0, 100, 50)
-        self._rev_damp  = self._make_param_row(rev_inner, "Damp",  0, 100, 40)
-        self._rev_width = self._make_param_row(rev_inner, "Width", 0, 100, 70)
-        self._rev_level = self._make_param_row(rev_inner, "Level", 0, 100, 25)
+        self._rev_room  = self._make_param_row(rev_inner, "Room",  0, 100, 50, "rev_room")
+        self._rev_damp  = self._make_param_row(rev_inner, "Damp",  0, 100, 40, "rev_damp")
+        self._rev_width = self._make_param_row(rev_inner, "Width", 0, 100, 70, "rev_width")
+        self._rev_level = self._make_param_row(rev_inner, "Level", 0, 100, 25, "rev_level")
 
         rev_grp.setLayout(rev_inner)
         root.addWidget(rev_grp)
 
         # ── Compressor section ─────────────────────────────────────────
-        comp_grp = self._make_group("COMPRESSOR")
+        comp_grp = self._make_group("COMPRESSOR", "compressor")
         comp_inner = QVBoxLayout(comp_grp)
         comp_inner.setContentsMargins(4, 4, 4, 4)
         comp_inner.setSpacing(4)
 
         self._comp_enable = QCheckBox("Active")
+        set_help(self._comp_enable, "fx_active")
         self._comp_enable.setChecked(False)
         self._comp_enable.toggled.connect(self._push)
         comp_inner.addWidget(self._comp_enable)
 
-        self._comp_thresh  = self._make_param_row(comp_inner, "Thresh", 0, 127, 90)
-        self._comp_ratio   = self._make_param_row(comp_inner, "Ratio",  1,  20,  4)
-        self._comp_attack  = self._make_param_row(comp_inner, "Attack", 1, 200, 10)
-        self._comp_release = self._make_param_row(comp_inner, "Rel.",   1, 500,100)
+        self._comp_thresh  = self._make_param_row(comp_inner, "Thresh", 0, 127, 90, "comp_thresh")
+        self._comp_ratio   = self._make_param_row(comp_inner, "Ratio",  1,  20,  4, "comp_ratio")
+        self._comp_attack  = self._make_param_row(comp_inner, "Attack", 1, 200, 10, "comp_attack")
+        self._comp_release = self._make_param_row(comp_inner, "Rel.",   1, 500,100, "comp_release")
 
         comp_grp.setLayout(comp_inner)
         root.addWidget(comp_grp)
 
         # ── Chorus section ─────────────────────────────────────────────
-        cho_grp = self._make_group("CHORUS")
+        cho_grp = self._make_group("CHORUS", "chorus")
         cho_inner = QVBoxLayout(cho_grp)
         cho_inner.setContentsMargins(4, 4, 4, 4)
         cho_inner.setSpacing(4)
 
         self._cho_enable = QCheckBox("Active")
+        set_help(self._cho_enable, "fx_active")
         self._cho_enable.setChecked(False)
         self._cho_enable.toggled.connect(self._push)
         cho_inner.addWidget(self._cho_enable)
 
-        self._cho_level = self._make_param_row(cho_inner, "Level", 0, 100, 30)
-        self._cho_speed = self._make_param_row(cho_inner, "Speed", 1,  50,  3)
-        self._cho_depth = self._make_param_row(cho_inner, "Depth", 0, 300, 80)
+        self._cho_level = self._make_param_row(cho_inner, "Level", 0, 100, 30, "cho_level")
+        self._cho_speed = self._make_param_row(cho_inner, "Speed", 1,  50,  3, "cho_speed")
+        self._cho_depth = self._make_param_row(cho_inner, "Depth", 0, 300, 80, "cho_depth")
 
         cho_grp.setLayout(cho_inner)
         root.addWidget(cho_grp)
@@ -540,13 +284,15 @@ class EffectsPanel(QWidget):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _make_group(self, title: str) -> QGroupBox:
+    def _make_group(self, title: str, help_key: str = "") -> QGroupBox:
         g = QGroupBox(title)
-        g.setStyleSheet(f"""
+        if help_key:
+            set_help(g, help_key)
+        themed(g, lambda: f"""
             QGroupBox {{
-                border: 1px solid rgba(0,229,255,0.2);
+                border: 1px solid {rgba(C['accent_hi'], 0.2)};
                 border-radius: 6px; margin-top: 10px; padding-top: 6px;
-                color: rgba(0,229,255,0.6); font-size: 10px; letter-spacing: 1px;
+                color: {rgba(C['accent_hi'], 0.6)}; font-size: 10px; letter-spacing: 1px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin; left: 8px; padding: 0 4px;
@@ -555,15 +301,20 @@ class EffectsPanel(QWidget):
         return g
 
     def _make_param_row(self, layout: QVBoxLayout,
-                        label: str, lo: int, hi: int, init: int) -> QSlider:
+                        label: str, lo: int, hi: int, init: int,
+                        help_key: str = "") -> QSlider:
         """Add a labelled horizontal slider row and return the slider."""
         row = QHBoxLayout()
         row.setSpacing(4)
-        row.addWidget(_label(label, C["text_dim"], 10))
+        name_lbl = _label(label, "text_dim", 10)
+        row.addWidget(name_lbl)
         sl = _make_hslider(lo, hi, init)
+        if help_key:
+            set_help(name_lbl, help_key)
+            set_help(sl, help_key)
         sl.valueChanged.connect(self._push)
         row.addWidget(sl)
-        val_lbl = _label(str(init), C["cyan"], 9)
+        val_lbl = _label(str(init), "cyan", 9)
         sl.valueChanged.connect(lambda v, l=val_lbl: l.setText(str(v)))
         row.addWidget(val_lbl)
         layout.addLayout(row)
@@ -689,6 +440,7 @@ class PianoRollWidget(QWidget):
     PITCH_MAX:     int = 128   # exclusive upper bound (127 = G9)
     HEADER_HEIGHT: int = 30
     PIANO_WIDTH:   int = 52
+    BLACK_KEY_RATIO: float = 0.62   # black key length relative to the keyboard width
 
     # Mouse drag modes
     _MODE_NONE   = "none"
@@ -769,7 +521,7 @@ class PianoRollWidget(QWidget):
         self.setMinimumSize(640, 400)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
-        self.setStyleSheet(f"background:{C['void']};")
+        themed(self, lambda: f"background:{C['void']};")
 
     # ------------------------------------------------------------------
     # Qt overrides
@@ -893,6 +645,14 @@ class PianoRollWidget(QWidget):
     def _draw_bg(self, p: QPainter, w: int, h: int) -> None:
         p.fillRect(0, 0, w, h, QColor(C["void"]))
 
+    def help_key_at(self, pos) -> str:
+        """Help region under *pos* (used by the "? HELP" mode)."""
+        if pos.y() < self.HEADER_HEIGHT:
+            return "ruler"
+        if pos.x() < self.PIANO_WIDTH:
+            return "keyboard"
+        return "piano_roll"
+
     def _draw_piano(self, p: QPainter, gh: int) -> None:
         p.save()
         p.translate(0, self.HEADER_HEIGHT)
@@ -906,15 +666,16 @@ class PianoRollWidget(QWidget):
             if y > gh:
                 break
             is_black = pitch % 12 in {1, 3, 6, 8, 10}
+            # White key surface on every row …
+            grad = QLinearGradient(0, y, self.PIANO_WIDTH, y)
+            grad.setColorAt(0, QColor(C["key_white_hi"]))
+            grad.setColorAt(1, QColor(C["key_white_lo"]))
+            p.fillRect(0, y, self.PIANO_WIDTH - 2, self.NOTE_HEIGHT - 1,
+                       QBrush(grad))
+            # … black keys are shorter, like on a real keyboard.
             if is_black:
-                p.fillRect(0, y, self.PIANO_WIDTH - 2, self.NOTE_HEIGHT - 1,
-                           QColor(C["key_black"]))
-            else:
-                grad = QLinearGradient(0, y, self.PIANO_WIDTH, y)
-                grad.setColorAt(0, QColor(C["key_white_hi"]))
-                grad.setColorAt(1, QColor(C["key_white_lo"]))
-                p.fillRect(0, y, self.PIANO_WIDTH - 2, self.NOTE_HEIGHT - 1,
-                           QBrush(grad))
+                p.fillRect(0, y, int(self.PIANO_WIDTH * self.BLACK_KEY_RATIO),
+                           self.NOTE_HEIGHT - 1, QColor(C["key_black"]))
 
             if pitch % 12 == 0:
                 p.setPen(QColor(C["cyan"]))
@@ -936,7 +697,7 @@ class PianoRollWidget(QWidget):
                 fill_x = max(0, xs)
                 fill_w = min(gw, xe) - fill_x
                 p.fillRect(fill_x, 0, fill_w, self.HEADER_HEIGHT,
-                           QColor(153, 69, 255, 50))
+                           qcolor(C["accent"], 50))
                 p.setPen(QPen(QColor(C["purple"]), 2))
                 if 0 <= xs <= gw:
                     p.drawLine(xs, 0, xs, self.HEADER_HEIGHT)
@@ -944,7 +705,7 @@ class PianoRollWidget(QWidget):
                     p.drawLine(xe, 0, xe, self.HEADER_HEIGHT)
 
         # Glowing bottom border on ruler
-        p.setPen(QPen(QColor(0, 229, 255, 60), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 60), 1))
         p.drawLine(0, self.HEADER_HEIGHT - 1, gw, self.HEADER_HEIGHT - 1)
 
         p.setFont(QFont("Arial", 9))
@@ -962,7 +723,7 @@ class PianoRollWidget(QWidget):
                     p.drawLine(x, 4, x, self.HEADER_HEIGHT - 1)
                     p.drawText(x + 3, self.HEADER_HEIGHT - 5, lbl.text)
                 else:
-                    p.setPen(QPen(QColor(0, 229, 255, 40), 1))
+                    p.setPen(QPen(qcolor(C["accent_hi"], 40), 1))
                     p.drawLine(x, 22, x, self.HEADER_HEIGHT - 1)
                     p.setPen(QColor(C["text_dim"]))
                     p.drawText(x + 3, self.HEADER_HEIGHT - 5, lbl.text)
@@ -993,7 +754,7 @@ class PianoRollWidget(QWidget):
 
             # C-note separator line
             if pitch % 12 == 0:
-                p.setPen(QPen(QColor(0, 229, 255, 25), 1))
+                p.setPen(QPen(qcolor(C["accent_hi"], 25), 1))
                 p.drawLine(0, y, gw, y)
 
         # Vertical beat lines — bar lines bright, beat lines medium, sub-grid faint.
@@ -1009,11 +770,11 @@ class PianoRollWidget(QWidget):
             if 0 <= x <= gw:
                 in_bar = b % bar_beats
                 if in_bar < 0.001 or abs(in_bar - bar_beats) < 0.001:
-                    p.setPen(QPen(QColor(0, 229, 255, 35), 1))   # bar line
+                    p.setPen(QPen(qcolor(C["accent_hi"], 35), 1))   # bar line
                 elif abs(in_bar % 1.0) < 0.001:
-                    p.setPen(QPen(QColor(0, 229, 255, 18), 1))   # beat line
+                    p.setPen(QPen(qcolor(C["accent_hi"], 18), 1))   # beat line
                 else:
-                    p.setPen(QPen(QColor(0, 229, 255, 8), 1))    # sub-beat line
+                    p.setPen(QPen(qcolor(C["accent_hi"], 8), 1))    # sub-beat line
                 p.drawLine(x, 0, x, gh)
 
         p.restore()
@@ -1166,8 +927,8 @@ class PianoRollWidget(QWidget):
             ly = min(self._lasso_start.y(), self._lasso_end.y()) - self.HEADER_HEIGHT
             lw = abs(self._lasso_end.x() - self._lasso_start.x())
             lh = abs(self._lasso_end.y() - self._lasso_start.y())
-            p.setPen(QPen(QColor(0, 229, 255, 200), 1, Qt.DashLine))
-            p.setBrush(QColor(0, 229, 255, 20))
+            p.setPen(QPen(qcolor(C["accent_hi"], 200), 1, Qt.DashLine))
+            p.setBrush(qcolor(C["accent_hi"], 20))
             p.drawRect(QRectF(lx, ly, lw, lh))
 
         p.restore()
@@ -1196,17 +957,17 @@ class PianoRollWidget(QWidget):
         p.translate(self.PIANO_WIDTH, 0)
 
         # ── Neon glow: wide semi-transparent band behind the main line ──
-        glow_pen = QPen(QColor(0, 229, 255, 40), 5)
+        glow_pen = QPen(qcolor(C["accent_hi"], 40), 5)
         p.setPen(glow_pen)
         p.drawLine(x, 0, x, self.HEADER_HEIGHT + gh)
 
         # ── Main 1-px cyan line spanning ruler + note grid ──
-        p.setPen(QPen(QColor(0, 229, 255, 220), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 220), 1))
         p.drawLine(x, 0, x, self.HEADER_HEIGHT + gh)
 
         # ── Triangle cap on the ruler top edge ──
         # PySide6 drawPolygon requires a QPolygonF; splatting a plain list raises TypeError.
-        p.setBrush(QColor(0, 229, 255, 200))
+        p.setBrush(qcolor(C["accent_hi"], 200))
         p.setPen(Qt.NoPen)
         tri = QPolygonF([
             QPointF(x - 5, 0.0),
@@ -1548,7 +1309,7 @@ class VelocityLaneWidget(QWidget):
         self._hover_note_id: int = -1
 
         self.setMouseTracking(True)
-        self.setStyleSheet(f"background:{C['void']};")
+        themed(self, lambda: f"background:{C['void']};")
 
     # ── Public API ────────────────────────────────────────────────────────
 
@@ -1584,21 +1345,21 @@ class VelocityLaneWidget(QWidget):
         p.setPen(QColor(C["text_dim"]))
         p.setFont(QFont("Arial", 8, QFont.Bold))
         p.drawText(QRectF(0, 0, self.PIANO_WIDTH, h), Qt.AlignCenter, "VEL")
-        p.setPen(QPen(QColor(0, 229, 255, 30), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 30), 1))
         p.drawLine(self.PIANO_WIDTH - 1, 0, self.PIANO_WIDTH - 1, h)
 
         # Grid background
         gw = w - self.PIANO_WIDTH
-        p.fillRect(self.PIANO_WIDTH, 0, gw, h, QColor(8, 10, 22))
+        p.fillRect(self.PIANO_WIDTH, 0, gw, h, QColor(C["bg"]))
 
         # Top border glow
-        p.setPen(QPen(QColor(0, 229, 255, 55), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 55), 1))
         p.drawLine(0, 0, w, 0)
 
         # Reference lines at velocity 127, 100, 64
         for ref_vel, alpha in ((127, 38), (100, 24), (64, 16)):
             ry = int(inner_h - ref_vel / 127.0 * inner_h)
-            p.setPen(QPen(QColor(0, 229, 255, alpha), 1, Qt.DotLine))
+            p.setPen(QPen(qcolor(C["accent_hi"], alpha), 1, Qt.DotLine))
             p.drawLine(self.PIANO_WIDTH, ry, w, ry)
         p.setFont(QFont("Arial", 7))
         for ref_vel in (127, 100, 64):
@@ -1810,7 +1571,7 @@ class AudioClipLane(QWidget):
 
         self.setFixedHeight(self.RULER_H + self.CLIP_H + 4)
         self.setMouseTracking(True)
-        self.setStyleSheet(f"background:{C['abyss']};")
+        themed(self, lambda: f"background:{C['abyss']};")
 
     # ------------------------------------------------------------------
     # Public API
@@ -1848,7 +1609,7 @@ class AudioClipLane(QWidget):
 
         # Piano-width stub
         p.fillRect(0, 0, self.PIANO_WIDTH - 1, h, QColor(C["deep"]))
-        p.setPen(QPen(QColor(0, 229, 255, 40), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 40), 1))
         p.drawLine(self.PIANO_WIDTH - 1, 0, self.PIANO_WIDTH - 1, h)
         p.setFont(QFont("Arial", 8, QFont.Bold))
         p.setPen(QColor(C["text_dim"]))
@@ -1859,7 +1620,7 @@ class AudioClipLane(QWidget):
 
         # ── Ruler ───────────────────────────────────────────────────────
         p.fillRect(0, 0, gw, self.RULER_H, QColor(C["deep"]))
-        p.setPen(QPen(QColor(0, 229, 255, 25), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 25), 1))
         p.drawLine(0, self.RULER_H - 1, gw, self.RULER_H - 1)
 
         p.setFont(QFont("Arial", 8))
@@ -1870,7 +1631,7 @@ class AudioClipLane(QWidget):
                 if beat % 4 == 0:
                     p.setPen(QColor(C["text_dim"]))
                     p.drawText(x + 2, self.RULER_H - 3, f"B{int(beat // 4) + 1}")
-                p.setPen(QPen(QColor(0, 229, 255, 20), 1))
+                p.setPen(QPen(qcolor(C["accent_hi"], 20), 1))
                 p.drawLine(x, 0, x, self.RULER_H)
             beat += 4
 
@@ -1881,7 +1642,7 @@ class AudioClipLane(QWidget):
             if xs < gw and xe > 0:
                 fill_x = max(0, xs)
                 fill_w = min(gw, xe) - fill_x
-                p.fillRect(fill_x, 0, fill_w, h, QColor(153, 69, 255, 22))
+                p.fillRect(fill_x, 0, fill_w, h, qcolor(C["accent"], 22))
                 p.setPen(QPen(QColor(C["purple"]), 1))
                 if 0 <= xs <= gw:
                     p.drawLine(xs, 0, xs, h)
@@ -2033,18 +1794,19 @@ class MixerStrip(QFrame):
     def __init__(self, channel: int, name: str, color: str,
                  parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        set_help(self, "mixer_strip")
         self.channel   = channel
         self._building = True
         self._color    = color
 
         self.setFixedWidth(96)
         self.setFrameShape(QFrame.NoFrame)
-        self.setStyleSheet("""
-            MixerStrip {
-                border: 1px solid rgba(0,229,255,0.1);
+        themed(self, lambda: f"""
+            MixerStrip {{
+                border: 1px solid {rgba(C['accent_hi'], 0.1)};
                 border-radius: 8px;
                 margin: 2px;
-            }
+            }}
         """)
 
         lay = QVBoxLayout(self)
@@ -2062,17 +1824,17 @@ class MixerStrip(QFrame):
         top.addWidget(bar, stretch=1)
         rm = QPushButton("×")
         rm.setFixedSize(16, 16)
-        rm.setStyleSheet(
-            f"QPushButton {{ background: rgba(255,45,158,0.18); border: none;"
+        themed(rm, lambda: f"QPushButton {{ background: {rgba(C['pink'], 0.18)}; border: none;"
             f" border-radius: 8px; color: {C['pink']}; font-size: 11px; }}"
-            f"QPushButton:hover {{ background: {C['pink']}; color: white; }}"
-        )
+            f"QPushButton:hover {{ background: {C['pink']}; color: white; }}")
         rm.clicked.connect(lambda: self.remove_clicked.emit(channel))
+        set_help(rm, "mix_remove")
         top.addWidget(rm)
         lay.addLayout(top)
 
         # Track name (double-click to rename)
         self._name_label = _ClickableLabel(name[:10])
+        set_help(self._name_label, "mix_name")
         self._name_label.setAlignment(Qt.AlignCenter)
         self._name_label.setFont(QFont("Arial", 8, QFont.Bold))
         self._name_label.setStyleSheet(f"color:{color}; background:transparent;")
@@ -2084,15 +1846,14 @@ class MixerStrip(QFrame):
         # Instrument subtitle (shows currently loaded preset, separate from track name)
         self._instrument_label = QLabel("")
         self._instrument_label.setAlignment(Qt.AlignCenter)
-        self._instrument_label.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:8px; background:transparent;")
+        themed(self._instrument_label, lambda: f"color:{C['text_dim']}; font-size:8px; background:transparent;")
         self._instrument_label.setWordWrap(True)
         lay.addWidget(self._instrument_label)
 
         # Channel number
         cl = QLabel(f"CH {channel+1:02d}")
         cl.setAlignment(Qt.AlignCenter)
-        cl.setStyleSheet(f"color:{C['text_dim']}; font-size:9px; background:transparent;")
+        themed(cl, lambda: f"color:{C['text_dim']}; font-size:9px; background:transparent;")
         lay.addWidget(cl)
 
         # Volume fader
@@ -2100,9 +1861,10 @@ class MixerStrip(QFrame):
         vol_row.setSpacing(2)
         lbl_vol = QLabel("VOL")
         lbl_vol.setAlignment(Qt.AlignCenter)
-        lbl_vol.setStyleSheet(f"color:{C['text_dim']}; font-size:8px; background:transparent;")
+        themed(lbl_vol, lambda: f"color:{C['text_dim']}; font-size:8px; background:transparent;")
         vol_row.addWidget(lbl_vol)
         self.vol = QSlider(Qt.Vertical)
+        set_help(self.vol, "mix_vol")
         self.vol.setRange(0, 100)
         self.vol.setValue(80)
         self.vol.setFixedHeight(90)
@@ -2113,9 +1875,10 @@ class MixerStrip(QFrame):
         # Pan
         lbl_pan = QLabel("PAN")
         lbl_pan.setAlignment(Qt.AlignCenter)
-        lbl_pan.setStyleSheet(f"color:{C['text_dim']}; font-size:8px; background:transparent;")
+        themed(lbl_pan, lambda: f"color:{C['text_dim']}; font-size:8px; background:transparent;")
         lay.addWidget(lbl_pan)
         self.pan = QSlider(Qt.Horizontal)
+        set_help(self.pan, "mix_pan")
         self.pan.setRange(-50, 50)
         self.pan.setValue(0)
         self.pan.valueChanged.connect(self._on_pan)
@@ -2125,41 +1888,38 @@ class MixerStrip(QFrame):
         ms = QHBoxLayout()
         ms.setSpacing(3)
         self.mute_btn = QPushButton("M")
+        set_help(self.mute_btn, "mix_mute")
         self.mute_btn.setCheckable(True)
         self.mute_btn.setFixedSize(30, 22)
-        self.mute_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; border:1px solid rgba(255,107,43,0.3);"
+        themed(self.mute_btn, lambda: f"QPushButton {{ background:{C['deep']}; border:1px solid {rgba(C['danger'], 0.3)};"
             f" border-radius:3px; color:{C['text_dim']}; font-size:10px; }}"
-            f"QPushButton:checked {{ background:rgba(255,107,43,0.4);"
-            f" border-color:{C['orange']}; color:{C['orange']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(C['danger'], 0.4)};"
+            f" border-color:{C['orange']}; color:{C['orange']}; }}")
         self.mute_btn.toggled.connect(lambda v: self.mute_toggled.emit(channel, v))
         ms.addWidget(self.mute_btn)
 
         self.solo_btn = QPushButton("S")
+        set_help(self.solo_btn, "mix_solo")
         self.solo_btn.setCheckable(True)
         self.solo_btn.setFixedSize(30, 22)
-        self.solo_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; border:1px solid rgba(255,215,0,0.3);"
+        themed(self.solo_btn, lambda: f"QPushButton {{ background:{C['deep']}; border:1px solid {rgba(C['warning'], 0.3)};"
             f" border-radius:3px; color:{C['text_dim']}; font-size:10px; }}"
-            f"QPushButton:checked {{ background:rgba(255,215,0,0.3);"
-            f" border-color:{C['gold']}; color:{C['gold']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(C['warning'], 0.3)};"
+            f" border-color:{C['gold']}; color:{C['gold']}; }}")
         self.solo_btn.toggled.connect(lambda v: self.solo_toggled.emit(channel, v))
         ms.addWidget(self.solo_btn)
         lay.addLayout(ms)
 
         # Select button
         self.sel_btn = QPushButton("●")
+        set_help(self.sel_btn, "mix_select")
         self.sel_btn.setCheckable(True)
         self.sel_btn.setFixedHeight(22)
         self.sel_btn.setToolTip("Select — route keyboard/gamepad to this track")
-        self.sel_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; border:1px solid rgba(0,229,255,0.2);"
+        themed(self.sel_btn, lambda: f"QPushButton {{ background:{C['deep']}; border:1px solid {rgba(C['accent_hi'], 0.2)};"
             f" border-radius:3px; color:{C['text_dim']}; font-size:11px; }}"
-            f"QPushButton:checked {{ background:rgba(0,229,255,0.2);"
-            f" border-color:{C['cyan']}; color:{C['cyan']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(C['accent_hi'], 0.2)};"
+            f" border-color:{C['cyan']}; color:{C['cyan']}; }}")
         self.sel_btn.clicked.connect(lambda: self.track_selected.emit(channel))
         lay.addWidget(self.sel_btn)
 
@@ -2176,11 +1936,17 @@ class MixerStrip(QFrame):
         if not self._building:
             self.pan_changed.emit(self.channel, v / 50.0)
 
+    def mousePressEvent(self, ev) -> None:
+        """Clicking anywhere on the strip (not only the ● button) selects the track."""
+        if ev.button() == Qt.LeftButton:
+            self.track_selected.emit(self.channel)
+        super().mousePressEvent(ev)
+
     def set_selected(self, selected: bool) -> None:
         self.sel_btn.setChecked(selected)
-        self.setStyleSheet(f"""
+        themed(self, lambda selected=selected: f"""
             MixerStrip {{
-                border: 1px solid {'rgba(0,229,255,0.55)' if selected else 'rgba(0,229,255,0.1)'};
+                border: 1px solid {rgba(C['accent_hi'], 0.55) if selected else C['line']};
                 border-radius: 8px;
                 margin: 2px;
             }}
@@ -2209,6 +1975,9 @@ class MixerStrip(QFrame):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TransportBar(QWidget):
+    ROOT_COMBO_WIDTH: int = 76        # px — root note selector (C4 … B4)
+    COMBO_POPUP_MIN_WIDTH: int = 110  # px — minimum width of opened dropdown lists
+
     play_clicked   = Signal()
     stop_clicked   = Signal()
     record_clicked = Signal(bool)
@@ -2221,22 +1990,19 @@ class TransportBar(QWidget):
         lay.setSpacing(8)
 
         def _tb(text: str, tip: str = "", checkable: bool = False,
-                color: str = "") -> QPushButton:
+                variant: str = "") -> QPushButton:
+            """Transport button; *variant* = style from core/theme.py (success, danger …)."""
             b = QPushButton(text)
             b.setFixedHeight(34)
             b.setCheckable(checkable)
             b.setToolTip(tip)
-            if color:
-                b.setStyleSheet(
-                    f"QPushButton {{ color:{color}; border-radius:5px; }}"
-                    f"QPushButton:hover {{ border-color:{color}; color:{color}; }}"
-                    f"QPushButton:checked {{ border-color:{C['pink']}; color:{C['pink']}; }}"
-                )
+            if variant:
+                b.setProperty("variant", variant)
             return b
 
-        self.play_btn   = _tb("▶  PLAY",   "Play from start")
+        self.play_btn   = _tb("▶  PLAY",   "Play from start", variant="success")
         self.stop_btn   = _tb("■  STOP",   "Stop + rewind")
-        self.record_btn = _tb("⏺  REC",    "Record", True, C["orange"])
+        self.record_btn = _tb("⏺  REC",    "Record", True, "danger")
 
         self.play_btn  .clicked.connect(self.play_clicked)
         self.stop_btn  .clicked.connect(self.stop_clicked)
@@ -2249,7 +2015,8 @@ class TransportBar(QWidget):
         lay.addSpacing(20)
 
         # BPM
-        lay.addWidget(_label("BPM", C["text_dim"], 10))
+        self.bpm_label = _label("BPM", "text_dim", 10)
+        lay.addWidget(self.bpm_label)
         self.bpm_spin = QDoubleSpinBox()
         self.bpm_spin.setRange(20, 300)
         self.bpm_spin.setValue(120)
@@ -2274,35 +2041,37 @@ class TransportBar(QWidget):
         self.loop_btn.setToolTip(
             "Loop playback between markers — drag the ruler in the piano roll to set the region"
         )
-        self.loop_btn.setStyleSheet(
-            f"QPushButton {{ color:{C['purple']}; border:1px solid rgba(153,69,255,0.4); border-radius:5px; }}"
-            f"QPushButton:hover {{ border-color:{C['purple']}; color:{C['purple']}; }}"
-            f"QPushButton:checked {{ background:rgba(153,69,255,0.3);"
-            f" border-color:{C['purple']}; color:{C['purple']}; }}"
-        )
+        # Style: global checkable button (violet when active) — see core/theme.py
         lay.addWidget(self.loop_btn)
 
         lay.addSpacing(12)
 
         # Scale / Root / Octave
-        lay.addWidget(_label("SCALE", C["text_dim"], 10))
+        self.scale_label = _label("SCALE", "text_dim", 10)
+        lay.addWidget(self.scale_label)
         self.scale_combo = QComboBox()
         self.scale_combo.addItems(sorted(SCALES.keys()))
         self.scale_combo.setCurrentText("major")
         self.scale_combo.setFixedWidth(120)
         lay.addWidget(self.scale_combo)
 
-        lay.addWidget(_label("ROOT", C["text_dim"], 10))
+        self.root_label = _label("ROOT", "text_dim", 10)
+        lay.addWidget(self.root_label)
         self.root_combo = QComboBox()
         self.root_combo.addItems(
             [f"{n}4" for n in
              ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]]
         )
         self.root_combo.setCurrentText("C4")
-        self.root_combo.setFixedWidth(58)
+        # Wide enough for "C#4" plus the arrow; the popup list gets its own
+        # minimum width so entries are never cut off.
+        self.root_combo.setFixedWidth(self.ROOT_COMBO_WIDTH)
+        self.root_combo.view().setMinimumWidth(self.COMBO_POPUP_MIN_WIDTH)
+        self.scale_combo.view().setMinimumWidth(self.COMBO_POPUP_MIN_WIDTH)
         lay.addWidget(self.root_combo)
 
-        lay.addWidget(_label("OCT", C["text_dim"], 10))
+        self.octave_label = _label("OCT", "text_dim", 10)
+        lay.addWidget(self.octave_label)
         self.octave_spin = QSpinBox()
         self.octave_spin.setRange(-3, 3)
         self.octave_spin.setValue(0)
@@ -2313,129 +2082,9 @@ class TransportBar(QWidget):
 
         self.panic_btn = QPushButton("⚡ PANIC")
         self.panic_btn.setFixedHeight(34)
-        self.panic_btn.setStyleSheet(
-            f"QPushButton {{ color:{C['orange']};"
-            f" border:1px solid rgba(255,107,43,0.5); border-radius:5px; }}"
-            f"QPushButton:hover {{ background:rgba(255,107,43,0.3); }}"
-        )
+        self.panic_btn.setProperty("variant", "danger")
         self.panic_btn.setToolTip("All notes off — emergency silence")
         lay.addWidget(self.panic_btn)
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Settings Dialog  (Language + Theme)
-# ═══════════════════════════════════════════════════════════════════════════
-
-class SettingsDialog(QDialog):
-    """
-    Compact settings popup — language switcher (DE/EN/FR) and theme toggle.
-    Opened from the ⚙ SETTINGS button in the lower-left status bar.
-    Changes take effect immediately (live preview, no OK/Apply needed).
-    """
-
-    language_changed = Signal(str)   # emits language code e.g. "de"
-    theme_changed    = Signal(str)   # emits "dark" or "light"
-
-    def __init__(self, current_lang: str, current_theme: str,
-                 parent: QWidget = None) -> None:
-        super().__init__(parent, Qt.Tool | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
-        self._lang  = current_lang
-        self._theme = current_theme
-
-        root = QVBoxLayout(self)
-        root.setContentsMargins(14, 14, 14, 14)
-        root.setSpacing(12)
-
-        # ── Header ────────────────────────────────────────────────────────
-        hdr = QLabel(_tr("⚙  SETTINGS", current_lang))
-        hdr.setStyleSheet(
-            f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
-            " letter-spacing:1.5px;"
-        )
-        root.addWidget(hdr)
-
-        sep = QFrame(); sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet(f"color:{C['surface']};")
-        root.addWidget(sep)
-
-        # ── Language section ──────────────────────────────────────────────
-        self._lang_lbl = QLabel(_tr("LANGUAGE", current_lang))
-        self._lang_lbl.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px; letter-spacing:1px;"
-        )
-        root.addWidget(self._lang_lbl)
-
-        lang_row = QHBoxLayout()
-        lang_row.setSpacing(6)
-        self._lang_btns: dict[str, QPushButton] = {}
-        self._lang_grp = QButtonGroup(self)
-        for code in LANGUAGES:
-            btn = QPushButton(LANGUAGE_LABELS[code])
-            btn.setCheckable(True)
-            btn.setFixedHeight(28)
-            btn.setMinimumWidth(52)
-            btn.setChecked(code == current_lang)
-            btn.clicked.connect(lambda checked, c=code: self._on_lang(c))
-            self._lang_grp.addButton(btn)
-            self._lang_btns[code] = btn
-            lang_row.addWidget(btn)
-        lang_row.addStretch()
-        root.addLayout(lang_row)
-
-        # ── Theme section ─────────────────────────────────────────────────
-        self._theme_lbl = QLabel(_tr("THEME", current_lang))
-        self._theme_lbl.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px; letter-spacing:1px;"
-        )
-        root.addWidget(self._theme_lbl)
-
-        theme_row = QHBoxLayout()
-        theme_row.setSpacing(6)
-        self._dark_btn  = QPushButton(_tr("Dark",  current_lang))
-        self._light_btn = QPushButton(_tr("Light", current_lang))
-        for btn in (self._dark_btn, self._light_btn):
-            btn.setCheckable(True)
-            btn.setFixedHeight(28)
-        self._dark_btn .setChecked(current_theme == "dark")
-        self._light_btn.setChecked(current_theme == "light")
-        self._theme_grp = QButtonGroup(self)
-        self._theme_grp.addButton(self._dark_btn)
-        self._theme_grp.addButton(self._light_btn)
-        self._dark_btn .clicked.connect(lambda: self._on_theme("dark"))
-        self._light_btn.clicked.connect(lambda: self._on_theme("light"))
-        theme_row.addWidget(self._dark_btn)
-        theme_row.addWidget(self._light_btn)
-        theme_row.addStretch()
-        root.addLayout(theme_row)
-
-        # ── Close button ──────────────────────────────────────────────────
-        sep2 = QFrame(); sep2.setFrameShape(QFrame.HLine)
-        sep2.setStyleSheet(f"color:{C['surface']};")
-        root.addWidget(sep2)
-
-        self._close_btn = QPushButton(_tr("Close", current_lang))
-        self._close_btn.setFixedHeight(28)
-        self._close_btn.clicked.connect(self.close)
-        root.addWidget(self._close_btn)
-
-        self.setFixedWidth(220)
-
-    # ------------------------------------------------------------------
-
-    def _on_lang(self, code: str) -> None:
-        self._lang = code
-        self.language_changed.emit(code)
-        # Retranslate the dialog's own labels live
-        self._lang_lbl  .setText(_tr("LANGUAGE", code))
-        self._theme_lbl .setText(_tr("THEME",    code))
-        self._dark_btn  .setText(_tr("Dark",     code))
-        self._light_btn .setText(_tr("Light",    code))
-        self._close_btn .setText(_tr("Close",    code))
-
-    def _on_theme(self, theme: str) -> None:
-        self._theme = theme
-        self.theme_changed.emit(theme)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -2476,11 +2125,9 @@ class InstrumentSelectorDialog(QDialog):
         root.setSpacing(8)
         root.setContentsMargins(14, 14, 14, 14)
 
-        hdr = _label("CHANGE INSTRUMENT", C["cyan"], 13, True)
-        hdr.setStyleSheet(
-            f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
-            f" letter-spacing:3px; background:transparent;"
-        )
+        hdr = _label("CHANGE INSTRUMENT", "cyan", 13, True)
+        themed(hdr, lambda: f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
+            f" letter-spacing:3px; background:transparent;")
         root.addWidget(hdr)
 
         # ── Tab selector ───────────────────────────────────────────────────
@@ -2535,12 +2182,10 @@ class InstrumentSelectorDialog(QDialog):
                     f"QPushButton:hover {{ background:rgba(0,0,0,0.5); }}"
                 )
             else:
-                btn.setStyleSheet(
-                    f"QPushButton {{ background:{C['deep']}; color:{C['text_dim']};"
+                themed(btn, lambda: f"QPushButton {{ background:{C['deep']}; color:{C['text_dim']};"
                     f" border:1px solid rgba(255,255,255,0.1); border-radius:4px;"
                     f" padding:4px 16px; font-size:10px; }}"
-                    f"QPushButton:hover {{ background:{C['surface']}; color:{C['text']}; }}"
-                )
+                    f"QPushButton:hover {{ background:{C['surface']}; color:{C['text']}; }}")
         self._stack.setCurrentIndex(idx)
         col = self._TAB_COLORS[idx]
         self._ok_btn.setStyleSheet(
@@ -2558,7 +2203,7 @@ class InstrumentSelectorDialog(QDialog):
         lay.setSpacing(8)
 
         sf2_row = QHBoxLayout()
-        sf2_row.addWidget(_label("SOUNDFONT", C["text_dim"], 10))
+        sf2_row.addWidget(_label("SOUNDFONT", "text_dim", 10))
         self._sf2_combo = QComboBox()
         self._sf2_combo.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -2588,8 +2233,7 @@ class InstrumentSelectorDialog(QDialog):
         lay.addWidget(sp, stretch=1)
 
         lay.addWidget(_label(
-            "PREVIEW  ·  click keys or use A–K / W–P on your keyboard",
-            C["text_dim"], 9,
+            "PREVIEW  ·  click keys or use A–K / W–P on your keyboard", "text_dim", 9,
         ))
         self._preview = InstrumentPreviewWidget(self)
         self._preview.set_note_callbacks(
@@ -2608,20 +2252,17 @@ class InstrumentSelectorDialog(QDialog):
         lay.setSpacing(8)
 
         browse_row = QHBoxLayout()
-        browse_row.addWidget(_label("SFZ FILE", C["text_dim"], 10))
+        browse_row.addWidget(_label("SFZ FILE", "text_dim", 10))
         self._sfz_path_lbl = QLabel("(no file selected)")
-        self._sfz_path_lbl.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px; background:transparent;")
+        themed(self._sfz_path_lbl, lambda: f"color:{C['text_dim']}; font-size:10px; background:transparent;")
         self._sfz_path_lbl.setWordWrap(True)
         browse_row.addWidget(self._sfz_path_lbl, stretch=1)
         browse_sfz_btn = QPushButton("Browse SFZ…")
         browse_sfz_btn.setFixedWidth(110)
-        browse_sfz_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['lime']};"
-            f" border:1px solid rgba(57,255,20,0.4); border-radius:4px;"
+        themed(browse_sfz_btn, lambda: f"QPushButton {{ background:{C['deep']}; color:{C['lime']};"
+            f" border:1px solid {rgba(C['success'], 0.4)}; border-radius:4px;"
             f" padding:4px 10px; font-size:10px; }}"
-            f"QPushButton:hover {{ background:rgba(57,255,20,0.1); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['success'], 0.1)}; }}")
         browse_sfz_btn.clicked.connect(self._browse_sfz)
         browse_row.addWidget(browse_sfz_btn)
         lay.addLayout(browse_row)
@@ -2637,17 +2278,15 @@ class InstrumentSelectorDialog(QDialog):
         self._sfz_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._sfz_table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows)
-        self._sfz_table.setStyleSheet(
-            f"QTableWidget {{ background:{C['deep']}; color:{C['text']};"
+        themed(self._sfz_table, lambda: f"QTableWidget {{ background:{C['deep']}; color:{C['text']};"
             f" gridline-color:{C['surface']};"
-            f" border:1px solid rgba(57,255,20,0.2); }}"
+            f" border:1px solid {rgba(C['success'], 0.2)}; }}"
             f"QHeaderView::section {{ background:{C['abyss']}; color:{C['text_dim']};"
             f" border:none; padding:2px; }}"
-            f"QTableWidget::item:alternate {{ background:{C['abyss']}; }}"
-        )
+            f"QTableWidget::item:alternate {{ background:{C['abyss']}; }}")
         lay.addWidget(self._sfz_table, stretch=1)
 
-        self._sfz_name_lbl = _label("", C["lime"], 11)
+        self._sfz_name_lbl = _label("", "lime", 11)
         self._sfz_name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addWidget(self._sfz_name_lbl)
         return page
@@ -2661,35 +2300,30 @@ class InstrumentSelectorDialog(QDialog):
         scan_row = QHBoxLayout()
         scan_btn = QPushButton("↺  Scan System Paths")
         scan_btn.setFixedWidth(180)
-        scan_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['purple']};"
-            f" border:1px solid rgba(153,69,255,0.4); border-radius:4px;"
+        themed(scan_btn, lambda: f"QPushButton {{ background:{C['deep']}; color:{C['purple']};"
+            f" border:1px solid {rgba(C['accent'], 0.4)}; border-radius:4px;"
             f" padding:4px 12px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.2); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.2)}; }}")
         scan_btn.clicked.connect(self._scan_vst3)
         scan_row.addWidget(scan_btn)
         self._vst3_hint = QLabel("")
-        self._vst3_hint.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px;")
+        themed(self._vst3_hint, lambda: f"color:{C['text_dim']}; font-size:10px;")
         scan_row.addWidget(self._vst3_hint)
         scan_row.addStretch()
         lay.addLayout(scan_row)
 
         self._vst3_list = QListWidget()
-        self._vst3_list.setStyleSheet(
-            f"QListWidget {{ background:{C['deep']};"
-            f" border:1px solid rgba(153,69,255,0.3); border-radius:4px; }}"
+        themed(self._vst3_list, lambda: f"QListWidget {{ background:{C['deep']};"
+            f" border:1px solid {rgba(C['accent'], 0.3)}; border-radius:4px; }}"
             f"QListWidget::item {{ color:{C['text']}; padding:4px 8px; }}"
-            f"QListWidget::item:selected {{ background:rgba(153,69,255,0.25);"
-            f" color:{C['purple']}; }}"
-        )
+            f"QListWidget::item:selected {{ background:{rgba(C['accent'], 0.25)};"
+            f" color:{C['purple']}; }}")
         self._vst3_list.currentRowChanged.connect(self._on_vst3_row_changed)
         lay.addWidget(self._vst3_list, stretch=1)
 
         browse_vst_row = QHBoxLayout()
         browse_vst_row.addWidget(
-            _label("Or choose a file manually:", C["text_dim"], 10))
+            _label("Or choose a file manually:", "text_dim", 10))
         browse_vst_btn = QPushButton("Browse…")
         browse_vst_btn.setFixedWidth(100)
         browse_vst_btn.clicked.connect(self._browse_vst3)
@@ -2715,27 +2349,24 @@ class InstrumentSelectorDialog(QDialog):
 
         # ── File picker row ────────────────────────────────────────────────
         browse_row = QHBoxLayout()
-        browse_row.addWidget(_label("DSPRESET FILE", C["text_dim"], 10))
+        browse_row.addWidget(_label("DSPRESET FILE", "text_dim", 10))
         # Shows the file name after the user picks one.
         self._ds_path_lbl = QLabel("(no file selected)")
-        self._ds_path_lbl.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px; background:transparent;")
+        themed(self._ds_path_lbl, lambda: f"color:{C['text_dim']}; font-size:10px; background:transparent;")
         self._ds_path_lbl.setWordWrap(True)
         browse_row.addWidget(self._ds_path_lbl, stretch=1)
         browse_ds_btn = QPushButton("Browse DS…")
         browse_ds_btn.setFixedWidth(110)
-        browse_ds_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['gold']};"
-            f" border:1px solid rgba(255,215,0,0.4); border-radius:4px;"
+        themed(browse_ds_btn, lambda: f"QPushButton {{ background:{C['deep']}; color:{C['gold']};"
+            f" border:1px solid {rgba(C['warning'], 0.4)}; border-radius:4px;"
             f" padding:4px 10px; font-size:10px; }}"
-            f"QPushButton:hover {{ background:rgba(255,215,0,0.1); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['warning'], 0.1)}; }}")
         browse_ds_btn.clicked.connect(self._browse_ds)
         browse_row.addWidget(browse_ds_btn)
         lay.addLayout(browse_row)
 
         # ── Instrument name label (populated after parsing) ────────────────
-        self._ds_name_lbl = _label("", C["gold"], 11)
+        self._ds_name_lbl = _label("", "gold", 11)
         self._ds_name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addWidget(self._ds_name_lbl)
 
@@ -2749,18 +2380,16 @@ class InstrumentSelectorDialog(QDialog):
         self._ds_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._ds_table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows)
-        self._ds_table.setStyleSheet(
-            f"QTableWidget {{ background:{C['deep']}; color:{C['text']};"
+        themed(self._ds_table, lambda: f"QTableWidget {{ background:{C['deep']}; color:{C['text']};"
             f" gridline-color:{C['surface']};"
-            f" border:1px solid rgba(255,215,0,0.2); }}"
+            f" border:1px solid {rgba(C['warning'], 0.2)}; }}"
             f"QHeaderView::section {{ background:{C['abyss']}; color:{C['text_dim']};"
             f" border:none; padding:2px; }}"
-            f"QTableWidget::item:alternate {{ background:{C['abyss']}; }}"
-        )
+            f"QTableWidget::item:alternate {{ background:{C['abyss']}; }}")
         lay.addWidget(self._ds_table, stretch=1)
 
         # ── Info footer (zone count, group count) ──────────────────────────
-        self._ds_info_lbl = _label("", C["text_dim"], 9)
+        self._ds_info_lbl = _label("", "text_dim", 9)
         lay.addWidget(self._ds_info_lbl)
 
         return page
@@ -2847,8 +2476,7 @@ class InstrumentSelectorDialog(QDialog):
     def _load_sfz_preview(self, path: str) -> None:
         self._sfz_path = path
         self._sfz_path_lbl.setText(os.path.basename(path))
-        self._sfz_path_lbl.setStyleSheet(
-            f"color:{C['text']}; font-size:10px; background:transparent;")
+        themed(self._sfz_path_lbl, lambda: f"color:{C['text']}; font-size:10px; background:transparent;")
         try:
             info = parse_sfz(path)
             self._sfz_keyboard.set_regions(info.regions)
@@ -3010,42 +2638,38 @@ class VstBrowserDialog(QDialog):
         root = QVBoxLayout(self)
         root.setSpacing(10)
 
-        root.addWidget(_label("SELECT A VST3 / AU PLUGIN", C["purple"], 12, True))
+        root.addWidget(_label("SELECT A VST3 / AU PLUGIN", "purple", 12, True))
 
         # Scan button + status hint
         scan_row = QHBoxLayout()
         scan_btn = QPushButton("↺  Scan System Paths")
         scan_btn.setFixedWidth(180)
-        scan_btn.setStyleSheet(
-            f"QPushButton {{ background:{C['deep']}; color:{C['purple']};"
-            f" border:1px solid rgba(153,69,255,0.4); border-radius:4px;"
+        themed(scan_btn, lambda: f"QPushButton {{ background:{C['deep']}; color:{C['purple']};"
+            f" border:1px solid {rgba(C['accent'], 0.4)}; border-radius:4px;"
             f" padding:4px 12px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.2); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.2)}; }}")
         scan_btn.clicked.connect(self._scan)
         scan_row.addWidget(scan_btn)
         self._scan_hint = QLabel("")
-        self._scan_hint.setStyleSheet(f"color:{C['text_dim']}; font-size:10px;")
+        themed(self._scan_hint, lambda: f"color:{C['text_dim']}; font-size:10px;")
         scan_row.addWidget(self._scan_hint)
         scan_row.addStretch()
         root.addLayout(scan_row)
 
         # Plugin list
         self._plugin_list = QListWidget()
-        self._plugin_list.setStyleSheet(
-            f"QListWidget {{ background:{C['deep']}; border:1px solid rgba(153,69,255,0.3);"
+        themed(self._plugin_list, lambda: f"QListWidget {{ background:{C['deep']}; border:1px solid {rgba(C['accent'], 0.3)};"
             f" border-radius:4px; }}"
             f"QListWidget::item {{ color:{C['text']}; padding:4px 8px; }}"
-            f"QListWidget::item:selected {{ background:rgba(153,69,255,0.25);"
-            f" color:{C['purple']}; }}"
-        )
+            f"QListWidget::item:selected {{ background:{rgba(C['accent'], 0.25)};"
+            f" color:{C['purple']}; }}")
         self._plugin_list.currentRowChanged.connect(self._on_row_changed)
         root.addWidget(self._plugin_list, stretch=1)
 
         # Manual browse row
         browse_row = QHBoxLayout()
         browse_row.addWidget(
-            _label("Or choose a file manually:", C["text_dim"], 10))
+            _label("Or choose a file manually:", "text_dim", 10))
         browse_btn = QPushButton("Browse…")
         browse_btn.setFixedWidth(100)
         browse_btn.clicked.connect(self._browse)
@@ -3055,7 +2679,7 @@ class VstBrowserDialog(QDialog):
 
         # Track name input
         nm_row = QHBoxLayout()
-        nm_row.addWidget(_label("TRACK NAME", C["text_dim"], 10))
+        nm_row.addWidget(_label("TRACK NAME", "text_dim", 10))
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("e.g.  My Synth Lead")
         nm_row.addWidget(self._name_edit)
@@ -3070,14 +2694,12 @@ class VstBrowserDialog(QDialog):
         self._ok_btn = QPushButton("✦  Load Plugin")
         self._ok_btn.setDefault(True)
         self._ok_btn.setEnabled(False)
-        self._ok_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(153,69,255,0.18);"
+        themed(self._ok_btn, lambda: f"QPushButton {{ background:{rgba(C['accent'], 0.18)};"
             f" border:1px solid {C['purple']}; color:{C['purple']};"
             f" border-radius:5px; padding:6px 18px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.38); }}"
-            f"QPushButton:disabled {{ color:rgba(153,69,255,0.3);"
-            f" border-color:rgba(153,69,255,0.15); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.38)}; }}"
+            f"QPushButton:disabled {{ color:{rgba(C['accent'], 0.3)};"
+            f" border-color:{rgba(C['accent'], 0.15)}; }}")
         self._ok_btn.clicked.connect(self._on_ok)
         btn_row.addWidget(self._ok_btn)
         root.addLayout(btn_row)
@@ -3182,7 +2804,7 @@ class VstParameterPanel(QDialog):
         root = QVBoxLayout(self)
         root.setSpacing(8)
 
-        root.addWidget(_label(f"PARAMETERS  —  {name}", C["purple"], 12, True))
+        root.addWidget(_label(f"PARAMETERS  —  {name}", "purple", 12, True))
 
         params = vst_manager.get_parameters(channel)
 
@@ -3190,13 +2812,12 @@ class VstParameterPanel(QDialog):
             msg = ("No parameters available.\n\n"
                    "Either the plugin has no exposed parameters, or "
                    "pedalboard could not read them.")
-            root.addWidget(_label(msg, C["text_dim"], 11))
+            root.addWidget(_label(msg, "text_dim", 11))
         else:
             # Scrollable grid of parameter sliders
             scroll = QScrollArea()
             scroll.setWidgetResizable(True)
-            scroll.setStyleSheet(
-                f"QScrollArea {{ background:{C['deep']}; border:none; }}")
+            themed(scroll, lambda: f"QScrollArea {{ background:{C['deep']}; border:none; }}")
             inner = QWidget()
             grid = QGridLayout(inner)
             grid.setSpacing(6)
@@ -3204,8 +2825,7 @@ class VstParameterPanel(QDialog):
 
             for row, (pname, value) in enumerate(params.items()):
                 lbl = QLabel(pname[:28])
-                lbl.setStyleSheet(
-                    f"color:{C['text']}; font-size:11px;")
+                themed(lbl, lambda: f"color:{C['text']}; font-size:11px;")
 
                 slider = QSlider(Qt.Horizontal)
                 slider.setRange(0, 1000)
@@ -3213,8 +2833,7 @@ class VstParameterPanel(QDialog):
 
                 val_lbl = QLabel(f"{value:.3f}")
                 val_lbl.setFixedWidth(46)
-                val_lbl.setStyleSheet(
-                    f"color:{C['cyan']}; font-size:10px;")
+                themed(val_lbl, lambda: f"color:{C['cyan']}; font-size:10px;")
 
                 # Capture the parameter name and value label in a closure
                 def _handler(v: int, p: str = pname, vl: QLabel = val_lbl) -> None:
@@ -3236,12 +2855,10 @@ class VstParameterPanel(QDialog):
         btn_row.addStretch()
 
         native_btn = QPushButton("⬡  Open Native Editor")
-        native_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(153,69,255,0.15);"
-            f" color:{C['purple']}; border:1px solid rgba(153,69,255,0.4);"
+        themed(native_btn, lambda: f"QPushButton {{ background:{rgba(C['accent'], 0.15)};"
+            f" color:{C['purple']}; border:1px solid {rgba(C['accent'], 0.4)};"
             f" border-radius:4px; padding:6px 14px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.35); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.35)}; }}")
         native_btn.clicked.connect(self._open_native)
         btn_row.addWidget(native_btn)
 
@@ -3349,12 +2966,11 @@ class ExportDialog(QDialog):
         root = QVBoxLayout(self)
         root.setSpacing(12)
 
-        root.addWidget(_label("EXPORT AUDIO", C["gold"], 13, True))
+        root.addWidget(_label("EXPORT AUDIO", "gold", 13, True))
 
         # ── Format ────────────────────────────────────────────────────────
         fmt_box = QGroupBox("Format")
-        fmt_box.setStyleSheet(
-            f"QGroupBox {{ color:{C['text_dim']}; border:1px solid rgba(0,229,255,0.2);"
+        themed(fmt_box, lambda: f"QGroupBox {{ color:{C['text_dim']}; border:1px solid {rgba(C['accent_hi'], 0.2)};"
             f" border-radius:5px; margin-top:8px; }}"
             f"QGroupBox::title {{ subcontrol-origin:margin; left:8px; }}")
         fmt_lay = QHBoxLayout(fmt_box)
@@ -3363,7 +2979,7 @@ class ExportDialog(QDialog):
         self._aac_radio = QRadioButton("AAC  (.m4a, 192 kbps)")
         self._wav_radio.setChecked(True)
         for rb in (self._wav_radio, self._mp3_radio, self._aac_radio):
-            rb.setStyleSheet(f"color:{C['text']};")
+            themed(rb, lambda: f"color:{C['text']};")
             fmt_lay.addWidget(rb)
         self._wav_radio.toggled.connect(lambda c: self._on_fmt_changed("wav") if c else None)
         self._mp3_radio.toggled.connect(lambda c: self._on_fmt_changed("mp3") if c else None)
@@ -3372,15 +2988,13 @@ class ExportDialog(QDialog):
 
         # ── Filename ──────────────────────────────────────────────────────
         file_box = QGroupBox("Output file")
-        file_box.setStyleSheet(
-            f"QGroupBox {{ color:{C['text_dim']}; border:1px solid rgba(0,229,255,0.2);"
+        themed(file_box, lambda: f"QGroupBox {{ color:{C['text_dim']}; border:1px solid {rgba(C['accent_hi'], 0.2)};"
             f" border-radius:5px; margin-top:8px; }}"
             f"QGroupBox::title {{ subcontrol-origin:margin; left:8px; }}")
         file_lay = QHBoxLayout(file_box)
         self._path_edit = QLineEdit(os.path.expanduser("~/Untitled.wav"))
-        self._path_edit.setStyleSheet(
-            f"background:{C['deep']}; color:{C['text']};"
-            f" border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:4px;")
+        themed(self._path_edit, lambda: f"background:{C['deep']}; color:{C['text']};"
+            f" border:1px solid {rgba(C['accent_hi'], 0.2)}; border-radius:4px; padding:4px;")
         browse_btn = QPushButton("Browse…")
         browse_btn.setFixedWidth(80)
         browse_btn.clicked.connect(self._browse)
@@ -3396,11 +3010,10 @@ class ExportDialog(QDialog):
         cancel = QPushButton("Cancel")
         cancel.clicked.connect(self.reject)
         export = QPushButton("Export")
-        export.setStyleSheet(
-            f"QPushButton {{ background:rgba(255,170,0,0.15);"
-            f" color:{C['gold']}; border:1px solid rgba(255,170,0,0.45);"
+        themed(export, lambda: f"QPushButton {{ background:{rgba(C['warning'], 0.15)};"
+            f" color:{C['gold']}; border:1px solid {rgba(C['warning'], 0.45)};"
             f" border-radius:4px; padding:6px 20px; }}"
-            f"QPushButton:hover {{ background:rgba(255,170,0,0.35); }}")
+            f"QPushButton:hover {{ background:{rgba(C['warning'], 0.35)}; }}")
         export.clicked.connect(self.accept)
         btn_row.addWidget(cancel)
         btn_row.addWidget(export)
@@ -3462,16 +3075,14 @@ class AddTrackDialog(QDialog):
         root.setContentsMargins(14, 14, 14, 14)
 
         # Header
-        hdr = _label("SELECT INSTRUMENT", C["cyan"], 13, True)
-        hdr.setStyleSheet(
-            f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
-            f" letter-spacing:3px; background:transparent;"
-        )
+        hdr = _label("SELECT INSTRUMENT", "cyan", 13, True)
+        themed(hdr, lambda: f"color:{C['cyan']}; font-size:13px; font-weight:bold;"
+            f" letter-spacing:3px; background:transparent;")
         root.addWidget(hdr)
 
         # SF2 picker row
         sf2_row = QHBoxLayout()
-        sf2_row.addWidget(_label("SOUNDFONT", C["text_dim"], 10))
+        sf2_row.addWidget(_label("SOUNDFONT", "text_dim", 10))
         self._sf2_combo = QComboBox()
         self._sf2_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sf2_files = AudioEngine.get_available_sf2_files()
@@ -3505,8 +3116,7 @@ class AddTrackDialog(QDialog):
 
         # ── Live preview keyboard ──────────────────────────────────────────
         prev_lbl = _label(
-            "PREVIEW  ·  click keys or use A–K / W–P on your keyboard",
-            C["text_dim"], 9,
+            "PREVIEW  ·  click keys or use A–K / W–P on your keyboard", "text_dim", 9,
         )
         root.addWidget(prev_lbl)
         self._preview = InstrumentPreviewWidget(self)
@@ -3520,7 +3130,7 @@ class AddTrackDialog(QDialog):
 
         # Track name row
         nm_row = QHBoxLayout()
-        nm_row.addWidget(_label("TRACK NAME", C["text_dim"], 10))
+        nm_row.addWidget(_label("TRACK NAME", "text_dim", 10))
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("e.g.  Crystal Piano Melody")
         nm_row.addWidget(self._name_edit)
@@ -3534,12 +3144,10 @@ class AddTrackDialog(QDialog):
         btn_row.addWidget(cancel)
         ok = QPushButton("✦  Add SF2 Track")
         ok.setDefault(True)
-        ok.setStyleSheet(
-            f"QPushButton {{ background:rgba(0,229,255,0.15);"
+        themed(ok, lambda: f"QPushButton {{ background:{rgba(C['accent_hi'], 0.15)};"
             f" border:1px solid {C['cyan']}; color:{C['cyan']};"
             f" border-radius:5px; padding:6px 18px; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.3); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent_hi'], 0.3)}; }}")
         ok.clicked.connect(self._on_ok)
         btn_row.addWidget(ok)
         root.addLayout(btn_row)
@@ -3547,41 +3155,35 @@ class AddTrackDialog(QDialog):
         # Alternative instrument sources: SFZ and VST3
         alt_sep = QFrame()
         alt_sep.setFrameShape(QFrame.Shape.HLine)
-        alt_sep.setStyleSheet("color:rgba(153,69,255,0.3);")
+        themed(alt_sep, lambda: f"color:{rgba(C['accent'], 0.3)};")
         root.addWidget(alt_sep)
 
         alt_row = QHBoxLayout()
         alt_row.addWidget(
-            _label("No SoundFont?  Use SFZ, DS or VST3 instead:", C["text_dim"], 10))
+            _label("No SoundFont?  Use SFZ, DS or VST3 instead:", "text_dim", 10))
         alt_row.addStretch()
         sfz_btn = QPushButton("♪  Load SFZ Instrument…")
-        sfz_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(57,255,20,0.08);"
-            f" color:{C['lime']}; border:1px solid rgba(57,255,20,0.4);"
+        themed(sfz_btn, lambda: f"QPushButton {{ background:{rgba(C['success'], 0.08)};"
+            f" color:{C['lime']}; border:1px solid {rgba(C['success'], 0.4)};"
             f" border-radius:4px; padding:5px 14px; }}"
-            f"QPushButton:hover {{ background:rgba(57,255,20,0.22); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['success'], 0.22)}; }}")
         sfz_btn.clicked.connect(self._on_load_sfz)
         alt_row.addWidget(sfz_btn)
 
         # Decent Sampler (.dspreset) track button.
         ds_btn = QPushButton("◈  Load DS Preset…")
-        ds_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(255,215,0,0.08);"
-            f" color:{C['gold']}; border:1px solid rgba(255,215,0,0.4);"
+        themed(ds_btn, lambda: f"QPushButton {{ background:{rgba(C['warning'], 0.08)};"
+            f" color:{C['gold']}; border:1px solid {rgba(C['warning'], 0.4)};"
             f" border-radius:4px; padding:5px 14px; }}"
-            f"QPushButton:hover {{ background:rgba(255,215,0,0.22); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['warning'], 0.22)}; }}")
         ds_btn.clicked.connect(self._on_load_ds)
         alt_row.addWidget(ds_btn)
 
         vst_btn = QPushButton("⬡  Load VST / AU Plugin…")
-        vst_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(153,69,255,0.12);"
-            f" color:{C['purple']}; border:1px solid rgba(153,69,255,0.4);"
+        themed(vst_btn, lambda: f"QPushButton {{ background:{rgba(C['accent'], 0.12)};"
+            f" color:{C['purple']}; border:1px solid {rgba(C['accent'], 0.4)};"
             f" border-radius:4px; padding:5px 14px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.28); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.28)}; }}")
         vst_btn.clicked.connect(self._on_load_vst)
         alt_row.addWidget(vst_btn)
         root.addLayout(alt_row)
@@ -3865,7 +3467,7 @@ class TrackArrangeView(QWidget):
         self._auto_tracks: set = set()
 
         self.setMouseTracking(True)
-        self.setStyleSheet(f"background:{C['abyss']};")
+        themed(self, lambda: f"background:{C['abyss']};")
         self.setAcceptDrops(True)   # Enable file drag-drop from OS file manager.
         self._resize_widget()
 
@@ -3936,6 +3538,14 @@ class TrackArrangeView(QWidget):
         self.update()
 
     # ── Internal geometry ──────────────────────────────────────────────
+
+    def help_key_at(self, pos) -> str:
+        """Help region under *pos* (used by the "? HELP" mode)."""
+        if pos.y() < self.RULER_HEIGHT:
+            return "ruler"
+        if pos.x() < self.HEADER_WIDTH:
+            return "track_header"
+        return "arrangement"
 
     def _resize_widget(self) -> None:
         h = (self.RULER_HEIGHT
@@ -4010,7 +3620,7 @@ class TrackArrangeView(QWidget):
             p.setRenderHint(QPainter.Antialiasing)
             w = self.width()
             p.fillRect(0, 0, w, self.height(), QColor(C["abyss"]))
-            p.setPen(QPen(QColor(0, 229, 255, 30), 1))
+            p.setPen(QPen(qcolor(C["accent_hi"], 30), 1))
             p.drawLine(self.HEADER_WIDTH, 0, self.HEADER_WIDTH, self.height())
             self._draw_ruler(p, w)
             for idx, track in enumerate(self._tracks):
@@ -4034,7 +3644,7 @@ class TrackArrangeView(QWidget):
                 fill_x = max(self.HEADER_WIDTH, xs)
                 fill_w = min(w, xe) - fill_x
                 p.fillRect(fill_x, 0, fill_w, self.RULER_HEIGHT,
-                           QColor(153, 69, 255, 50))
+                           qcolor(C["accent"], 50))
                 p.setPen(QPen(QColor(C["purple"]), 2))
                 if self.HEADER_WIDTH <= xs <= w:
                     p.drawLine(xs, 0, xs, self.RULER_HEIGHT)
@@ -4052,15 +3662,23 @@ class TrackArrangeView(QWidget):
                     p.drawText(x + 3, self.RULER_HEIGHT - 4,
                                f"{int(beat // 4) + 1}")
                 else:
-                    p.setPen(QPen(QColor(0, 229, 255, 22), 1))
+                    p.setPen(QPen(qcolor(C["accent_hi"], 22), 1))
                     p.drawLine(x, 14, x, self.RULER_HEIGHT - 1)
             beat += 1
-        p.setPen(QPen(QColor(0, 229, 255, 40), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 40), 1))
         p.drawLine(self.HEADER_WIDTH, self.RULER_HEIGHT - 1,
                    w, self.RULER_HEIGHT - 1)
 
     def _draw_midi_lane(self, p: QPainter, track: MidiTrack,
                         y: int, w: int) -> None:
+        p.save()
+        try:
+            self._draw_midi_lane_body(p, track, y, w)
+        finally:
+            p.restore()
+
+    def _draw_midi_lane_body(self, p: QPainter, track: MidiTrack,
+                             y: int, w: int) -> None:
         is_active = (track.channel == self._active_channel)
         color = QColor(track.color)
         h = self.TRACK_HEIGHT
@@ -4087,12 +3705,12 @@ class TrackArrangeView(QWidget):
         auto_btn_w = 28
         auto_btn_h = 14
         auto_active = track.channel in self._auto_tracks
-        auto_bg = QColor(0, 229, 255, 80) if auto_active else QColor(0, 80, 100, 120)
+        auto_bg = qcolor(C["accent"], 90) if auto_active else qcolor(C["accent"], 28)
         p.fillRect(auto_btn_x, auto_btn_y, auto_btn_w, auto_btn_h, auto_bg)
-        p.setPen(QColor(0, 229, 255, 220 if auto_active else 140))
+        p.setPen(qcolor(C["accent_hi"], 230 if auto_active else 150))
         p.setFont(QFont("Arial", 7, QFont.Bold))
         p.drawText(auto_btn_x + 2, auto_btn_y + auto_btn_h - 3, "AUTO")
-        p.setPen(QPen(QColor(0, 200, 220, 120), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 120), 1))
         p.setBrush(Qt.NoBrush)
         p.drawRect(auto_btn_x, auto_btn_y, auto_btn_w, auto_btn_h)
 
@@ -4104,21 +3722,23 @@ class TrackArrangeView(QWidget):
         fx_btn_w = 28
         fx_btn_h = 14
         p.fillRect(fx_btn_x, fx_btn_y, fx_btn_w, fx_btn_h,
-                   QColor(0, 140, 160, 160))
-        p.setPen(QColor(0, 229, 255, 220))
+                   qcolor(C["accent"], 28))
+        p.setPen(qcolor(C["accent_hi"], 220))
         p.setFont(QFont("Arial", 7, QFont.Bold))
         p.drawText(fx_btn_x + 2, fx_btn_y + fx_btn_h - 3, "FX")
-        p.setPen(QPen(QColor(0, 200, 220, 120), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 120), 1))
         p.setBrush(Qt.NoBrush)
         p.drawRect(fx_btn_x, fx_btn_y, fx_btn_w, fx_btn_h)
 
-        # Timeline background
+        # Timeline background — everything below is clipped to the timeline
+        # area so clips scrolled to the left never paint over the header.
+        p.setClipRect(self.HEADER_WIDTH, y, w - self.HEADER_WIDTH, h)
         p.fillRect(self.HEADER_WIDTH, y, w - self.HEADER_WIDTH, h,
                    QColor(C["abyss"]))
 
         # Faint beat grid when empty
         if not track.clips:
-            p.setPen(QPen(QColor(0, 229, 255, 7), 1))
+            p.setPen(QPen(qcolor(C["accent_hi"], 7), 1))
             beat = 0
             while beat <= self._total_beats:
                 x = self._beat_to_x(beat)
@@ -4130,7 +3750,7 @@ class TrackArrangeView(QWidget):
         for clip in track.clips:
             self._draw_clip_block(p, clip, track, y, h)
 
-        p.setPen(QPen(QColor(0, 229, 255, 14), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 14), 1))
         p.drawLine(0, y + h - 1, w, y + h - 1)
 
     def _draw_clip_block(self, p: QPainter, clip: MidiClip,
@@ -4175,6 +3795,14 @@ class TrackArrangeView(QWidget):
 
     def _draw_audio_lane(self, p: QPainter, atrack: AudioTrack,
                          y: int, w: int) -> None:
+        p.save()
+        try:
+            self._draw_audio_lane_body(p, atrack, y, w)
+        finally:
+            p.restore()
+
+    def _draw_audio_lane_body(self, p: QPainter, atrack: AudioTrack,
+                              y: int, w: int) -> None:
         h = self.AUDIO_ROW_HEIGHT
         color = QColor(atrack.color)
 
@@ -4190,7 +3818,9 @@ class TrackArrangeView(QWidget):
         p.drawText(10, y + 32,
                    f"{n_clips} clip(s)  ·  right-click header to remove")
 
-        # Timeline background
+        # Timeline background — everything below is clipped to the timeline
+        # area so clips scrolled to the left never paint over the header.
+        p.setClipRect(self.HEADER_WIDTH, y, w - self.HEADER_WIDTH, h)
         p.fillRect(self.HEADER_WIDTH, y, w - self.HEADER_WIDTH, h,
                    QColor(C["abyss"]))
 
@@ -4277,7 +3907,7 @@ class TrackArrangeView(QWidget):
             p.setPen(QPen(QColor(color.red(), color.green(), color.blue(), 180), 2))
             p.drawLine(cx + cw - 2, cy + 3, cx + cw - 2, cy + ch2 - 3)
 
-        p.setPen(QPen(QColor(0, 229, 255, 18), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 18), 1))
         p.drawLine(0, y + h - 1, w, y + h - 1)
 
     def _draw_playhead(self, p: QPainter, w: int) -> None:
@@ -4299,16 +3929,16 @@ class TrackArrangeView(QWidget):
         h = self.height()
 
         # ── Glow: wide translucent band to make the line easy to see ──
-        p.setPen(QPen(QColor(0, 229, 255, 35), 5))
+        p.setPen(QPen(qcolor(C["accent_hi"], 35), 5))
         p.drawLine(x, self.RULER_HEIGHT, x, h)
 
         # ── Main 1-px cyan line ──
-        p.setPen(QPen(QColor(0, 229, 255, 220), 1))
+        p.setPen(QPen(qcolor(C["accent_hi"], 220), 1))
         p.drawLine(x, self.RULER_HEIGHT, x, h)
 
         # ── Triangle cap in the ruler ──
         # PySide6 drawPolygon requires a QPolygonF; splatting a plain list raises TypeError.
-        p.setBrush(QColor(0, 229, 255, 200))
+        p.setBrush(qcolor(C["accent_hi"], 200))
         p.setPen(Qt.NoPen)
         tri = QPolygonF([
             QPointF(x - 5, 0.0),
@@ -4567,8 +4197,14 @@ class TrackArrangeView(QWidget):
             elif dy < 0:
                 self.zoom_out()
             return
-        delta = dx if abs(dx) > abs(dy) else -dy
-        self._view_x = max(0.0, self._view_x + delta / 120)
+        if ev.modifiers() & Qt.ShiftModifier and dx == 0:
+            dx, dy = -dy, 0                      # Shift+wheel → horizontal (mouse)
+        if abs(dx) <= abs(dy):
+            # Vertical wheel: let the surrounding QScrollArea scroll the tracks
+            # so every track (also the last ones) can be reached.
+            ev.ignore()
+            return
+        self._view_x = max(0.0, self._view_x + dx / 120)
         self.scroll_x_changed.emit(self._view_x)
         self.update()
 
@@ -4626,6 +4262,32 @@ class TrackArrangeView(QWidget):
 # Main Window
 # ═══════════════════════════════════════════════════════════════════════════
 
+class _PanelTitleBar(QWidget):
+    """Title line of a right-hand panel: full name + "»" button to collapse."""
+
+    def __init__(self, title: str, on_collapse, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(10, 4, 4, 4)
+        lay.setSpacing(4)
+        self._label = QLabel(title)
+        themed(self._label, lambda: (
+            f"color:{C['text_2']}; font-size:11px; font-weight:600;"
+            " letter-spacing:1.5px; background:transparent;"))
+        lay.addWidget(self._label)
+        lay.addStretch()
+        btn = QPushButton("»")
+        btn.setProperty("variant", "quiet")
+        btn.setFixedSize(26, 22)
+        btn.setToolTip("Hide panels")
+        btn.clicked.connect(on_collapse)
+        lay.addWidget(btn)
+        themed(self, lambda: f"background:{C['panel']}; border-bottom:1px solid {C['line']};")
+
+    def set_title(self, title: str) -> None:
+        self._label.setText(title)
+
+
 class MainWindow(QMainWindow):
     """
     Crystal-themed top-level window.
@@ -4638,6 +4300,11 @@ class MainWindow(QMainWindow):
         • New Project — clears everything and resets.
         • Effect chains stored per-channel in _effect_chains dict.
     """
+
+    # Mixer layout: height of one row of channel strips, and the smallest
+    # mixer area before a vertical scrollbar appears.
+    MIXER_CONTENT_HEIGHT: int = 310
+    MIXER_MIN_VISIBLE_HEIGHT: int = 120
 
     def __init__(
         self,
@@ -4739,12 +4406,15 @@ class MainWindow(QMainWindow):
         self._lang  = _qs.value("language", "en")
         self._theme = _qs.value("theme",    "dark")
 
-        self.setWindowTitle("SBS-Synth Master  ✦  Crystal DAW")
+        self.setWindowTitle(WINDOW_TITLE)
         self.setMinimumSize(1200, 750)
         _palette = LIGHT_PALETTE if self._theme == "light" else DARK_PALETTE
         C.update(_palette)  # mutate early so widget paintEvents use correct colours
         QApplication.instance().setStyleSheet(build_stylesheet(_palette))
         self.setFocusPolicy(Qt.StrongFocus)
+
+        # "? HELP" mode (explanation bubbles, like the Catalogue Manager)
+        self._help = help_mode.install(QApplication.instance(), lambda: self._lang)
 
         self._setup_toolbar()
         self._setup_transport()
@@ -4752,6 +4422,7 @@ class MainWindow(QMainWindow):
         self._setup_mixer()
         self._setup_effects_dock()
         self._setup_status_bar()
+        self._register_help()
         self._wire_signals()
         self._telemetry.setup_docks()
 
@@ -4840,69 +4511,153 @@ class MainWindow(QMainWindow):
     # UI construction
     # ------------------------------------------------------------------
 
+    def _build_brand(self) -> QWidget:
+        """Logo + product name at the left of the toolbar (like the Catalogue Manager header)."""
+        box = QWidget()
+        box.setStyleSheet("background: transparent;")
+        lay = QHBoxLayout(box)
+        lay.setContentsMargins(4, 0, 12, 0)
+        lay.setSpacing(8)
+        logo = QLabel()
+        logo.setStyleSheet("background: transparent;")
+        if os.path.exists(LOGO_MARK):
+            dpr = self.devicePixelRatioF() or 1.0
+            pix = QIcon(LOGO_MARK).pixmap(int(22 * dpr), int(22 * dpr))
+            pix.setDevicePixelRatio(dpr)
+            logo.setPixmap(pix)
+        lay.addWidget(logo)
+        name = QLabel(BRAND_NAME.upper())
+        name.setObjectName("brandName")
+        name.setToolTip(f"{BRAND_NAME} {APP_NAME}")
+        lay.addWidget(name)
+        return box
+
+    # ── Toolbar layout (data, not code) ────────────────────────────────────
+    # Each entry: (action key, English label = translation key, tooltip, slot name)
+    # None = separator.  Labels are translated via core/translations.py.
+    FILE_MENU = (
+        ("new",      "New project",          "Clear all tracks and start fresh",                  "_on_new_project"),
+        ("save",     "Save project…",        "Save full project to .dawproj",                     "_on_save_project"),
+        ("open",     "Open project…",        "Load a .dawproj project file",                      "_on_load_project"),
+        None,
+        ("save_mid", "Save MIDI…",           "Export tracks to .mid",                             "_on_save_midi"),
+        ("load_mid", "Load MIDI…",           "Import MIDI file(s) — each track gets its own GM instrument", "_on_import_midi_files"),
+        ("audio",    "Import audio…",        "Add audio files — each gets its own track",         "_on_import_audio_files"),
+        None,
+        ("export",   "Export (WAV / MP3)…",  "Export to WAV or MP3",                              "_on_export"),
+        ("master",   "Mastering export…",    "Multi-format mastering export (MP3 / WAV / Stems)", "_on_master_export"),
+    )
+    TOOLS_MENU = (
+        ("gm",       "GM defaults…",            "Default SFZ / VST3 instruments for MIDI drag-and-drop", "_on_gm_defaults"),
+        ("assign",   "Auto-assign instruments", "Assign role-appropriate instruments to all MIDI tracks", "_on_randomize_instruments"),
+        ("ai_mix",   "AI mix…",                 "Genre FX template for all tracks (EQ · Comp · Reverb · Stereo)", "_on_ai_mix"),
+        ("wav",      "Master WAV…",             "Master an external .wav file (EQ · width · LUFS · limiter)", "_on_auto_master"),
+        ("tele",     "Telemetry",               "Show / hide the real-time audio telemetry panels",   "_on_toggle_telemetry"),
+        None,
+        ("gamepad",  "Connect gamepad",         "Connect PS5 DualSense",                              "_on_connect_gamepad"),
+        ("keymap",   "Key map",                 "Show keyboard mapping",                              "_on_show_map"),
+    )
+
+    def _build_menu(self, spec) -> QMenu:
+        """QMenu from a *spec* tuple; actions are stored in self._actions[key]."""
+        menu = QMenu(self)
+        menu.setToolTipsVisible(True)
+        for entry in spec:
+            if entry is None:
+                menu.addSeparator()
+                continue
+            key, label, tip, slot = entry
+            act = menu.addAction(_tr(label, self._lang))
+            act.setToolTip(_tr(tip, self._lang))
+            act.triggered.connect(lambda _=False, s=slot: getattr(self, s)())
+            self._actions[key] = (act, label, tip)
+        return menu
+
+    def _build_settings_menu(self) -> QMenu:
+        """⚙ menu: language and theme as checkable sub-menus (replaces the old popup)."""
+        menu = QMenu(self)
+        self._lang_menu = menu.addMenu(_tr("Language", self._lang))
+        self._lang_group = QActionGroup(self)
+        for code in LANGUAGES:
+            act = self._lang_menu.addAction(LANGUAGE_LABELS[code])
+            act.setCheckable(True)
+            act.setChecked(code == self._lang)
+            act.triggered.connect(lambda _=False, c=code: self._on_language_changed(c))
+            self._lang_group.addAction(act)
+        self._theme_menu = menu.addMenu(_tr("Theme", self._lang))
+        self._theme_group = QActionGroup(self)
+        self._theme_actions = {}
+        for theme, label in (("dark", "Dark"), ("light", "Light")):
+            act = self._theme_menu.addAction(_tr(label, self._lang))
+            act.setCheckable(True)
+            act.setChecked(theme == self._theme)
+            act.triggered.connect(lambda _=False, t=theme: self._on_theme_changed(t))
+            self._theme_group.addAction(act)
+            self._theme_actions[theme] = (act, label)
+        return menu
+
     def _setup_toolbar(self) -> None:
         tb = QToolBar("Actions")
         tb.setMovable(False)
         self.addToolBar(Qt.TopToolBarArea, tb)
+        tb.addWidget(self._build_brand())
+        self._actions: Dict[str, tuple] = {}
 
-        def _btn(label: str, tip: str, slot,
-                 color: str = C["cyan"]) -> QPushButton:
-            b = QPushButton(label)
+        def _btn(label: str, tip: str = "", slot=None, variant: str = "",
+                 menu: Optional[QMenu] = None) -> QPushButton:
+            """Toolbar button — neutral by default (Catalogue-Manager style)."""
+            b = QPushButton(_tr(label, self._lang))
             b.setToolTip(tip)
             b.setFixedHeight(32)
-            b.setStyleSheet(
-                f"QPushButton {{ color:{color}; padding:0 12px; }}"
-                f"QPushButton:hover {{ border-color:{color}; color:{color}; }}"
-            )
-            b.clicked.connect(slot)
+            if variant:
+                b.setProperty("variant", variant)
+            if menu is not None:
+                b.setMenu(menu)          # click opens the dropdown
+                b.setProperty("hasMenu", True)   # extra room for the ▾ arrow
+            if slot is not None:
+                b.clicked.connect(slot)
             return b
 
-        self._tb_new     = _btn("✦ NEW PROJECT",  "Clear all tracks and start fresh",
-                                self._on_new_project, C["purple"])
-        self._tb_save    = _btn("💾 SAVE PROJECT", "Save full project to .dawproj",
-                                self._on_save_project, C["cyan"])
-        self._tb_load    = _btn("📂 LOAD PROJECT", "Load a .dawproj project file",
-                                self._on_load_project, C["cyan"])
-        self._tb_rack    = _btn("🎹 CHANNEL RACK",
-                                "Open / close the step sequencer (Channel Rack)",
-                                self._on_toggle_channel_rack, C["pink"])
-        self._tb_addtrk  = _btn("+ ADD TRACK",    "Add a new instrument track",
-                                self._on_add_track)
-        self._tb_savemid = _btn("💾 SAVE MIDI",   "Export tracks to .mid",
-                                self._on_save_midi)
-        self._tb_loadmid = _btn("📂 LOAD MIDI",
-                                "Import MIDI file(s) — each track gets its own "
-                                "GM instrument automatically. Use NEW PROJECT first "
-                                "to replace the current project.",
-                                self._on_import_midi_files, C["cyan"])
-        self._tb_audio   = _btn("🎵+ IMPORT AUDIO",
-                                "Add multiple audio files — each gets its own track",
-                                self._on_import_audio_files, C["gold"])
-        self._tb_gmdef   = _btn("🎹 GM DEFAULTS",
-                                "Set default SFZ / VST3 instruments for MIDI drag-and-drop",
-                                self._on_gm_defaults, C["purple"])
-        self._tb_export  = _btn("🎵 EXPORT",      "Export to WAV or MP3",
-                                self._on_export, C["gold"])
-        self._tb_master  = _btn("🎚 MASTER",      "Multi-format mastering export (MP3 / WAV / Stems)",
-                                self._on_master_export, C["cyan"])
-        self._tb_gamepad = _btn("🎮 GAMEPAD",     "Connect PS5 DualSense",
-                                self._on_connect_gamepad)
-        self._tb_keymap  = _btn("⌨ KEY MAP",      "Show keyboard mapping",
-                                self._on_show_map)
+        # Left: file menu + the two most used actions + tools menu
+        self._tb_file  = _btn("📁 FILE", menu=self._build_menu(self.FILE_MENU))
+        self._tb_rack  = _btn("🎹 CHANNEL RACK",
+                              "Open / close the step sequencer (Channel Rack)",
+                              self._on_toggle_channel_rack)
+        self._tb_addtrk = _btn("+ ADD TRACK", "Add a new instrument track",
+                               self._on_add_track, "primary")
+        self._tb_tools = _btn("🧰 TOOLS", menu=self._build_menu(self.TOOLS_MENU))
 
-        for w in (self._tb_new, self._tb_save, self._tb_load):
-            tb.addWidget(w)
+        tb.addWidget(self._tb_file)
         tb.addSeparator()
         tb.addWidget(self._tb_rack)
-        tb.addSeparator()
         tb.addWidget(self._tb_addtrk)
         tb.addSeparator()
-        for w in (self._tb_savemid, self._tb_loadmid, self._tb_audio,
-                  self._tb_gmdef, self._tb_export, self._tb_master):
-            tb.addWidget(w)
-        tb.addSeparator()
-        tb.addWidget(self._tb_gamepad)
-        tb.addWidget(self._tb_keymap)
+        tb.addWidget(self._tb_tools)
+
+        # Right: settings (language / theme) — like the language + user menu
+        # in the Catalogue Manager header.
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spacer.setStyleSheet("background: transparent;")
+        tb.addWidget(spacer)
+        self._tb_help = _btn("? HELP ON")
+        self._tb_help.setCheckable(True)
+        self._tb_help.setChecked(self._help.enabled)
+        self._tb_help.toggled.connect(self._on_help_toggled)
+        self._update_help_button()
+        tb.addWidget(self._tb_help)
+        self._tb_panels = _btn("◨ PANELS", _tr("Show / hide the side panels", self._lang))
+        self._tb_panels.setCheckable(True)
+        self._tb_panels.setChecked(True)
+        self._tb_panels.toggled.connect(self._set_side_panels_visible)
+        tb.addWidget(self._tb_panels)
+        self._tb_settings = _btn("⚙", _tr("Settings", self._lang),
+                                 menu=self._build_settings_menu(),
+                                 variant="quiet")
+        tb.addWidget(self._tb_settings)
+
+    def _on_toggle_telemetry(self) -> None:
+        self._telemetry.toggle()
 
     def _setup_transport(self) -> None:
         self._transport = TransportBar()
@@ -4925,12 +4680,13 @@ class MainWindow(QMainWindow):
         arrange_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         arrange_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         arrange_scroll.setStyleSheet("border:none;")
+        set_help(arrange_scroll, "arrangement")
 
         self._arrange_hscroll = QScrollBar(Qt.Horizontal)
         self._arrange_hscroll.setRange(0, int(self._arrange_view._total_beats * 4))
         self._arrange_hscroll.setSingleStep(4)
         self._arrange_hscroll.setPageStep(32)
-        self._arrange_hscroll.setStyleSheet(f"""
+        themed(self._arrange_hscroll, lambda: f"""
             QScrollBar:horizontal {{
                 background:{C['abyss']}; height:12px; border:none;
             }}
@@ -4947,32 +4703,31 @@ class MainWindow(QMainWindow):
 
         # Zoom toolbar for arrange view
         _zoom_btn_ss = (
-            f"QPushButton {{ background:{C['deep']}; color:{C['cyan']};"
-            f" border:1px solid rgba(0,229,255,0.25); border-radius:4px;"
+            lambda: f"QPushButton {{ background:{C['deep']}; color:{C['cyan']};"
+            f" border:1px solid {rgba(C['accent_hi'], 0.25)}; border-radius:4px;"
             f" padding:0 10px; font-size:13px; font-weight:bold; }}"
-            f"QPushButton:hover {{ border-color:{C['cyan']}; background:rgba(0,229,255,0.12); }}"
+            f"QPushButton:hover {{ border-color:{C['cyan']}; background:{rgba(C['accent_hi'], 0.12)}; }}"
         )
         zoom_in_btn  = QPushButton("+")
         zoom_out_btn = QPushButton("−")
+        self._zoom_btns = (zoom_in_btn, zoom_out_btn)
         zoom_in_btn .setFixedHeight(22)
         zoom_out_btn.setFixedHeight(22)
         zoom_in_btn .setFixedWidth(32)
         zoom_out_btn.setFixedWidth(32)
-        zoom_in_btn .setStyleSheet(_zoom_btn_ss)
-        zoom_out_btn.setStyleSheet(_zoom_btn_ss)
+        themed(zoom_in_btn, _zoom_btn_ss)
+        themed(zoom_out_btn, _zoom_btn_ss)
         zoom_in_btn .setToolTip("Zoom in  (Ctrl+scroll)")
         zoom_out_btn.setToolTip("Zoom out  (Ctrl+scroll)")
         zoom_in_btn .clicked.connect(self._arrange_view.zoom_in)
         zoom_out_btn.clicked.connect(self._arrange_view.zoom_out)
 
         zoom_lbl = QLabel("ZOOM")
-        zoom_lbl.setStyleSheet(
-            f"color:{C['text_dim']}; font-size:10px; background:transparent;")
+        themed(zoom_lbl, lambda: f"color:{C['text_dim']}; font-size:10px; background:transparent;")
 
         zoom_row = QWidget()
         zoom_row.setFixedHeight(26)
-        zoom_row.setStyleSheet(
-            f"background:{C['abyss']}; border-bottom:1px solid rgba(0,229,255,0.12);")
+        themed(zoom_row, lambda: f"background:{C['abyss']}; border-bottom:1px solid {rgba(C['accent_hi'], 0.12)};")
         zr_lay = QHBoxLayout(zoom_row)
         zr_lay.setContentsMargins(8, 2, 8, 2)
         zr_lay.setSpacing(4)
@@ -4989,8 +4744,7 @@ class MainWindow(QMainWindow):
         # Vertical splitter: arrangement on top, automation panel below
         self._arrange_splitter = QSplitter(Qt.Vertical)
         self._arrange_splitter.setHandleWidth(4)
-        self._arrange_splitter.setStyleSheet(
-            f"QSplitter::handle {{ background:{C['surface']}; }}")
+        themed(self._arrange_splitter, lambda: f"QSplitter::handle {{ background:{C['surface']}; }}")
         self._arrange_splitter.addWidget(arrange_scroll)
         self._arrange_splitter.addWidget(self._auto_panel)
         # Give all available space to the arrangement view initially
@@ -5026,7 +4780,7 @@ class MainWindow(QMainWindow):
             0, PianoRollWidget.PITCH_MAX - PianoRollWidget.PITCH_MIN - 1)
         self._piano_vscroll.setSingleStep(1)
         self._piano_vscroll.setPageStep(20)
-        self._piano_vscroll.setStyleSheet(f"""
+        themed(self._piano_vscroll, lambda: f"""
             QScrollBar:vertical {{
                 background:{C['abyss']}; width:12px; border:none;
             }}
@@ -5052,36 +4806,28 @@ class MainWindow(QMainWindow):
         # Back button + track title bar
         self._back_btn = QPushButton("← ARRANGEMENT")
         self._back_btn.setFixedHeight(28)
-        self._back_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(0,229,255,0.08);"
-            f" color:{C['cyan']}; border:1px solid rgba(0,229,255,0.35);"
+        themed(self._back_btn, lambda: f"QPushButton {{ background:{rgba(C['accent_hi'], 0.08)};"
+            f" color:{C['cyan']}; border:1px solid {rgba(C['accent_hi'], 0.35)};"
             f" border-radius:4px; padding:0 10px; font-size:11px; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.22); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent_hi'], 0.22)}; }}")
 
         # VST editor button (visible only when a VST track is open)
         self._vst_edit_btn = QPushButton("⚙  VST EDITOR")
         self._vst_edit_btn.setFixedHeight(28)
         self._vst_edit_btn.setVisible(False)
-        self._vst_edit_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(153,69,255,0.12);"
-            f" color:{C['purple']}; border:1px solid rgba(153,69,255,0.45);"
+        themed(self._vst_edit_btn, lambda: f"QPushButton {{ background:{rgba(C['accent'], 0.12)};"
+            f" color:{C['purple']}; border:1px solid {rgba(C['accent'], 0.45)};"
             f" border-radius:4px; padding:0 10px; font-size:11px; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.32); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.32)}; }}")
 
         self._piano_roll_title = QLabel("PIANO ROLL")
-        self._piano_roll_title.setStyleSheet(
-            f"color:{C['cyan']}; font-size:11px; font-weight:bold;"
-            f" padding:0 12px; background:transparent;"
-        )
+        themed(self._piano_roll_title, lambda: f"color:{C['cyan']}; font-size:11px; font-weight:bold;"
+            f" padding:0 12px; background:transparent;")
 
         title_bar = QWidget()
         title_bar.setFixedHeight(34)
-        title_bar.setStyleSheet(
-            f"background:{C['abyss']};"
-            f" border-bottom:1px solid rgba(0,229,255,0.2);"
-        )
+        themed(title_bar, lambda: f"background:{C['abyss']};"
+            f" border-bottom:1px solid {rgba(C['accent_hi'], 0.2)};")
         # Draw / Select mode toggle
         self._draw_mode_btn = QPushButton("✏ DRAW")
         self._draw_mode_btn.setCheckable(True)
@@ -5089,16 +4835,14 @@ class MainWindow(QMainWindow):
         self._draw_mode_btn.setFixedHeight(28)
         self._draw_mode_btn.setToolTip(
             "DRAW: click to add notes  |  SELECT: drag to select a group of notes")
-        self._draw_mode_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(0,229,255,0.08); color:{C['cyan']};"
-            f" border:1px solid rgba(0,229,255,0.35); border-radius:4px;"
+        themed(self._draw_mode_btn, lambda: f"QPushButton {{ background:{rgba(C['accent_hi'], 0.08)}; color:{C['cyan']};"
+            f" border:1px solid {rgba(C['accent_hi'], 0.35)}; border-radius:4px;"
             f" padding:0 10px; font-size:11px; }}"
-            f"QPushButton:checked {{ background:rgba(0,229,255,0.22);"
+            f"QPushButton:checked {{ background:{rgba(C['accent_hi'], 0.22)};"
             f" color:{C['cyan']}; border-color:{C['cyan']}; }}"
-            f"QPushButton:!checked {{ background:rgba(153,69,255,0.1);"
-            f" color:{C['purple']}; border-color:rgba(153,69,255,0.4); }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.18); }}"
-        )
+            f"QPushButton:!checked {{ background:{rgba(C['accent'], 0.1)};"
+            f" color:{C['purple']}; border-color:{rgba(C['accent'], 0.4)}; }}"
+            f"QPushButton:hover {{ background:{rgba(C['accent_hi'], 0.18)}; }}")
         self._draw_mode_btn.toggled.connect(self._on_draw_mode_toggled)
 
         # Grid settings panel — note values, triplets/dotted/Free, ruler mode.
@@ -5123,14 +4867,12 @@ class MainWindow(QMainWindow):
         self._vel_toggle_btn.setFixedHeight(28)
         self._vel_toggle_btn.setToolTip(
             "Show / hide the velocity lane below the piano roll")
-        self._vel_toggle_btn.setStyleSheet(
-            f"QPushButton {{ background:rgba(153,69,255,0.10); color:{C['purple']};"
-            f" border:1px solid rgba(153,69,255,0.40); border-radius:4px;"
+        themed(self._vel_toggle_btn, lambda: f"QPushButton {{ background:{rgba(C['accent'], 0.10)}; color:{C['purple']};"
+            f" border:1px solid {rgba(C['accent'], 0.40)}; border-radius:4px;"
             f" padding:0 10px; font-size:11px; }}"
-            f"QPushButton:checked {{ background:rgba(153,69,255,0.25);"
+            f"QPushButton:checked {{ background:{rgba(C['accent'], 0.25)};"
             f" color:{C['purple']}; border-color:{C['purple']}; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.22); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(C['accent'], 0.22)}; }}")
         tlay.addWidget(self._vel_toggle_btn)
 
         # ── Velocity lane ────────────────────────────────────────────
@@ -5140,10 +4882,8 @@ class MainWindow(QMainWindow):
         # Vertical splitter: piano roll on top, velocity lane on bottom
         self._piano_vel_splitter = QSplitter(Qt.Vertical)
         self._piano_vel_splitter.setHandleWidth(4)
-        self._piano_vel_splitter.setStyleSheet(
-            f"QSplitter::handle {{ background:rgba(153,69,255,0.30); }}"
-            f"QSplitter::handle:hover {{ background:{C['purple']}; }}"
-        )
+        themed(self._piano_vel_splitter, lambda: f"QSplitter::handle {{ background:{rgba(C['accent'], 0.30)}; }}"
+            f"QSplitter::handle:hover {{ background:{C['purple']}; }}")
         self._piano_vel_splitter.addWidget(piano_with_scroll)
         self._piano_vel_splitter.addWidget(self._velocity_lane)
         self._piano_vel_splitter.setStretchFactor(0, 1)
@@ -5177,15 +4917,16 @@ class MainWindow(QMainWindow):
         self._audio_mixer_strips: Dict[int, AudioMixerStrip] = {}
         self._mixer_inner  = QWidget()
         self._mixer_layout = QHBoxLayout(self._mixer_inner)
-        self._mixer_layout.setAlignment(Qt.AlignLeft)
+        self._mixer_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self._mixer_layout.setContentsMargins(6, 6, 6, 6)
         self._mixer_layout.setSpacing(3)
 
         mixer_scroll = QScrollArea()
         mixer_scroll.setWidget(self._mixer_inner)
         mixer_scroll.setWidgetResizable(True)
-        mixer_scroll.setFixedHeight(310)
-        mixer_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        mixer_scroll.setFixedHeight(self.MIXER_CONTENT_HEIGHT)
+        mixer_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        mixer_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         mixer_scroll.setStyleSheet("border:none;")
 
         # Create the C++ MasterBus (or Python fallback) and connect to the player.
@@ -5198,7 +4939,7 @@ class MainWindow(QMainWindow):
         # Thin vertical separator between track strips and master strip.
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color: rgba(0,229,255,0.25); background: rgba(0,229,255,0.12);")
+        themed(sep, lambda: f"color: {rgba(C['accent_hi'], 0.25)}; background: {rgba(C['accent_hi'], 0.12)};")
         sep.setFixedWidth(2)
 
         # Outer container: scrollable track area + separator + master strip.
@@ -5210,9 +4951,27 @@ class MainWindow(QMainWindow):
         outer_layout.addWidget(sep)
         outer_layout.addWidget(self._master_bus_channel)
 
+        # Vertical scroll around the whole mixer: if the window (or the dock)
+        # is smaller than the strips, scroll instead of cutting them off.
+        # Tall enough for the master strip's own minimum, so its fader,
+        # labels and limiter never overlap.
+        self._mixer_content_h = max(self.MIXER_CONTENT_HEIGHT,
+                                    self._master_bus_channel.minimumSizeHint().height(),
+                                    self._master_bus_channel.sizeHint().height())
+        mixer_outer.setMinimumHeight(self._mixer_content_h)
+        mixer_vscroll = QScrollArea()
+        mixer_vscroll.setWidget(mixer_outer)
+        mixer_vscroll.setWidgetResizable(True)
+        mixer_vscroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        mixer_vscroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        mixer_vscroll.setFrameShape(QFrame.NoFrame)
+        mixer_vscroll.setMinimumHeight(self.MIXER_MIN_VISIBLE_HEIGHT)
+
         self._mixer_dock = QDockWidget("MIXER", self)
-        self._mixer_dock.setWidget(mixer_outer)
+        self._mixer_dock.setWidget(mixer_vscroll)
         self.addDockWidget(Qt.BottomDockWidgetArea, self._mixer_dock)
+        # Start with the full mixer visible; the user can drag the divider.
+        self.resizeDocks([self._mixer_dock], [self._mixer_content_h + 30], Qt.Vertical)
 
     def _setup_effects_dock(self) -> None:
         # -- MIDI instrument FX panel -----------------------------------------
@@ -5258,107 +5017,118 @@ class MainWindow(QMainWindow):
         # Default to showing the MIDI effects panel.
         self._midi_fx_dock.raise_()
 
+        # Tabs of the right-hand panels at the top, with full names.
+        self.setTabPosition(Qt.RightDockWidgetArea, QTabWidget.North)
+        # Panels stay docked: they could be torn off by accident and, once the
+        # floating window was closed, there was no way to get them back.
+        for dock in (self._midi_fx_dock, self._audio_fx_dock,
+                     self._humanizer_dock, self._ds_panel, self._mixer_dock):
+            dock.setFeatures(QDockWidget.DockWidgetMovable)
+        self._dock_title_bars = {}
+        for dock, short, full in self._right_dock_titles():
+            dock.setWindowTitle(_tr(short, self._lang))
+            # Tab = short name; title line inside = full name + collapse button.
+            bar = _PanelTitleBar(_tr(full, self._lang),
+                                 lambda: self._set_side_panels_visible(False))
+            dock.setTitleBarWidget(bar)
+            self._dock_title_bars[dock] = (bar, full)
+        QTimer.singleShot(0, self._tune_dock_tabs)
+
+    # ── Help mode ─────────────────────────────────────────────────────────
+    def _on_help_toggled(self, on: bool) -> None:
+        self._help.set_enabled(on)
+        self._update_help_button()
+        if on:   # tell the user how it works
+            self.statusBar().showMessage(_tr(
+                "Help on: hover over a button, control or area for about a second "
+                "to see an explanation (cursor shows ?).", self._lang), 10000)
+
+    def _update_help_button(self) -> None:
+        on = self._help.enabled
+        self._tb_help.setText(_tr("? HELP ON" if on else "? HELP OFF", self._lang))
+        self._tb_help.setToolTip(_tr("Turn explanations off" if on else "Turn explanations on",
+                                     self._lang))
+
+    def _register_help(self) -> None:
+        """Attach explanations (core/help_texts.py) to the main UI elements."""
+        t = self._transport
+        pairs = (
+            (self._tb_file, "file"), (self._tb_rack, "channel_rack"),
+            (self._tb_addtrk, "add_track"), (self._tb_tools, "tools"),
+            (self._tb_panels, "panels"), (self._tb_settings, "settings"),
+            (self._tb_help, "help"),
+            (t.play_btn, "play"), (t.stop_btn, "stop"), (t.record_btn, "record"),
+            (t.bpm_spin, "bpm"), (t.bpm_label, "bpm"), (t.scale_label, "scale"),
+            (t.root_label, "root"), (t.octave_label, "octave"), (t.comp_mode_btn, "comp_view"), (t.loop_btn, "loop"),
+            (t.scale_combo, "scale"), (t.root_combo, "root"), (t.octave_spin, "octave"),
+            (t.panic_btn, "panic"),
+            (self._arrange_view, "arrangement"), (self._piano_roll, "piano_roll"),
+            (self._back_btn, "back_arrangement"), (self._draw_mode_btn, "draw_mode"),
+            (self._grid_panel, "grid"), (self._velocity_lane, "velocity"),
+            (self._vel_toggle_btn, "velocity"),
+            (self._master_bus_channel, "master"),
+            (self._midi_fx_dock, "panel_fx"), (self._audio_fx_dock, "panel_audio"),
+            (self._humanizer_dock, "panel_human"), (self._ds_panel, "panel_sampler"),
+        )
+        for widget, key in pairs:
+            set_help(widget, key)
+        for btn in self._zoom_btns:
+            set_help(btn, "zoom")
+
+    def _set_side_panels_visible(self, visible: bool) -> None:
+        """Collapse / expand the right-hand panels (FX, AUDIO, HUMAN, SAMPLER)."""
+        for dock, _short, _full in self._right_dock_titles():
+            dock.setVisible(visible)
+        if visible:
+            self._midi_fx_dock.raise_()
+            QTimer.singleShot(0, self._tune_dock_tabs)
+        if self._tb_panels.isChecked() != visible:
+            self._tb_panels.blockSignals(True)
+            self._tb_panels.setChecked(visible)
+            self._tb_panels.blockSignals(False)
+
+    def _right_dock_titles(self):
+        """(dock, short tab title, full name) of the tabbed right-hand panels."""
+        return (
+            (self._midi_fx_dock,   "FX",      "EFFECTS"),
+            (self._audio_fx_dock,  "AUDIO",   "AUDIO FX"),
+            (self._humanizer_dock, "HUMAN",   "HUMANIZE"),
+            (self._ds_panel,       "SAMPLER", "DS INSTRUMENT"),
+        )
+
+    def _tune_dock_tabs(self) -> None:
+        """All tabs fully visible (short titles), full name as tooltip."""
+        full_by_short = {_tr(short, self._lang): _tr(full, self._lang)
+                         for _d, short, full in self._right_dock_titles()}
+        key_by_short = {_tr(short, self._lang): dock.property("helpKey")
+                        for dock, short, _f in self._right_dock_titles()}
+        for bar in self.findChildren(QTabBar):
+            bar.setElideMode(Qt.ElideNone)
+            bar.setExpanding(True)              # share the width evenly
+            bar.setUsesScrollButtons(False)     # no arrows — everything fits
+            for i in range(bar.count()):
+                full = full_by_short.get(bar.tabText(i))
+                if full:
+                    bar.setTabToolTip(i, full)
+                    bar.setTabData(i, key_by_short.get(bar.tabText(i)))
+
     def _setup_status_bar(self) -> None:
+        """Status bar shows status only — all actions live in the toolbar menus."""
         sb = QStatusBar()
         self.setStatusBar(sb)
 
-        # ── Settings button — lower LEFT corner ───────────────────────────
-        self._settings_btn = QPushButton(_tr("⚙  SETTINGS", self._lang))
-        self._settings_btn.setFixedHeight(22)
-        self._settings_btn.setStyleSheet(
-            f"QPushButton {{ color:{C['cyan']};"
-            f" border:1px solid rgba(0,229,255,0.35); border-radius:4px;"
-            f" padding:0 10px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:{C['cyan']}; color:{C['cyan']}; }}"
-        )
-        self._settings_btn.clicked.connect(self._on_settings)
-        sb.addWidget(self._settings_btn)   # addWidget = left side
-
-        # ── Permanent status labels (right side) ──────────────────────────
         self._st_engine = QLabel("Engine: —")
         self._st_scale  = QLabel("Scale: —")
         self._st_beat   = QLabel("♩ 0.00")
         for w in (self._st_engine, self._st_scale, self._st_beat):
-            w.setStyleSheet(f"color:{C['text_dim']}; font-size:11px; padding:0 8px;")
+            themed(w, lambda: f"color:{C['text_dim']}; font-size:11px; padding:0 8px;")
         sb.addPermanentWidget(self._st_engine)
         sb.addPermanentWidget(self._st_scale)
         sb.addPermanentWidget(self._st_beat)
 
-        self._sb_rand_btn = QPushButton(_tr("🎲 Auto-Assign Instruments", self._lang))
-        self._sb_rand_btn.setToolTip(
-            "Randomly assign role-appropriate Soundfonts/presets\n"
-            "to all loaded MIDI tracks for maximum variety."
-        )
-        self._sb_rand_btn.setFixedHeight(22)
-        self._sb_rand_btn.setStyleSheet(
-            f"QPushButton {{ color:#FFD700;"
-            f" border:1px solid rgba(255,215,0,0.35); border-radius:4px;"
-            f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#FFD700; color:#FFD700; }}"
-        )
-        self._sb_rand_btn.clicked.connect(self._on_randomize_instruments)
-        sb.addPermanentWidget(self._sb_rand_btn)
-
-        self._sb_ai_btn = QPushButton(_tr("🤖 AI MIX", self._lang))
-        self._sb_ai_btn.setToolTip(
-            "Apply a genre-specific FX template to all tracks\n"
-            "(EQ · Compression · Reverb · Stereo · Spectral Panning)"
-        )
-        self._sb_ai_btn.setFixedHeight(22)
-        self._sb_ai_btn.setStyleSheet(
-            f"QPushButton {{ color:#9945FF;"
-            f" border:1px solid rgba(153,69,255,0.40); border-radius:4px;"
-            f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#9945FF; color:#9945FF; }}"
-        )
-        self._sb_ai_btn.clicked.connect(self._on_ai_mix)
-        sb.addPermanentWidget(self._sb_ai_btn)
-
-        self._sb_wav_btn = QPushButton(_tr("✨ Master WAV", self._lang))
-        self._sb_wav_btn.setToolTip(
-            "Master an external .wav file\n"
-            "Genre EQ · M/S width · LUFS · Brickwall limiter"
-        )
-        self._sb_wav_btn.setFixedHeight(22)
-        self._sb_wav_btn.setStyleSheet(
-            f"QPushButton {{ color:#00FF88;"
-            f" border:1px solid rgba(0,255,136,0.35); border-radius:4px;"
-            f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:#00FF88; color:#00FF88; }}"
-        )
-        self._sb_wav_btn.clicked.connect(self._on_auto_master)
-        sb.addPermanentWidget(self._sb_wav_btn)
-
-        self._sb_tel_btn = QPushButton(_tr("📊 TELEMETRY", self._lang))
-        self._sb_tel_btn.setToolTip(
-            "Show / hide real-time audio telemetry panels\n"
-            "(Waveform · Freq Bands · Chroma · Waterfall · H/P)"
-        )
-        self._sb_tel_btn.setFixedHeight(22)
-        self._sb_tel_btn.setStyleSheet(
-            f"QPushButton {{ color:{C['lime']};"
-            f" border:1px solid rgba(0,229,255,0.2); border-radius:4px;"
-            f" padding:0 8px; font-size:11px; }}"
-            f"QPushButton:hover {{ border-color:{C['lime']}; color:{C['lime']}; }}"
-        )
-        self._sb_tel_btn.clicked.connect(self._telemetry.toggle)
-        sb.addPermanentWidget(self._sb_tel_btn)
-
     # ------------------------------------------------------------------
-    # Settings: language, theme
+    # Settings: language, theme  (⚙ menu in the toolbar)
     # ------------------------------------------------------------------
-
-    def _on_settings(self) -> None:
-        """Open the SettingsDialog anchored to the lower-left settings button."""
-        dlg = SettingsDialog(self._lang, self._theme, self)
-        dlg.language_changed.connect(self._on_language_changed)
-        dlg.theme_changed   .connect(self._on_theme_changed)
-        # Position dialog just above the settings button
-        btn_pos = self._settings_btn.mapToGlobal(
-            self._settings_btn.rect().topLeft()
-        )
-        dlg.move(btn_pos.x(), btn_pos.y() - dlg.sizeHint().height() - 4)
-        dlg.exec()
 
     def _on_language_changed(self, lang: str) -> None:
         self._lang = lang
@@ -5368,38 +5138,37 @@ class MainWindow(QMainWindow):
     def _on_theme_changed(self, theme: str) -> None:
         self._theme = theme
         QSettings("SBS", "SynthMaster").setValue("theme", theme)
-        self._apply_theme()
+        # Restyle after the click handler has returned (not while the clicked
+        # button itself is being restyled) — keeps the event loop responsive.
+        QTimer.singleShot(0, self._apply_theme)
 
     def retranslate_ui(self) -> None:
         """Update all stored translatable widget texts to the current language."""
         L = self._lang
-        # Toolbar buttons
-        self._tb_new    .setText(_tr("✦ NEW PROJECT",    L))
-        self._tb_save   .setText(_tr("💾 SAVE PROJECT",  L))
-        self._tb_load   .setText(_tr("📂 LOAD PROJECT",  L))
-        self._tb_rack   .setText(_tr("🎹 CHANNEL RACK",  L))
-        self._tb_addtrk .setText(_tr("+ ADD TRACK",      L))
-        self._tb_savemid.setText(_tr("💾 SAVE MIDI",     L))
-        self._tb_loadmid.setText(_tr("📂 LOAD MIDI",     L))
-        self._tb_audio  .setText(_tr("🎵+ IMPORT AUDIO", L))
-        self._tb_gmdef  .setText(_tr("🎹 GM DEFAULTS",   L))
-        self._tb_export .setText(_tr("🎵 EXPORT",        L))
-        self._tb_master .setText(_tr("🎚 MASTER",        L))
-        self._tb_gamepad.setText(_tr("🎮 GAMEPAD",       L))
-        self._tb_keymap .setText(_tr("⌨ KEY MAP",        L))
-        # Status bar
-        self._settings_btn.setText(_tr("⚙  SETTINGS",              L))
-        self._sb_rand_btn .setText(_tr("🎲 Auto-Assign Instruments", L))
-        self._sb_ai_btn   .setText(_tr("🤖 AI MIX",                 L))
-        self._sb_wav_btn  .setText(_tr("✨ Master WAV",              L))
-        self._sb_tel_btn  .setText(_tr("📊 TELEMETRY",              L))
+        # Toolbar buttons and menu entries
+        self._tb_file  .setText(_tr("📁 FILE",         L))
+        self._tb_rack  .setText(_tr("🎹 CHANNEL RACK", L))
+        self._tb_addtrk.setText(_tr("+ ADD TRACK",     L))
+        self._tb_tools .setText(_tr("🧰 TOOLS",        L))
+        self._tb_settings.setToolTip(_tr("Settings",   L))
+        for act, label, tip in self._actions.values():
+            act.setText(_tr(label, L))
+            act.setToolTip(_tr(tip, L))
+        self._lang_menu .setTitle(_tr("Language", L))
+        self._theme_menu.setTitle(_tr("Theme",    L))
+        for act, label in self._theme_actions.values():
+            act.setText(_tr(label, L))
         # Dock titles
         self._transport_dock.setWindowTitle(_tr("TRANSPORT",    L))
         self._mixer_dock    .setWindowTitle(_tr("MIXER",        L))
-        self._midi_fx_dock  .setWindowTitle(_tr("EFFECTS",      L))
-        self._audio_fx_dock .setWindowTitle(_tr("AUDIO FX",     L))
-        self._humanizer_dock.setWindowTitle(_tr("HUMANIZE",     L))
-        self._ds_panel      .setWindowTitle(_tr("DS INSTRUMENT", L))
+        # Right-hand panels: short tab title, full name as tooltip
+        for dock, short, full in self._right_dock_titles():
+            dock.setWindowTitle(_tr(short, L))
+            self._dock_title_bars[dock][0].set_title(_tr(full, L))
+        self._update_help_button()
+        self._tb_panels.setText(_tr("◨ PANELS", L))
+        self._tb_panels.setToolTip(_tr("Show / hide the side panels", L))
+        self._tune_dock_tabs()
 
     def _apply_theme(self) -> None:
         """Switch between dark (Bioluminescent Crystal) and light palette."""
@@ -5409,6 +5178,8 @@ class MainWindow(QMainWindow):
         # pick up the new colours on their next repaint.
         C.update(palette)
         QApplication.instance().setStyleSheet(build_stylesheet(palette))
+        # Widget stylesheets registered with themed() follow the new palette.
+        refresh_themed_styles()
         # Force repaint on the custom-drawn canvases (not covered by QSS).
         self._piano_roll.update()
         self._arrange_view.update()
@@ -6900,7 +6671,7 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getSaveFileName(
             self, "Save Project",
             os.path.expanduser("~/Untitled.dawproj"),
-            "Crystal DAW Project (*.dawproj);;All Files (*)",
+            f"{BRAND_NAME} Project (*.dawproj);;All Files (*)",
         )
         if not path:
             return
@@ -6926,7 +6697,7 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(
             self, "Load Project",
             os.path.expanduser("~"),
-            "Crystal DAW Project (*.dawproj);;All Files (*)",
+            f"{BRAND_NAME} Project (*.dawproj);;All Files (*)",
         )
         if not path:
             return
@@ -6992,7 +6763,7 @@ class MainWindow(QMainWindow):
             atrack = AudioTrack(
                 name=at["name"],
                 track_id=at["track_id"],
-                color=at.get("color", "#FFD700"),
+                color=at.get("color", C["warning"]),
             )
             self._midi._audio_tracks[atrack.track_id] = atrack
             self._midi._audio_track_counter = max(
@@ -7003,7 +6774,7 @@ class MainWindow(QMainWindow):
                     start_beat=cd["start_beat"],
                     name=cd.get("name", ""),
                     duration_seconds=cd.get("duration_seconds", 0.0),
-                    color=cd.get("color", "#FFD700"),
+                    color=cd.get("color", C["warning"]),
                     clip_id=self._midi._next_id(),
                 ))
 
@@ -7318,15 +7089,13 @@ class MainWindow(QMainWindow):
         dlg = QDialog(self)
         dlg.setWindowTitle(_tr("AI Mix — Select Genre", self._lang))
         dlg.setFixedSize(300, 140)
-        dlg.setStyleSheet(
-            f"QDialog {{ background:{C['abyss']}; color:{C['text']}; }}"
+        themed(dlg, lambda: f"QDialog {{ background:{C['abyss']}; color:{C['text']}; }}"
             f"QLabel  {{ color:{C['text']}; font-size:10px; background:transparent; }}"
             f"QComboBox {{ background:{C['deep']}; color:{C['cyan']};"
-            f" border:1px solid rgba(153,69,255,0.4); border-radius:4px;"
+            f" border:1px solid {rgba(C['accent'], 0.4)}; border-radius:4px;"
             f" font-size:10px; padding:3px 8px; }}"
             f"QComboBox QAbstractItemView {{ background:{C['deep']};"
-            f" color:{C['text']}; selection-background-color:{C['purple']}; }}"
-        )
+            f" color:{C['text']}; selection-background-color:{C['purple']}; }}")
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(16, 16, 16, 12)
         lay.setSpacing(10)
@@ -7348,11 +7117,9 @@ class MainWindow(QMainWindow):
         btn_cancel = QPushButton(_tr("Cancel", self._lang))
         for btn, color in ((btn_apply, C["cyan"]), (btn_cancel, C["dim"])):
             btn.setFixedHeight(28)
-            btn.setStyleSheet(
-                f"QPushButton {{ background:{C['deep']}; color:{color};"
+            themed(btn, lambda color=color: f"QPushButton {{ background:{C['deep']}; color:{color};"
                 f" border:1px solid {color}; border-radius:4px; font-size:10px; }}"
-                f"QPushButton:hover {{ background:rgba(0,0,0,0.2); }}"
-            )
+                f"QPushButton:hover {{ background:rgba(0,0,0,0.2); }}")
         btn_apply.clicked.connect(dlg.accept)
         btn_cancel.clicked.connect(dlg.reject)
         btn_row.addWidget(btn_apply)
@@ -7773,13 +7540,12 @@ class MainWindow(QMainWindow):
         kb_w  = QWidget()
         kb_lay = QVBoxLayout(kb_w)
         kb_lay.addWidget(_label(
-            "↑ Arrow Up = Octave +1    ↓ Arrow Down = Octave −1",
-            C["gold"], 10, False))
+            "↑ Arrow Up = Octave +1    ↓ Arrow Down = Octave −1", "gold", 10, False))
         kb_grid_w = QWidget()
         kb_grid   = QGridLayout(kb_grid_w)
-        kb_grid.addWidget(_label("Key",  C["text_dim"]), 0, 0)
-        kb_grid.addWidget(_label("Note", C["text_dim"]), 0, 1)
-        kb_grid.addWidget(_label("MIDI", C["text_dim"]), 0, 2)
+        kb_grid.addWidget(_label("Key", "text_dim"), 0, 0)
+        kb_grid.addWidget(_label("Note", "text_dim"), 0, 1)
+        kb_grid.addWidget(_label("MIDI", "text_dim"), 0, 2)
         for row, (_, m) in enumerate(
             list(self._controller.get_key_map().items())[:36], 1
         ):
@@ -7798,9 +7564,9 @@ class MainWindow(QMainWindow):
 
         gp_grid_w = QWidget()
         gp_grid   = QGridLayout(gp_grid_w)
-        gp_grid.addWidget(_label("Button",  C["text_dim"]), 0, 0)
-        gp_grid.addWidget(_label("Action",  C["text_dim"]), 0, 1)
-        gp_grid.addWidget(_label("Note",    C["text_dim"]), 0, 2)
+        gp_grid.addWidget(_label("Button", "text_dim"), 0, 0)
+        gp_grid.addWidget(_label("Action", "text_dim"), 0, 1)
+        gp_grid.addWidget(_label("Note", "text_dim"), 0, 2)
 
         row = 1
         for _, m in self._controller._gamepad_map.items():
@@ -7824,8 +7590,7 @@ class MainWindow(QMainWindow):
         if row == 1:
             gp_lay.addWidget(_label(
                 "No gamepad connected.\nConnect a PS5 or Switch controller\n"
-                "and click the GAMEPAD button in the toolbar.",
-                C["text_dim"], 10, False))
+                "and click the GAMEPAD button in the toolbar.", "text_dim", 10, False))
         else:
             sa_gp = QScrollArea()
             sa_gp.setWidget(gp_grid_w)

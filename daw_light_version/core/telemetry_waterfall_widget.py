@@ -15,6 +15,7 @@ import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QColor, QImage
 from PySide6.QtWidgets import QWidget
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _N_ROWS  = 12
 _N_COLS  = 100
@@ -27,7 +28,7 @@ _PLOT_H  = _N_ROWS * _ROW_H
 _TOT_W   = _LABEL_W + _PLOT_W
 _TOT_H   = _PLOT_H
 
-_BG       = QColor("#0a0a14")
+_BG       = QColor(_C["panel"])
 _TEXT_COL = QColor("#88aacc")
 
 _NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]

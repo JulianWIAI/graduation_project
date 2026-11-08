@@ -161,18 +161,8 @@ class MasterAnalysisWorker(QThread):
 # Spectrum display widget
 # ─────────────────────────────────────────────────────────────────────────────
 
-_C = {
-    "abyss":   "#060A18",
-    "deep":    "#0A0E22",
-    "cyan":    "#00E5FF",
-    "purple":  "#9945FF",
-    "pink":    "#FF2D9E",
-    "gold":    "#FFD700",
-    "text":    "#C8E6FF",
-    "dim":     "#3D5A80",
-    "green":   "#00FF88",
-    "orange":  "#FF6B2B",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 
 class SpectrumWidget(QWidget):
@@ -308,9 +298,7 @@ class SmartMasterPlugin(FxPluginBase):
 
     def _build_ui(self) -> None:
         self._widget = QWidget()
-        self._widget.setStyleSheet(
-            f"background:{_C['abyss']}; color:{_C['text']};"
-        )
+        themed(self._widget, lambda: f"background:{_C['abyss']}; color:{_C['text']};")
         lay = QVBoxLayout(self._widget)
         lay.setContentsMargins(8, 8, 8, 8)
         lay.setSpacing(6)
@@ -318,26 +306,22 @@ class SmartMasterPlugin(FxPluginBase):
         # Title
         title = QLabel("AI SMART MASTER BUS")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:12px; font-weight:bold;"
-            f" letter-spacing:2px; background:transparent;"
-        )
+        themed(title, lambda: f"color:{_C['cyan']}; font-size:12px; font-weight:bold;"
+            f" letter-spacing:2px; background:transparent;")
         lay.addWidget(title)
 
         # ── Target selector ───────────────────────────────────────────────
         tgt_row = QHBoxLayout()
         tgt_lbl = QLabel("Target:")
-        tgt_lbl.setStyleSheet(f"color:{_C['text']}; font-size:9px; background:transparent;")
+        themed(tgt_lbl, lambda: f"color:{_C['text']}; font-size:9px; background:transparent;")
         self._target_combo = QComboBox()
         self._target_combo.addItems(list(TARGETS.keys()))
         self._target_combo.setCurrentText("Spotify")
-        self._target_combo.setStyleSheet(
-            f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
+        themed(self._target_combo, lambda: f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
             f" border:1px solid {_C['purple']}; border-radius:3px;"
             f" font-size:9px; padding:2px 6px; }}"
             f"QComboBox QAbstractItemView {{ background:{_C['deep']};"
-            f" color:{_C['text']}; selection-background-color:{_C['purple']}; }}"
-        )
+            f" color:{_C['text']}; selection-background-color:{_C['purple']}; }}")
         tgt_row.addWidget(tgt_lbl)
         tgt_row.addWidget(self._target_combo, 1)
         lay.addLayout(tgt_row)
@@ -345,10 +329,8 @@ class SmartMasterPlugin(FxPluginBase):
         # ── LUFS display ──────────────────────────────────────────────────
         self._lufs_lbl = QLabel("Current LUFS: —")
         self._lufs_lbl.setAlignment(Qt.AlignCenter)
-        self._lufs_lbl.setStyleSheet(
-            f"color:{_C['gold']}; font-size:10px; background:{_C['deep']};"
-            f" border:1px solid rgba(255,215,0,0.2); border-radius:3px; padding:3px;"
-        )
+        themed(self._lufs_lbl, lambda: f"color:{_C['gold']}; font-size:10px; background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['warning'], 0.2)}; border-radius:3px; padding:3px;")
         lay.addWidget(self._lufs_lbl)
 
         # ── Spectrum ──────────────────────────────────────────────────────
@@ -359,9 +341,7 @@ class SmartMasterPlugin(FxPluginBase):
         self._status_lbl = QLabel("")
         self._status_lbl.setAlignment(Qt.AlignCenter)
         self._status_lbl.setWordWrap(True)
-        self._status_lbl.setStyleSheet(
-            f"color:{_C['dim']}; font-size:8px; background:transparent;"
-        )
+        themed(self._status_lbl, lambda: f"color:{_C['dim']}; font-size:8px; background:transparent;")
         lay.addWidget(self._status_lbl)
 
         # ── Buttons ───────────────────────────────────────────────────────
@@ -369,23 +349,19 @@ class SmartMasterPlugin(FxPluginBase):
 
         self._analyse_btn = QPushButton("⚡  ANALYSE")
         self._analyse_btn.setFixedHeight(30)
-        self._analyse_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']}; border:1px solid {_C['purple']};"
+        themed(self._analyse_btn, lambda: f"QPushButton {{ background:{_C['deep']}; border:1px solid {_C['purple']};"
             f" border-radius:4px; color:{_C['purple']}; font-size:10px; font-weight:bold; }}"
-            f"QPushButton:hover {{ background:rgba(153,69,255,0.1); }}"
-            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['accent'], 0.1)}; }}"
+            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}")
         self._analyse_btn.clicked.connect(self._start_analysis)
 
         self._apply_btn = QPushButton("✓  APPLY")
         self._apply_btn.setFixedHeight(30)
         self._apply_btn.setEnabled(False)
-        self._apply_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']}; border:1px solid {_C['cyan']};"
+        themed(self._apply_btn, lambda: f"QPushButton {{ background:{_C['deep']}; border:1px solid {_C['cyan']};"
             f" border-radius:4px; color:{_C['cyan']}; font-size:10px; font-weight:bold; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.08); }}"
-            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.08)}; }}"
+            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}")
         self._apply_btn.clicked.connect(self._apply_to_chain)
 
         btn_row.addWidget(self._analyse_btn)

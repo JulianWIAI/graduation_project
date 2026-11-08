@@ -32,16 +32,8 @@ from .fx_plugin_base import FxPluginBase
 from .fx_plugin_registry import PLUGIN_CATEGORIES
 
 # Crystal bioluminescence palette -- local copy avoids circular imports.
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "purple":   "#9945FF",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-    "orange":   "#FF6B2B",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402
 
 # Slot height fixed so the rack has a consistent rhythm.
 _SLOT_HEIGHT = 32
@@ -99,11 +91,9 @@ class FxSlotWidget(QWidget):
         self._remove_btn = QPushButton("×")
         self._remove_btn.setFixedSize(24, 24)
         self._remove_btn.setToolTip("Remove effect")
-        self._remove_btn.setStyleSheet(
-            f"QPushButton {{ background:transparent; border:none;"
+        themed(self._remove_btn, lambda: f"QPushButton {{ background:transparent; border:none;"
             f" color:{_C['text_dim']}; font-size:14px; }}"
-            f"QPushButton:hover {{ color:{_C['orange']}; }}"
-        )
+            f"QPushButton:hover {{ color:{_C['orange']}; }}")
         self._remove_btn.clicked.connect(self.remove_requested.emit)
 
         self._layout.addWidget(self._power_btn)
@@ -187,13 +177,11 @@ class FxSlotWidget(QWidget):
     def _open_picker_menu(self) -> None:
         """Show a categorised context menu listing all available effects."""
         menu = QMenu(self)
-        menu.setStyleSheet(
-            f"QMenu {{ background:{_C['surface']}; color:{_C['text']};"
-            f" border:1px solid rgba(0,229,255,0.2); font-size:10px; }}"
-            f"QMenu::item:selected {{ background:rgba(0,229,255,0.15); }}"
-            f"QMenu::separator {{ height:1px; background:rgba(0,229,255,0.1);"
-            f" margin:2px 8px; }}"
-        )
+        themed(menu, lambda: f"QMenu {{ background:{_C['surface']}; color:{_C['text']};"
+            f" border:1px solid {rgba(_C['accent_hi'], 0.2)}; font-size:10px; }}"
+            f"QMenu::item:selected {{ background:{rgba(_C['accent_hi'], 0.15)}; }}"
+            f"QMenu::separator {{ height:1px; background:{rgba(_C['accent_hi'], 0.1)};"
+            f" margin:2px 8px; }}")
 
         # Build one submenu per category.
         for category, effect_names in PLUGIN_CATEGORIES.items():
@@ -217,42 +205,42 @@ class FxSlotWidget(QWidget):
     def _power_style(active: bool) -> str:
         if active:
             return (
-                "QPushButton { background:rgba(0,229,255,0.15);"
-                " border:1px solid rgba(0,229,255,0.5); border-radius:4px;"
-                " color:#00E5FF; font-size:12px; }"
-                "QPushButton:hover { background:rgba(0,229,255,0.25); }"
+                f"QPushButton {{ background:{rgba(_C['accent_hi'], 0.15)};"
+                f" border:1px solid {rgba(_C['accent_hi'], 0.5)}; border-radius:4px;"
+                f" color:{_C['accent_hi']}; font-size:12px; }}"
+                f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.25)}; }}"
             )
         return (
             "QPushButton { background:transparent;"
-            " border:1px solid rgba(61,90,128,0.4); border-radius:4px;"
-            " color:#3D5A80; font-size:12px; }"
-            "QPushButton:hover { border-color:rgba(0,229,255,0.3); }"
+            f" border:1px solid {rgba(_C['text_dim'], 0.4)}; border-radius:4px;"
+            f" color:{_C['text_dim']}; font-size:12px; }}"
+            f"QPushButton:hover {{ border-color:{rgba(_C['accent_hi'], 0.3)}; }}"
         )
 
     @staticmethod
     def _empty_btn_style() -> str:
         return (
             "QPushButton { background:transparent;"
-            " border:1px dashed rgba(0,229,255,0.2); border-radius:4px;"
-            " color:#3D5A80; font-size:10px; text-align:left; padding-left:8px; }"
-            "QPushButton:hover { border-color:rgba(0,229,255,0.5);"
-            " color:#00E5FF; }"
+            f" border:1px dashed {rgba(_C['accent_hi'], 0.2)}; border-radius:4px;"
+            f" color:{_C['text_dim']}; font-size:10px; text-align:left; padding-left:8px; }}"
+            f"QPushButton:hover {{ border-color:{rgba(_C['accent_hi'], 0.5)};"
+            f" color:{_C['accent_hi']}; }}"
         )
 
     @staticmethod
     def _loaded_btn_style(selected: bool) -> str:
         if selected:
             return (
-                "QPushButton { background:rgba(153,69,255,0.2);"
-                " border:1px solid rgba(153,69,255,0.7); border-radius:4px;"
-                " color:#C8E6FF; font-size:10px; text-align:left;"
+                f"QPushButton {{ background:{rgba(_C['accent'], 0.2)};"
+                f" border:1px solid {rgba(_C['accent'], 0.7)}; border-radius:4px;"
+                f" color:{_C['text']}; font-size:10px; text-align:left;"
                 " padding-left:8px; }"
             )
         return (
-            "QPushButton { background:rgba(0,229,255,0.06);"
-            " border:1px solid rgba(0,229,255,0.2); border-radius:4px;"
-            " color:#C8E6FF; font-size:10px; text-align:left;"
+            f"QPushButton {{ background:{rgba(_C['accent_hi'], 0.06)};"
+            f" border:1px solid {rgba(_C['accent_hi'], 0.2)}; border-radius:4px;"
+            f" color:{_C['text']}; font-size:10px; text-align:left;"
             " padding-left:8px; }"
-            "QPushButton:hover { border-color:rgba(153,69,255,0.6);"
-            " background:rgba(153,69,255,0.1); }"
+            f"QPushButton:hover {{ border-color:{rgba(_C['accent'], 0.6)};"
+            f" background:{rgba(_C['accent'], 0.1)}; }}"
         )

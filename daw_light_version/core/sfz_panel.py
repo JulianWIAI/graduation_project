@@ -30,23 +30,24 @@ from PySide6.QtWidgets import (
 from .sfz_engine_python import (
     SfzInstrumentInfo, SfzRegionInfo, parse_sfz,
 )
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 # ── Colour palette (matches the DAW's dark theme) ─────────────────────────────
 
-_BACKGROUND  = QColor("#060A18")
+_BACKGROUND  = QColor(_C["panel"])
 _WHITE_KEY   = QColor("#1A2444")
-_BLACK_KEY   = QColor("#0A0E22")
+_BLACK_KEY   = QColor(_C["field"])
 _KEY_OUTLINE = QColor("#1E2A4A")
-_TEXT        = QColor("#C8E6FF")
-_TEXT_DIM    = QColor("#3D5A80")
+_TEXT        = QColor(_C["text"])
+_TEXT_DIM    = QColor(_C["text_dim"])
 
 # Region overlay colours: cycle through a fixed palette for distinguishability.
 _REGION_COLORS = [
-    QColor(0, 229, 255, 80),    # cyan
-    QColor(57, 255, 20, 80),    # lime
-    QColor(255, 107, 43, 80),   # orange
-    QColor(153, 69, 255, 80),   # purple
-    QColor(255, 45, 158, 80),   # pink
+    qcolor(_C["accent_hi"], 80),    # cyan
+    qcolor(_C["success"], 80),    # lime
+    qcolor(_C["danger"], 80),   # orange
+    qcolor(_C["accent"], 80),   # purple
+    qcolor(_C["pink"], 80),   # pink
     QColor(0, 255, 179, 80),    # teal
 ]
 
@@ -202,7 +203,7 @@ class SfzInfoPanel(QFrame):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background:#060A18; color:#C8E6FF; font-size:10px;")
+        themed(self, lambda: f"background:{_C['panel']}; color:{_C['text']}; font-size:10px;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(4)
@@ -214,18 +215,16 @@ class SfzInfoPanel(QFrame):
         )
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.setAlternatingRowColors(True)
-        self._table.setStyleSheet(
-            "QTableWidget{background:#060A18; color:#C8E6FF; gridline-color:#1E2A4A;}"
-            "QHeaderView::section{background:#0A0E22; color:#3D5A80; border:none; padding:2px;}"
-            "QTableWidget::item:alternate{background:#0A1020;}"
-        )
+        themed(self._table, lambda: f"QTableWidget{{background:{_C['panel']}; color:{_C['text']}; gridline-color:#1E2A4A;}}"
+            f"QHeaderView::section{{background:{_C['field']}; color:{_C['text_dim']}; border:none; padding:2px;}}"
+            "QTableWidget::item:alternate{background:#0A1020;}")
         self._table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         layout.addWidget(self._table, stretch=3)
 
         # CC labels.
         cc_lbl = QLabel("CC Controls")
-        cc_lbl.setStyleSheet("color:#3D5A80; font-size:8px;")
+        themed(cc_lbl, lambda: f"color:{_C['text_dim']}; font-size:8px;")
         layout.addWidget(cc_lbl)
 
         self._cc_table = QTableWidget(0, 2)
@@ -280,7 +279,7 @@ class SfzInstrumentPanel(QDockWidget):
 
         # ── Layout ────────────────────────────────────────────────────────────
         root_w = QWidget()
-        root_w.setStyleSheet("background:#060A18;")
+        themed(root_w, lambda: f"background:{_C['panel']};")
         root = QVBoxLayout(root_w)
         root.setContentsMargins(6, 6, 6, 6)
         root.setSpacing(4)
@@ -289,16 +288,14 @@ class SfzInstrumentPanel(QDockWidget):
         header_row = QHBoxLayout()
         self._load_btn = QPushButton("Load SFZ…")
         self._load_btn.setFixedHeight(24)
-        self._load_btn.setStyleSheet(
-            "QPushButton{background:#0A0E22; border:1px solid rgba(0,229,255,0.3);"
-            " border-radius:3px; color:#00E5FF; font-size:10px; padding:0 8px;}"
-            "QPushButton:hover{background:rgba(0,229,255,0.1);}"
-        )
+        themed(self._load_btn, lambda: f"QPushButton{{background:{_C['field']}; border:1px solid {rgba(_C['accent_hi'], 0.3)};"
+            f" border-radius:3px; color:{_C['accent_hi']}; font-size:10px; padding:0 8px;}}"
+            f"QPushButton:hover{{background:{rgba(_C['accent_hi'], 0.1)};}}")
         self._load_btn.clicked.connect(self._on_load_clicked)
         header_row.addWidget(self._load_btn)
 
         self._name_lbl = QLabel("(no instrument)")
-        self._name_lbl.setStyleSheet("color:#3D5A80; font-size:10px; background:transparent;")
+        themed(self._name_lbl, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
         header_row.addWidget(self._name_lbl, stretch=1)
         root.addLayout(header_row)
 
@@ -333,9 +330,7 @@ class SfzInstrumentPanel(QDockWidget):
         count_str = (f"{self._info.num_regions} regions, "
                      f"{self._info.num_groups} groups")
         self._name_lbl.setText(f"{self._info.name}  [{count_str}]")
-        self._name_lbl.setStyleSheet(
-            "color:#C8E6FF; font-size:10px; background:transparent;"
-        )
+        themed(self._name_lbl, lambda: f"color:{_C['text']}; font-size:10px; background:transparent;")
 
         self._keyboard.set_regions(self._info.regions)
         self._info_panel.populate(self._info)

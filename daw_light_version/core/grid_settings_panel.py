@@ -23,41 +23,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 
-# ── Colour palette (matches the project dark theme) ──────────────────────────
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0D1228",
-    "cyan":     "#00E5FF",
-    "purple":   "#9945FF",
-    "pink":     "#FF4DFF",
-    "gold":     "#FFD700",
-    "text_dim": "#3D5A80",
-    "text":     "#E0F0FF",
-}
-
-
-def _btn_style(active: bool, colour: str) -> str:
-    """Return a QPushButton stylesheet for active/inactive state."""
-    if active:
-        return (
-            f"QPushButton {{ background:rgba({_hex_to_rgb(colour)},0.25);"
-            f" border:1px solid {colour}; border-radius:3px;"
-            f" color:{colour}; font-size:9px; padding:1px 4px; }}"
-        )
-    return (
-        f"QPushButton {{ background:{_C['deep']};"
-        f" border:1px solid rgba({_hex_to_rgb(colour)},0.25); border-radius:3px;"
-        f" color:{_C['text_dim']}; font-size:9px; padding:1px 4px; }}"
-        f"QPushButton:hover {{ border-color:{colour}; color:{colour}; }}"
-    )
-
-
-def _hex_to_rgb(hex_color: str) -> str:
-    """Convert #RRGGBB to 'R,G,B' string for rgba() use."""
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"{r},{g},{b}"
+# ── Colours: shared live palette (core/theme.py, Catalogue-Manager look) ──────
+from .theme import C as _C, rgba, themed, tiny_button_style  # noqa: E402
 
 
 # ── Note value groups ─────────────────────────────────────────────────────────
@@ -115,8 +82,7 @@ class GridSettingsPanel(QWidget):
 
         # ── "GRID" header label ───────────────────────────────────────────────
         grid_lbl = QLabel("GRID")
-        grid_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
+        themed(grid_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         root.addWidget(grid_lbl)
 
         # ── Base note value buttons ────────────────────────────────────────────
@@ -129,7 +95,7 @@ class GridSettingsPanel(QWidget):
             btn.setFixedWidth(32)
             btn.setCheckable(True)
             btn.setChecked(val == self._base)
-            btn.setStyleSheet(_btn_style(val == self._base, _C["cyan"]))
+            themed(btn, tiny_button_style)
             btn.clicked.connect(lambda _chk, v=val: self._on_base(v))
             self._base_btns[val] = btn
             base_row.addWidget(btn)
@@ -148,7 +114,7 @@ class GridSettingsPanel(QWidget):
             btn.setFixedWidth(36 if mod == "Free" else 22)
             btn.setCheckable(True)
             btn.setChecked(mod == self._mod)
-            btn.setStyleSheet(_btn_style(mod == self._mod, _C["pink"]))
+            themed(btn, tiny_button_style)
             btn.clicked.connect(lambda _chk, m=mod: self._on_mod(m))
             self._mod_btns[mod] = btn
             mod_row.addWidget(btn)
@@ -167,7 +133,7 @@ class GridSettingsPanel(QWidget):
             btn.setFixedWidth(40 if rm == "SMPTE" else 32)
             btn.setCheckable(True)
             btn.setChecked(rm == self._ruler)
-            btn.setStyleSheet(_btn_style(rm == self._ruler, _C["gold"]))
+            themed(btn, tiny_button_style)
             btn.clicked.connect(lambda _chk, r=rm: self._on_ruler(r))
             self._ruler_btns[rm] = btn
             ruler_row.addWidget(btn)
@@ -179,14 +145,12 @@ class GridSettingsPanel(QWidget):
         self._fps_combo.setCurrentText("30")
         self._fps_combo.setFixedWidth(54)
         self._fps_combo.setFixedHeight(22)
-        self._fps_combo.setStyleSheet(
-            f"QComboBox {{ background:{_C['deep']}; color:{_C['gold']};"
-            f" border:1px solid rgba(255,215,0,0.3); border-radius:3px;"
+        themed(self._fps_combo, lambda: (
+            f"QComboBox {{ background:{_C['field']}; color:{_C['text']};"
+            f" border:1px solid {_C['line_2']}; border-radius:4px;"
             f" padding:1px 4px; font-size:9px; }}"
             f"QComboBox::drop-down {{ border:none; }}"
-            f"QComboBox QAbstractItemView {{ background:{_C['surface']};"
-            f" color:{_C['text']}; selection-background-color:{_C['deep']}; }}"
-        )
+        ))
         self._fps_combo.currentTextChanged.connect(self._on_fps)
         self._fps_combo.setVisible(False)
         root.addWidget(self._fps_combo)
@@ -250,7 +214,6 @@ class GridSettingsPanel(QWidget):
         for val, btn in self._base_btns.items():
             active = (val == self._base)
             btn.setChecked(active)
-            btn.setStyleSheet(_btn_style(active, _C["cyan"]))
 
     def _refresh_mod_buttons(self) -> None:
         for mod, btn in self._mod_btns.items():
@@ -261,13 +224,11 @@ class GridSettingsPanel(QWidget):
             elif mod == "D":
                 btn.setEnabled(self._base in _DOTTED_SUPPORTED)
             btn.setChecked(active)
-            btn.setStyleSheet(_btn_style(active, _C["pink"]))
 
     def _refresh_ruler_buttons(self) -> None:
         for rm, btn in self._ruler_btns.items():
             active = (rm == self._ruler)
             btn.setChecked(active)
-            btn.setStyleSheet(_btn_style(active, _C["gold"]))
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -309,5 +270,5 @@ def _vsep() -> QFrame:
     sep.setFrameShape(QFrame.VLine)
     sep.setFixedWidth(1)
     sep.setFixedHeight(20)
-    sep.setStyleSheet(f"background:rgba(0,229,255,0.15); border:none;")
+    themed(sep, lambda: f"background:{_C['line_2']}; border:none;")
     return sep

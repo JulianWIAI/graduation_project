@@ -34,21 +34,8 @@ from .audio_engine import GM_INSTRUMENTS
 # ─────────────────────────────────────────────────────────────────────────────
 # Colour palette  (matches the main application theme)
 # ─────────────────────────────────────────────────────────────────────────────
-_C = {
-    "abyss":    "#0A0A0F",
-    "deep":     "#111118",
-    "surface":  "#1A1A24",
-    "border":   "#2A2A3A",
-    "text":     "#E0E0E0",
-    "text_dim": "#888899",
-    "cyan":     "#00E5FF",
-    "gold":     "#FFD700",
-    "pink":     "#FF6B9D",
-    "purple":   "#9945FF",
-    "green":    "#39FF14",
-    "orange":   "#FF6B2B",
-    "red":      "#FF4444",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _DIALOG_STYLESHEET = f"""
 QDialog {{
@@ -77,33 +64,33 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QPushButton {{
     background: {_C['deep']};
     color: {_C['cyan']};
-    border: 1px solid rgba(0,229,255,0.25);
+    border: 1px solid {rgba(_C['accent_hi'], 0.25)};
     border-radius: 5px;
     padding: 0 10px;
     height: 28px;
 }}
 QPushButton:hover {{
     border-color: {_C['cyan']};
-    background: rgba(0,229,255,0.10);
+    background: {rgba(_C['accent_hi'], 0.10)};
 }}
 QPushButton:pressed {{
-    background: rgba(0,229,255,0.20);
+    background: {rgba(_C['accent_hi'], 0.20)};
 }}
 QPushButton#browse_sfz  {{ color: {_C['cyan']}; }}
-QPushButton#browse_sf2  {{ color: {_C['gold']};   border-color: rgba(255,215,0,0.35); }}
-QPushButton#browse_sf2:hover  {{ border-color: {_C['gold']};   background: rgba(255,215,0,0.12); }}
-QPushButton#browse_vst3 {{ color: {_C['purple']}; border-color: rgba(153,69,255,0.35); }}
-QPushButton#browse_vst3:hover {{ border-color: {_C['purple']}; background: rgba(153,69,255,0.12); }}
+QPushButton#browse_sf2  {{ color: {_C['gold']};   border-color: {rgba(_C['warning'], 0.35)}; }}
+QPushButton#browse_sf2:hover  {{ border-color: {_C['gold']};   background: {rgba(_C['warning'], 0.12)}; }}
+QPushButton#browse_vst3 {{ color: {_C['purple']}; border-color: {rgba(_C['accent'], 0.35)}; }}
+QPushButton#browse_vst3:hover {{ border-color: {_C['purple']}; background: {rgba(_C['accent'], 0.12)}; }}
 QPushButton#clear_btn   {{ color: {_C['text_dim']}; border-color: rgba(255,255,255,0.10); min-width:28px; max-width:28px; }}
 QPushButton#clear_btn:hover   {{ color: {_C['red']};      border-color: {_C['red']}; }}
-QPushButton#save_btn    {{ color: {_C['green']};  border-color: rgba(57,255,20,0.40); height:34px; }}
-QPushButton#save_btn:hover    {{ background: rgba(57,255,20,0.15); border-color: {_C['green']}; }}
-QPushButton#reset_btn   {{ color: {_C['orange']}; border-color: rgba(255,107,43,0.35); }}
-QPushButton#reset_btn:hover   {{ background: rgba(255,107,43,0.12); border-color: {_C['orange']}; }}
+QPushButton#save_btn    {{ color: {_C['green']};  border-color: {rgba(_C['success'], 0.40)}; height:34px; }}
+QPushButton#save_btn:hover    {{ background: {rgba(_C['success'], 0.15)}; border-color: {_C['green']}; }}
+QPushButton#reset_btn   {{ color: {_C['orange']}; border-color: {rgba(_C['danger'], 0.35)}; }}
+QPushButton#reset_btn:hover   {{ background: {rgba(_C['danger'], 0.12)}; border-color: {_C['orange']}; }}
 QPushButton#cancel_btn  {{ color: {_C['text_dim']}; border-color: rgba(255,255,255,0.15); }}
 QPushButton#cancel_btn:hover  {{ color: {_C['text']}; border-color: rgba(255,255,255,0.40); }}
-QPushButton#ok_btn      {{ color: {_C['green']};  border-color: rgba(57,255,20,0.40); }}
-QPushButton#ok_btn:hover      {{ background: rgba(57,255,20,0.15); border-color: {_C['green']}; }}
+QPushButton#ok_btn      {{ color: {_C['green']};  border-color: {rgba(_C['success'], 0.40)}; }}
+QPushButton#ok_btn:hover      {{ background: {rgba(_C['success'], 0.15)}; border-color: {_C['green']}; }}
 QFrame#row_frame {{
     background: {_C['surface']};
     border: 1px solid {_C['border']};
@@ -120,11 +107,11 @@ QListWidget {{
     border-radius: 4px;
 }}
 QListWidget::item:selected {{
-    background: rgba(0,229,255,0.18);
+    background: {rgba(_C['accent_hi'], 0.18)};
     color: {_C['cyan']};
 }}
 QListWidget::item:hover {{
-    background: rgba(0,229,255,0.08);
+    background: {rgba(_C['accent_hi'], 0.08)};
 }}
 """
 
@@ -158,11 +145,11 @@ class _Sf2PresetPickerDialog(QDialog):
         layout.setSpacing(10)
 
         sf2_lbl = QLabel(f"SF2: {os.path.basename(sf2_path)}")
-        sf2_lbl.setStyleSheet(f"color:{_C['gold']}; font-weight:bold;")
+        themed(sf2_lbl, lambda: f"color:{_C['gold']}; font-weight:bold;")
         layout.addWidget(sf2_lbl)
 
         cat_lbl = QLabel(f"Category: {display_name}")
-        cat_lbl.setStyleSheet(f"color:{_C['text_dim']}; font-size:10px;")
+        themed(cat_lbl, lambda: f"color:{_C['text_dim']}; font-size:10px;")
         layout.addWidget(cat_lbl)
 
         self._list = QListWidget()
@@ -234,12 +221,12 @@ class _CategoryRow(QFrame):
         font.setBold(True)
         font.setPointSize(10)
         name_lbl.setFont(font)
-        name_lbl.setStyleSheet(f"color:{_C['cyan']};")
+        themed(name_lbl, lambda: f"color:{_C['cyan']};")
         left.addWidget(name_lbl)
 
         id_range = _format_id_range(gm_ids)
         range_lbl = QLabel(f"GM {id_range}")
-        range_lbl.setStyleSheet(f"color:{_C['text_dim']}; font-size:9px;")
+        themed(range_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px;")
         left.addWidget(range_lbl)
 
         name_container = QWidget()
@@ -249,9 +236,7 @@ class _CategoryRow(QFrame):
 
         # ── Path display ───────────────────────────────────────────────────
         self._path_lbl = QLabel("(using built-in default)")
-        self._path_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:10px; background:transparent;"
-        )
+        themed(self._path_lbl, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
         self._path_lbl.setWordWrap(False)
         self._path_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._path_lbl.setToolTip("")
@@ -293,8 +278,7 @@ class _CategoryRow(QFrame):
         if not entry:
             self._path_lbl.setText("(using built-in default)")
             self._path_lbl.setToolTip("")
-            self._path_lbl.setStyleSheet(
-                f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
+            themed(self._path_lbl, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
             return
 
         t    = entry.get("type", "sfz")
@@ -315,8 +299,7 @@ class _CategoryRow(QFrame):
 
         self._path_lbl.setText(label)
         self._path_lbl.setToolTip(path)
-        self._path_lbl.setStyleSheet(
-            f"color:{_C['text']}; font-size:10px; background:transparent;")
+        themed(self._path_lbl, lambda: f"color:{_C['text']}; font-size:10px; background:transparent;")
 
     def get_override(self) -> Optional[Dict[str, Any]]:
         """Return the current override dict, or ``None`` if none set."""
@@ -438,16 +421,14 @@ class GmDefaultsDialog(QDialog):
 
         # ── Header ────────────────────────────────────────────────────────
         header = QLabel("Default instruments for MIDI open / import")
-        header.setStyleSheet(
-            f"color:{_C['text']}; font-size:13px; font-weight:bold;"
-        )
+        themed(header, lambda: f"color:{_C['text']}; font-size:13px; font-weight:bold;")
         root.addWidget(header)
 
         sub = QLabel(
             "Assign a custom SFZ, SF2, or VST3 instrument to each GM program group.  "
             "Leave a row empty to use the built-in SF2 soundfont (GeneralUser GS)."
         )
-        sub.setStyleSheet(f"color:{_C['text_dim']}; font-size:10px;")
+        themed(sub, lambda: f"color:{_C['text_dim']}; font-size:10px;")
         sub.setWordWrap(True)
         root.addWidget(sub)
 
@@ -485,9 +466,7 @@ class GmDefaultsDialog(QDialog):
         path_hint = QLabel(
             f"Settings file: {GmDefaultsManager.SETTINGS_FILE}"
         )
-        path_hint.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px;"
-        )
+        themed(path_hint, lambda: f"color:{_C['text_dim']}; font-size:9px;")
         root.addWidget(path_hint)
 
         # ── Bottom buttons ─────────────────────────────────────────────────

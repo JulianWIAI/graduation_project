@@ -31,6 +31,7 @@ from PySide6.QtCore import Qt, Signal, QPointF
 from PySide6.QtGui import (
     QPainter, QColor, QPen, QPainterPath, QBrush, QFont,
 )
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 if TYPE_CHECKING:
     from .audio_fx_chain import AudioFxChain
@@ -258,31 +259,30 @@ class AutomationLane(QWidget):
         the left header region of the lane widget."""
         self._dropdown = QComboBox(self)
         self._dropdown.setGeometry(4, 4, self.HEADER_W - 8, 22)
-        self._dropdown.setStyleSheet("""
-            QComboBox {
-                background: #0A0E22;
-                color: #00E5FF;
-                border: 1px solid rgba(0,229,255,0.4);
+        themed(self._dropdown, lambda: f"""
+            QComboBox {{
+                background: {_C['field']};
+                color: {_C['accent_hi']};
+                border: 1px solid {rgba(_C['accent_hi'], 0.4)};
                 border-radius: 3px;
                 font-size: 10px;
                 padding: 0 4px;
-            }
-            QComboBox::drop-down { border: none; }
-            QComboBox QAbstractItemView {
-                background: #0A0E22;
-                color: #C8E6FF;
-                selection-background-color: #00E5FF;
-                selection-color: #030308;
-                border: 1px solid #00E5FF;
-            }
+            }}
+            QComboBox::drop-down {{ border: none; }}
+            QComboBox QAbstractItemView {{
+                background: {_C['field']};
+                color: {_C['text']};
+                selection-background-color: {_C['accent_hi']};
+                selection-color: {_C['bg']};
+                border: 1px solid {_C['accent_hi']};
+            }}
         """)
         self._dropdown.currentIndexChanged.connect(self._on_target_changed)
 
         # Track name hint under the dropdown
         self._track_lbl = QLabel(f"AUTO  ·  {self._track_name}", self)
         self._track_lbl.setGeometry(4, 28, self.HEADER_W - 8, 14)
-        self._track_lbl.setStyleSheet(
-            "color:#3D5A80; font-size:9px; background:transparent;")
+        themed(self._track_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
 
     def _ensure_envelope(self, key: str,
                          lo: float, hi: float) -> AutomationEnvelope:
@@ -440,8 +440,8 @@ class AutomationLane(QWidget):
         p.fillRect(0, 0, W, H, QColor("#07091A"))
 
         # Header background + right border
-        p.fillRect(0, 0, self.HEADER_W, H, QColor("#0A0E22"))
-        p.setPen(QPen(QColor(0, 229, 255, 40), 1))
+        p.fillRect(0, 0, self.HEADER_W, H, QColor(_C["field"]))
+        p.setPen(QPen(qcolor(_C["accent_hi"], 40), 1))
         p.drawLine(self.HEADER_W, 0, self.HEADER_W, H)
 
         # Thin track-color bar on the far left edge
@@ -451,7 +451,7 @@ class AutomationLane(QWidget):
         env = self._active_env
         mid_norm = env.norm((env.min_val + env.max_val) * 0.5)
         mid_y = int(self._value_to_y(mid_norm))
-        p.setPen(QPen(QColor(0, 229, 255, 18), 1, Qt.DashLine))
+        p.setPen(QPen(qcolor(_C["accent_hi"], 18), 1, Qt.DashLine))
         p.drawLine(self.HEADER_W, mid_y, W, mid_y)
 
         # Draw curve or placeholder hint
@@ -459,13 +459,13 @@ class AutomationLane(QWidget):
         if nodes:
             self._draw_curve(p, nodes, W, H)
         else:
-            p.setPen(QColor(61, 90, 128, 160))
+            p.setPen(qcolor(_C["text_dim"], 160))
             p.setFont(QFont("Arial", 8))
             p.drawText(self.HEADER_W + 10, H // 2 + 4,
                        "Ctrl + Click to add automation nodes")
 
         # Bottom separator
-        p.setPen(QPen(QColor(0, 229, 255, 22), 1))
+        p.setPen(QPen(qcolor(_C["accent_hi"], 22), 1))
         p.drawLine(0, H - 1, W, H - 1)
         p.end()
 
@@ -491,12 +491,12 @@ class AutomationLane(QWidget):
         fill.lineTo(W, H)
         fill.lineTo(self.HEADER_W, H)
         fill.closeSubpath()
-        fc = QColor("#00E5FF")
+        fc = QColor(_C["accent_hi"])
         fc.setAlpha(18)
         p.fillPath(fill, QBrush(fc))
 
         # The envelope line
-        p.setPen(QPen(QColor("#00E5FF"), 1.8,
+        p.setPen(QPen(QColor(_C["accent_hi"]), 1.8,
                       Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         p.drawPath(path)
 
@@ -505,8 +505,8 @@ class AutomationLane(QWidget):
             nx = self._beat_to_x(node.beat_pos)
             ny = self._value_to_y(node.value)
             active = (node is self._hover_node or node is self._dragged_node)
-            p.setPen(QPen(QColor("#030308"), 1.5))
-            p.setBrush(QBrush(QColor("#FFD700" if active else "#00E5FF")))
+            p.setPen(QPen(QColor(_C["bg"]), 1.5))
+            p.setBrush(QBrush(QColor(_C["warning"] if active else _C["accent_hi"])))
             p.drawEllipse(QPointF(nx, ny), self.NODE_RADIUS, self.NODE_RADIUS)
 
     # ── Serialisation passthrough ─────────────────────────────────────────────
@@ -539,7 +539,7 @@ class AutomationPanel(QWidget):
 
         # Inner content widget that holds the lane stack
         self._content = QWidget()
-        self._content.setStyleSheet("background:#060A18;")
+        themed(self._content, lambda: f"background:{_C['panel']};")
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(1)
@@ -551,14 +551,14 @@ class AutomationPanel(QWidget):
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self._scroll.setStyleSheet("background:#060A18; border:none;")
+        themed(self._scroll, lambda: f"background:{_C['panel']}; border:none;")
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         outer.addWidget(self._scroll)
 
-        self.setStyleSheet("background:#060A18;")
+        themed(self, lambda: f"background:{_C['panel']};")
         self.setMinimumHeight(0)
         # Panel starts hidden; shown automatically when the first lane is added.
         self.hide()

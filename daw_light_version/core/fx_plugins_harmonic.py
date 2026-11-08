@@ -69,25 +69,15 @@ def _ensure_cpp() -> bool:
 # Shared UI helpers  (colours + widget factories matching the DAW palette)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "pink":     "#FF2D9E",
-    "purple":   "#9945FF",
-    "gold":     "#FFD700",
-    "orange":   "#FF6B2B",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _SLIDER_STYLE = (
-    "QSlider::groove:horizontal { height:4px;"
-    " background:rgba(0,229,255,0.12); border-radius:2px; }"
+    lambda: "QSlider::groove:horizontal { height:4px;"
+    f" background:{rgba(_C['accent_hi'], 0.12)}; border-radius:2px; }}"
     "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-    " background:#00E5FF; border-radius:6px; }"
-    "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.35);"
+    f" background:{_C['accent_hi']}; border-radius:6px; }}"
+    f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.35)};"
     " border-radius:2px; }"
 )
 
@@ -96,13 +86,11 @@ def _group_box(title: str):
     """Styled QGroupBox matching the DAW dark theme."""
     from PySide6.QtWidgets import QGroupBox
     g = QGroupBox(title)
-    g.setStyleSheet(
-        f"QGroupBox {{ border:1px solid rgba(153,69,255,0.3); border-radius:6px;"
+    themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent'], 0.3)}; border-radius:6px;"
         f" margin-top:10px; padding-top:6px; color:{_C['text_dim']};"
         f" font-size:9px; letter-spacing:1px; background:{_C['abyss']}; }}"
         f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-        f" color:rgba(153,69,255,0.9); }}"
-    )
+        f" color:{rgba(_C['accent'], 0.9)}; }}")
     return g
 
 
@@ -129,19 +117,15 @@ def _param_row(parent, label: str, lo: int, hi: int, init: int):
     row.setSpacing(6)
     name_lbl = QLabel(label)
     name_lbl.setFixedWidth(90)
-    name_lbl.setStyleSheet(
-        f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-    )
+    themed(name_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
     slider = QSlider(Qt.Horizontal)
     slider.setRange(lo, hi)
     slider.setValue(init)
-    slider.setStyleSheet(_SLIDER_STYLE)
+    themed(slider, _SLIDER_STYLE)
     val_lbl = QLabel(str(init))
     val_lbl.setFixedWidth(40)
     val_lbl.setAlignment(Qt.AlignRight)
-    val_lbl.setStyleSheet(
-        f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-    )
+    themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
     row.addWidget(name_lbl)
     row.addWidget(slider)
     row.addWidget(val_lbl)
@@ -160,18 +144,18 @@ def _btn_group(parent, labels: list, default: int = 0):
     row.setSpacing(3)
     buttons = []
     _btn_style = (
-        f"QPushButton {{ background:{_C['deep']};"
-        f" border:1px solid rgba(153,69,255,0.3); border-radius:4px;"
+        lambda: f"QPushButton {{ background:{_C['deep']};"
+        f" border:1px solid {rgba(_C['accent'], 0.3)}; border-radius:4px;"
         f" color:{_C['text_dim']}; font-size:9px; }}"
-        f"QPushButton:checked {{ background:rgba(153,69,255,0.25);"
-        f" border-color:rgba(153,69,255,0.8); color:#C8E6FF; }}"
+        f"QPushButton:checked {{ background:{rgba(_C['accent'], 0.25)};"
+        f" border-color:{rgba(_C['accent'], 0.8)}; color:{_C['text']}; }}"
     )
     for i, label in enumerate(labels):
         btn = QPushButton(label)
         btn.setCheckable(True)
         btn.setChecked(i == default)
         btn.setFixedHeight(22)
-        btn.setStyleSheet(_btn_style)
+        themed(btn, _btn_style)
         row.addWidget(btn)
         buttons.append(btn)
 
@@ -581,7 +565,7 @@ class BitcrusherPlugin(_CppHarmonicPlugin):
         # Dither toggle
         dither_cb = QCheckBox("Dithering")
         dither_cb.setChecked(self.dither)
-        dither_cb.setStyleSheet(f"color:{_C['text']}; font-size:9px;")
+        themed(dither_cb, lambda: f"color:{_C['text']}; font-size:9px;")
 
         def _on_dither(state):
             self.dither = bool(state)

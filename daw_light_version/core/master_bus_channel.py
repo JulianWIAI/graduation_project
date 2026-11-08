@@ -35,19 +35,9 @@ from .master_bus_python import AUDITION_BYPASS, AUDITION_PREVIEW, AUDITION_STREA
 
 # ── Colour palette (kept in sync with gui_windows.C) ─────────────────────────
 
-_C = {
-    "void":     "#030308",
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "purple":   "#9945FF",
-    "lime":     "#39FF14",
-    "orange":   "#FF6B2B",
-    "pink":     "#FF2D9E",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402
+from .help_mode import set_help  # noqa: E402
 
 # Meter display range: anything below -60 dBFS reads as "silent".
 _METER_MIN_DB = -60.0
@@ -193,9 +183,9 @@ class MasterBusChannel(QFrame):
 
         self.setFixedWidth(112)
         self.setFrameShape(QFrame.Shape.NoFrame)
-        self.setStyleSheet(f"""
+        themed(self, lambda: f"""
             MasterBusChannel {{
-                border: 1px solid rgba(0,229,255,0.25);
+                border: 1px solid {rgba(_C['accent_hi'], 0.25)};
                 border-left: 2px solid {_C["cyan"]};
                 border-radius: 8px;
                 margin: 2px;
@@ -209,17 +199,13 @@ class MasterBusChannel(QFrame):
         # ── Header ──────────────────────────────────────────────────────────
         bar = QFrame()
         bar.setFixedHeight(4)
-        bar.setStyleSheet(
-            f"background:{_C['cyan']}; border-radius:2px; border:none;"
-        )
+        themed(bar, lambda: f"background:{_C['cyan']}; border-radius:2px; border:none;")
         root.addWidget(bar)
 
         title = QLabel("MASTER")
         title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         title.setFont(QFont("Arial", 9, QFont.Weight.Bold))
-        title.setStyleSheet(
-            f"color:{_C['cyan']}; background:transparent; letter-spacing:2px;"
-        )
+        themed(title, lambda: f"color:{_C['cyan']}; background:transparent; letter-spacing:2px;")
         root.addWidget(title)
 
         # ── Audition mode selector ───────────────────────────────────────────
@@ -227,10 +213,8 @@ class MasterBusChannel(QFrame):
         # on the C++ MasterBus via an atomic<int> write (no audio dropout).
         mode_sep = QLabel("AUDITION")
         mode_sep.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        mode_sep.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:7px; background:transparent;"
-            f" letter-spacing:1px;"
-        )
+        themed(mode_sep, lambda: f"color:{_C['text_dim']}; font-size:7px; background:transparent;"
+            f" letter-spacing:1px;")
         root.addWidget(mode_sep)
 
         mode_row = QHBoxLayout()
@@ -259,6 +243,7 @@ class MasterBusChannel(QFrame):
             btn.setFixedHeight(20)
             btn.setStyleSheet(self._mode_btn_style(color, active=mode_id == AUDITION_BYPASS))
             self._mode_group.addButton(btn, mode_id)
+            set_help(btn, "master_audition")
             self._mode_btns.append(btn)
             mode_row.addWidget(btn, stretch=1)
 
@@ -267,9 +252,7 @@ class MasterBusChannel(QFrame):
         # Small text label showing the active target name.
         self._mode_indicator = QLabel("Mix (Bypass)")
         self._mode_indicator.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self._mode_indicator.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(self._mode_indicator, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         root.addWidget(self._mode_indicator)
 
         # Connect mode group: idClicked(int) fires when a button is toggled on.
@@ -277,22 +260,22 @@ class MasterBusChannel(QFrame):
 
         # ── Stereo VU meter ──────────────────────────────────────────────────
         self._meter = _StereoMeter()
+        set_help(self._meter, "master_meter")
         root.addWidget(self._meter)
 
         # ── Gain fader ───────────────────────────────────────────────────────
         lbl_vol = QLabel("GAIN")
         lbl_vol.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        lbl_vol.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(lbl_vol, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         root.addWidget(lbl_vol)
 
         # Range 0–200 maps to gain 0.0–2.0 (100 = unity = 0 dB).
         self._fader = QSlider(Qt.Orientation.Vertical)
+        set_help(self._fader, "master_gain")
         self._fader.setRange(0, 200)
         self._fader.setValue(100)
         self._fader.setFixedHeight(88)
-        self._fader.setStyleSheet(f"""
+        themed(self._fader, lambda: f"""
             QSlider::groove:vertical {{
                 width:6px; border-radius:3px;
             }}
@@ -307,9 +290,7 @@ class MasterBusChannel(QFrame):
 
         self._gain_lbl = QLabel("0.0 dB")
         self._gain_lbl.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self._gain_lbl.setStyleSheet(
-            f"color:{_C['text']}; font-size:9px; background:transparent;"
-        )
+        themed(self._gain_lbl, lambda: f"color:{_C['text']}; font-size:9px; background:transparent;")
         root.addWidget(self._gain_lbl)
 
         # ── User limiter section ──────────────────────────────────────────────
@@ -317,27 +298,26 @@ class MasterBusChannel(QFrame):
         # limits; changing these controls would have no effect on the output).
         lim_header = QLabel("LIMITER")
         lim_header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        lim_header.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(lim_header, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         root.addWidget(lim_header)
 
         self._lim_btn = QPushButton("ON")
+        set_help(self._lim_btn, "master_limiter")
         self._lim_btn.setCheckable(True)
         self._lim_btn.setChecked(True)
         self._lim_btn.setFixedHeight(22)
-        self._lim_btn.setStyleSheet(f"""
+        themed(self._lim_btn, lambda: f"""
             QPushButton {{
-                border:1px solid rgba(0,229,255,0.3);
+                border:1px solid {rgba(_C['accent_hi'], 0.3)};
                 border-radius:3px; color:{_C["text_dim"]}; font-size:10px;
             }}
             QPushButton:checked {{
-                background:rgba(0,229,255,0.15);
+                background:{rgba(_C['accent_hi'], 0.15)};
                 border-color:{_C["cyan"]}; color:{_C["cyan"]};
             }}
             QPushButton:disabled {{
-                border-color:rgba(0,229,255,0.08);
-                color:rgba(61,90,128,0.4);
+                border-color:{rgba(_C['accent_hi'], 0.08)};
+                color:{rgba(_C['text_dim'], 0.4)};
             }}
         """)
         self._lim_btn.toggled.connect(self._on_limiter_toggled)
@@ -346,28 +326,27 @@ class MasterBusChannel(QFrame):
         ceil_row = QHBoxLayout()
         ceil_row.setSpacing(2)
         ceil_lbl = QLabel("Ceil:")
-        ceil_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(ceil_lbl, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         ceil_row.addWidget(ceil_lbl)
 
         self._ceil_spin = QDoubleSpinBox()
+        set_help(self._ceil_spin, "master_ceiling")
         self._ceil_spin.setRange(-20.0, 0.0)
         self._ceil_spin.setSingleStep(0.1)
         self._ceil_spin.setDecimals(1)
         self._ceil_spin.setValue(-0.1)
         self._ceil_spin.setSuffix(" dB")
         self._ceil_spin.setFixedWidth(68)
-        self._ceil_spin.setStyleSheet(f"""
+        themed(self._ceil_spin, lambda: f"""
             QDoubleSpinBox {{
-                border:1px solid rgba(0,229,255,0.2);
+                border:1px solid {rgba(_C['accent_hi'], 0.2)};
                 border-radius:3px; color:{_C["text"]}; font-size:9px;
                 padding:2px 4px;
             }}
             QDoubleSpinBox:focus   {{ border-color:{_C["cyan"]}; }}
             QDoubleSpinBox:disabled {{
-                color:rgba(61,90,128,0.4);
-                border-color:rgba(0,229,255,0.06);
+                color:{rgba(_C['text_dim'], 0.4)};
+                border-color:{rgba(_C['accent_hi'], 0.06)};
             }}
         """)
         self._ceil_spin.valueChanged.connect(self._on_ceiling_changed)
@@ -472,7 +451,7 @@ class MasterBusChannel(QFrame):
                 )
 
         # Gain fader
-        self._fader.setStyleSheet(f"""
+        themed(self._fader, lambda: f"""
             QSlider::groove:vertical {{
                 width:6px; border-radius:3px;
             }}
@@ -484,34 +463,34 @@ class MasterBusChannel(QFrame):
         """)
 
         # Limiter ON/OFF toggle
-        self._lim_btn.setStyleSheet(f"""
+        themed(self._lim_btn, lambda: f"""
             QPushButton {{
                 background:{_C["deep"]};
-                border:1px solid rgba(0,229,255,0.3);
+                border:1px solid {rgba(_C['accent_hi'], 0.3)};
                 border-radius:3px; color:{_C["text_dim"]}; font-size:10px;
             }}
             QPushButton:checked {{
-                background:rgba(0,229,255,0.15);
+                background:{rgba(_C['accent_hi'], 0.15)};
                 border-color:{_C["cyan"]}; color:{_C["cyan"]};
             }}
             QPushButton:disabled {{
-                background:{_C["deep"]}; border-color:rgba(0,229,255,0.08);
-                color:rgba(61,90,128,0.4);
+                background:{_C["deep"]}; border-color:{rgba(_C['accent_hi'], 0.08)};
+                color:{rgba(_C['text_dim'], 0.4)};
             }}
         """)
 
         # Ceiling spinbox
-        self._ceil_spin.setStyleSheet(f"""
+        themed(self._ceil_spin, lambda: f"""
             QDoubleSpinBox {{
                 background:{_C["deep"]};
-                border:1px solid rgba(0,229,255,0.2);
+                border:1px solid {rgba(_C['accent_hi'], 0.2)};
                 border-radius:3px; color:{_C["text"]}; font-size:9px;
                 padding:2px 4px;
             }}
             QDoubleSpinBox:focus   {{ border-color:{_C["cyan"]}; }}
             QDoubleSpinBox:disabled {{
-                color:rgba(61,90,128,0.4);
-                border-color:rgba(0,229,255,0.06);
+                color:{rgba(_C['text_dim'], 0.4)};
+                border-color:{rgba(_C['accent_hi'], 0.06)};
             }}
         """)
 
@@ -538,7 +517,7 @@ class MasterBusChannel(QFrame):
         return (
             f"QPushButton {{"
             f"  background: transparent;"
-            f"  border: 1px solid rgba(61,90,128,0.4);"
+            f"  border: 1px solid {rgba(_C['text_dim'], 0.4)};"
             f"  border-radius: 3px;"
             f"  color: {_C['text_dim']};"
             f"  font-size: 8px;"

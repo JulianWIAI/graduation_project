@@ -11,7 +11,9 @@ tool) without touching any core code.
 """
 
 import logging
+import faulthandler
 import os
+import signal
 import sys
 
 # Add the compiled C++ extension directory to sys.path so that
@@ -31,6 +33,8 @@ from core.audio_engine import AudioEngine
 from core.midi_logic import MidiLogic
 from core.controller import ControllerManager
 from core.gui_windows import MainWindow
+from core.branding import BRAND_NAME, APP_NAME, LOGO_MARK
+from core import ui_behavior
 
 
 def configure_logging() -> None:
@@ -62,7 +66,7 @@ def main() -> int:
     """
     configure_logging()
     log = logging.getLogger(__name__)
-    log.info("=== SBS-Synth Master starting ===")
+    log.info("=== %s %s starting ===", BRAND_NAME, APP_NAME)
 
     # Must be set before QApplication is constructed.
     QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -71,12 +75,23 @@ def main() -> int:
 
     # QApplication must be created before any QWidget.
     app = QApplication(sys.argv)
-    app.setApplicationName("SBS-Synth Master")
+    # Diagnostics: on a crash, and when Ctrl+\\ is pressed in the terminal
+    # (e.g. while the app hangs), print where every thread currently is.
+    faulthandler.enable()
+    if hasattr(signal, "SIGQUIT"):
+        faulthandler.register(signal.SIGQUIT, all_threads=True, chain=False)
+    # Ctrl+C in the terminal quits the app (Qt would otherwise ignore it).
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    # Mouse wheel scrolls panels instead of changing sliders by accident.
+    _wheel_guard = ui_behavior.install(app)  # noqa: F841 (keep alive)
+    app.setApplicationName(f"{BRAND_NAME} {APP_NAME}")
     app.setOrganizationName("SBS Studio")
 
     icon_path = os.path.join(os.path.dirname(__file__), "assets", "icons", "icon.png")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
+    elif os.path.exists(LOGO_MARK):
+        app.setWindowIcon(QIcon(LOGO_MARK))   # Beat Collage logo as fallback icon
 
     # Audio subsystem — FluidSynth opens CoreAudio on macOS.
     engine = AudioEngine()
@@ -107,7 +122,7 @@ def main() -> int:
 
     log.info("Window ready — entering Qt event loop.")
     exit_code = app.exec()
-    log.info("=== SBS-Synth Master exiting (code %d) ===", exit_code)
+    log.info("=== %s %s exiting (code %d) ===", BRAND_NAME, APP_NAME, exit_code)
     return exit_code
 
 

@@ -172,12 +172,8 @@ class IRSearchWorker(QThread):
 # FX Rack Plugin
 # ─────────────────────────────────────────────────────────────────────────────
 
-_C = {
-    "abyss": "#060A18", "deep": "#0A0E22",
-    "cyan": "#00E5FF", "purple": "#9945FF",
-    "text": "#C8E6FF", "text_dim": "#3D5A80",
-    "gold": "#FFD700",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 
 class GenerativeReverbPlugin(FxPluginBase):
@@ -301,26 +297,22 @@ class GenerativeReverbPlugin(FxPluginBase):
     def create_parameter_widget(self) -> QWidget:
         def _grp(title: str) -> QGroupBox:
             g = QGroupBox(title)
-            g.setStyleSheet(
-                f"QGroupBox {{ border:1px solid rgba(153,69,255,0.3);"
+            themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent'], 0.3)};"
                 f" border-radius:6px; margin-top:10px; padding-top:6px;"
                 f" color:{_C['text_dim']}; font-size:9px; background:{_C['abyss']}; }}"
                 f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-                f" color:rgba(153,69,255,0.9); }}"
-            )
+                f" color:{rgba(_C['accent'], 0.9)}; }}")
             return g
 
         def _btn(text: str, color: str) -> QPushButton:
             b = QPushButton(text)
             b.setFixedHeight(28)
-            b.setStyleSheet(
-                f"QPushButton {{ background:{_C['deep']};"
+            themed(b, lambda color=color: f"QPushButton {{ background:{_C['deep']};"
                 f" border:1px solid {color}; border-radius:5px;"
                 f" color:{color}; font-size:10px; font-weight:bold; }}"
-                f"QPushButton:hover {{ background:rgba(0,229,255,0.06); }}"
+                f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.06)}; }}"
                 f"QPushButton:disabled {{ color:{_C['text_dim']};"
-                f" border-color:{_C['text_dim']}; }}"
-            )
+                f" border-color:{_C['text_dim']}; }}")
             return b
 
         def _slider_row(parent, label: str, lo: int, hi: int,
@@ -332,26 +324,20 @@ class GenerativeReverbPlugin(FxPluginBase):
             row.setSpacing(6)
             lbl = QLabel(label)
             lbl.setFixedWidth(72)
-            lbl.setStyleSheet(
-                f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-            )
+            themed(lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
             sl = QSlider(Qt.Horizontal)
             sl.setRange(lo, hi)
             sl.setValue(init)
-            sl.setStyleSheet(
-                "QSlider::groove:horizontal { height:4px;"
-                " background:rgba(0,229,255,0.12); border-radius:2px; }"
+            themed(sl, lambda: "QSlider::groove:horizontal { height:4px;"
+                f" background:{rgba(_C['accent_hi'], 0.12)}; border-radius:2px; }}"
                 "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-                " background:#00E5FF; border-radius:6px; }"
-                "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.35);"
-                " border-radius:2px; }"
-            )
+                f" background:{_C['accent_hi']}; border-radius:6px; }}"
+                f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.35)};"
+                " border-radius:2px; }")
             val_lbl = QLabel(f"{init/scale:.{dec}f}")
             val_lbl.setFixedWidth(40)
             val_lbl.setAlignment(Qt.AlignRight)
-            val_lbl.setStyleSheet(
-                f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-            )
+            themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
             def _cb(v, a=attr, s=scale, l=val_lbl, d=dec):
                 setattr(self, f"_{a}", v / s)
                 l.setText(f"{v/s:.{d}f}")
@@ -374,9 +360,7 @@ class GenerativeReverbPlugin(FxPluginBase):
             if Path(self._ir_folder).exists()
             else "Folder not found — click Browse"
         )
-        self._folder_lbl.setStyleSheet(
-            f"color:{_C['text']}; font-size:9px; background:transparent;"
-        )
+        themed(self._folder_lbl, lambda: f"color:{_C['text']}; font-size:9px; background:transparent;")
         folder_lay.addWidget(self._folder_lbl)
 
         browse_btn = _btn("Browse IR Folder…", _C["text_dim"])
@@ -393,20 +377,16 @@ class GenerativeReverbPlugin(FxPluginBase):
                 "⚠  sentence-transformers not installed.\n"
                 "pip install sentence-transformers"
             )
-            warn.setStyleSheet(
-                f"color:{_C['gold']}; font-size:9px; background:transparent;"
-            )
+            themed(warn, lambda: f"color:{_C['gold']}; font-size:9px; background:transparent;")
             prompt_lay.addWidget(warn)
 
         self._prompt_edit = QLineEdit()
         self._prompt_edit.setPlaceholderText(
             'e.g. "church cathedral" / "tight vocal booth" / "spring reverb"'
         )
-        self._prompt_edit.setStyleSheet(
-            f"background:{_C['deep']}; color:{_C['text']};"
-            f" border:1px solid rgba(0,229,255,0.25); border-radius:4px;"
-            f" padding:4px; font-size:10px;"
-        )
+        themed(self._prompt_edit, lambda: f"background:{_C['deep']}; color:{_C['text']};"
+            f" border:1px solid {rgba(_C['accent_hi'], 0.25)}; border-radius:4px;"
+            f" padding:4px; font-size:10px;")
         self._prompt_edit.returnPressed.connect(self._start_search)
         prompt_lay.addWidget(self._prompt_edit)
 
@@ -417,9 +397,7 @@ class GenerativeReverbPlugin(FxPluginBase):
 
         self._status_lbl = QLabel("Enter a description and click Find.")
         self._status_lbl.setWordWrap(True)
-        self._status_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(self._status_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         prompt_lay.addWidget(self._status_lbl)
         lay.addWidget(prompt_grp)
 
@@ -428,10 +406,8 @@ class GenerativeReverbPlugin(FxPluginBase):
         ir_lay = QVBoxLayout(ir_grp)
 
         self._ir_name_lbl = QLabel("None")
-        self._ir_name_lbl.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:10px; font-weight:bold;"
-            f" background:transparent;"
-        )
+        themed(self._ir_name_lbl, lambda: f"color:{_C['cyan']}; font-size:10px; font-weight:bold;"
+            f" background:transparent;")
         ir_lay.addWidget(self._ir_name_lbl)
 
         # Manual browse button — skip AI search and load directly.

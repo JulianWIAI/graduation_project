@@ -32,6 +32,7 @@ from .telemetry_hpss_widget       import TelemetryHpssWidget
 from .benchmark_store             import scan_benchmarks, load_benchmark
 from .telemetry_noise_gate        import TelemetryNoiseGate
 from .telemetry_noise_floor       import TelemetryNoiseFloorCalibrator
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 logger = logging.getLogger(__name__)
 
@@ -323,8 +324,8 @@ class TelemetryManager(QObject):
         combo box above it.  The combo lists all discovered benchmark JSON files;
         selecting one pushes targets+tolerances to both _bands and _hpss.
         """
-        _BG  = "#0a0a14"
-        _DIM = "#3d5a80"
+        _BG  = _C["panel"]
+        _DIM = _C["text_dim"]
         _GRN = "#44ffaa"
 
         container = QWidget()
@@ -381,19 +382,23 @@ class TelemetryManager(QObject):
             ("📈 Waveform",   self._waveform,    Qt.BottomDockWidgetArea),
             ("🎚 Freq Bands", bands_container,   Qt.BottomDockWidgetArea),
             ("🎵 Chroma",     self._chroma,       Qt.BottomDockWidgetArea),
-            ("🌊 Waterfall",  self._waterfall,    Qt.RightDockWidgetArea),
-            ("⚡ H/P Split",  self._hpss,         Qt.RightDockWidgetArea),
+            ("🌊 Waterfall",  self._waterfall,    Qt.BottomDockWidgetArea),
+            ("⚡ H/P Split",  self._hpss,         Qt.BottomDockWidgetArea),
         ]
-        prev_bottom_dock = None
+        # All telemetry panels become tabs next to the MIXER, so opening them
+        # never squeezes the mixer strips (previously they were split beside it).
+        prev_bottom_dock = getattr(self._window, "_mixer_dock", None)
         for title, widget, area in specs:
             dock = QDockWidget(title, self._window)
             dock.setWidget(widget)
             dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+            # Closable (Tools → Telemetry brings them back), but not floatable:
+            # a torn-off window was easy to lose.
             dock.setFeatures(
-                QDockWidget.DockWidgetMovable   |
-                QDockWidget.DockWidgetFloatable |
+                QDockWidget.DockWidgetMovable |
                 QDockWidget.DockWidgetClosable
             )
+            dock.visibilityChanged.connect(self._on_dock_visibility)
             self._window.addDockWidget(area, dock)
             dock.hide()
             if area == Qt.BottomDockWidgetArea and prev_bottom_dock is not None:
@@ -404,8 +409,15 @@ class TelemetryManager(QObject):
 
         logger.debug("TelemetryManager: %d dock widgets created.", len(self._docks))
 
+    def _on_dock_visibility(self, _visible: bool) -> None:
+        """Keep state in sync when single docks are closed with their ✕."""
+        self._visible = any(d.isVisible() for d in self._docks)
+        if not self._visible:
+            self._timer.stop()
+
     def toggle(self) -> None:
-        """Show all hidden docks, or hide all visible ones."""
+        """Show all telemetry docks, or hide them if any is visible."""
+        self._visible = any(d.isVisible() for d in self._docks)
         if self._visible:
             for dock in self._docks:
                 dock.hide()
@@ -414,14 +426,18 @@ class TelemetryManager(QObject):
         else:
             for dock in self._docks:
                 dock.show()
-                dock.raise_()
+            if self._docks:
+                self._docks[0].raise_()          # start on the first tab
+            tune = getattr(self._window, "_tune_dock_tabs", None)
+            if tune is not None:
+                tune()                           # full tab titles, no arrows
             self._timer.start()   # always runs — analyzer is never None
             self._visible = True
 
     def set_theme(self, palette: dict) -> None:
         """Update background colour of all five canvas widgets when the theme changes."""
         from PySide6.QtGui import QColor as _QColor
-        bg = _QColor(palette.get("abyss", "#060A18"))
+        bg = _QColor(palette.get("abyss", _C["panel"]))
         for widget in (self._waveform, self._bands, self._chroma,
                        self._waterfall, self._hpss):
             widget.set_bg(bg)

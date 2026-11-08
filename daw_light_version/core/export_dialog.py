@@ -46,18 +46,8 @@ from .mastering_export_worker import ExportConfig, MasteringExportWorker
 from .project_render_info import FullProjectRenderInfo
 
 # ── Palette (kept in sync with gui_windows.C) ────────────────────────────────
-_C = {
-    "void":     "#030308",
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "purple":   "#9945FF",
-    "lime":     "#39FF14",
-    "orange":   "#FF6B2B",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _DIALOG_SS = f"""
 QDialog {{
@@ -68,7 +58,7 @@ QDialog {{
 }}
 QGroupBox {{
     background: {_C["deep"]};
-    border: 1px solid rgba(0,229,255,0.18);
+    border: 1px solid {rgba(_C['accent_hi'], 0.18)};
     border-radius: 6px;
     margin-top: 10px;
     padding: 8px 10px;
@@ -90,7 +80,7 @@ QCheckBox {{
 QCheckBox::indicator {{
     width: 16px;
     height: 16px;
-    border: 1px solid rgba(0,229,255,0.35);
+    border: 1px solid {rgba(_C['accent_hi'], 0.35)};
     border-radius: 3px;
     background: {_C["deep"]};
 }}
@@ -109,7 +99,7 @@ QRadioButton {{
 QRadioButton::indicator {{
     width: 14px;
     height: 14px;
-    border: 1px solid rgba(0,229,255,0.35);
+    border: 1px solid {rgba(_C['accent_hi'], 0.35)};
     border-radius: 7px;
     background: {_C["deep"]};
 }}
@@ -126,7 +116,7 @@ QLabel {{
 }}
 QLineEdit {{
     background: {_C["deep"]};
-    border: 1px solid rgba(0,229,255,0.20);
+    border: 1px solid {rgba(_C['accent_hi'], 0.20)};
     border-radius: 4px;
     padding: 5px 8px;
     color: {_C["text"]};
@@ -138,7 +128,7 @@ QLineEdit:focus {{
 }}
 QProgressBar {{
     background: {_C["deep"]};
-    border: 1px solid rgba(0,229,255,0.18);
+    border: 1px solid {rgba(_C['accent_hi'], 0.18)};
     border-radius: 4px;
     color: transparent;
     text-align: center;
@@ -151,7 +141,7 @@ QProgressBar::chunk {{
 }}
 QPushButton {{
     background: {_C["deep"]};
-    border: 1px solid rgba(0,229,255,0.25);
+    border: 1px solid {rgba(_C['accent_hi'], 0.25)};
     border-radius: 5px;
     padding: 7px 18px;
     color: {_C["text"]};
@@ -164,7 +154,7 @@ QPushButton:hover {{
 }}
 QPushButton:disabled {{
     background: {_C["deep"]};
-    border-color: rgba(0,229,255,0.08);
+    border-color: {rgba(_C['accent_hi'], 0.08)};
     color: {_C["text_dim"]};
 }}
 """
@@ -218,10 +208,8 @@ class ExportDialog(QDialog):
 
         # ── Header ──────────────────────────────────────────────────────────
         hdr = QLabel("Mastering & Export")
-        hdr.setStyleSheet(
-            f"font-size:17px; font-weight:700; color:{_C['cyan']};"
-            f" letter-spacing:1px;"
-        )
+        themed(hdr, lambda: f"font-size:17px; font-weight:700; color:{_C['cyan']};"
+            f" letter-spacing:1px;")
         root.addWidget(hdr)
 
         sub = QLabel(
@@ -229,7 +217,7 @@ class ExportDialog(QDialog):
             " chain on a shared offline render of the project."
         )
         sub.setWordWrap(True)
-        sub.setStyleSheet(f"color:{_C['text_dim']}; font-size:11px;")
+        themed(sub, lambda: f"color:{_C['text_dim']}; font-size:11px;")
         root.addWidget(sub)
 
         # ── Target checkboxes ────────────────────────────────────────────────
@@ -279,9 +267,7 @@ class ExportDialog(QDialog):
         flavor_desc = QLabel(
             "Applied once to the raw mix before all targets."
         )
-        flavor_desc.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:10px; background:transparent;"
-        )
+        themed(flavor_desc, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
         flavor_layout.addWidget(flavor_desc)
 
         self._flavor_btn_group = QButtonGroup(self)
@@ -301,9 +287,7 @@ class ExportDialog(QDialog):
             row.setSpacing(10)
             row.addWidget(rb)
             tag = QLabel(desc)
-            tag.setStyleSheet(
-                f"color:{_C['text_dim']}; font-size:10px; background:transparent;"
-            )
+            themed(tag, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
             tag.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             row.addWidget(tag, 1)
             flavor_layout.addLayout(row)
@@ -318,9 +302,7 @@ class ExportDialog(QDialog):
         tone_desc = QLabel(
             "Genre EQ + Mid/Side stereo width — applied before the limiter."
         )
-        tone_desc.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:10px; background:transparent;"
-        )
+        themed(tone_desc, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
         tone_layout.addWidget(tone_desc)
 
         genre_row = QHBoxLayout()
@@ -350,7 +332,7 @@ class ExportDialog(QDialog):
         self._width_slider.setTickInterval(25)
         self._width_val_lbl = QLabel("1.00×")
         self._width_val_lbl.setFixedWidth(36)
-        self._width_val_lbl.setStyleSheet(f"color:{_C['cyan']}; font-size:10px;")
+        themed(self._width_val_lbl, lambda: f"color:{_C['cyan']}; font-size:10px;")
         self._width_slider.valueChanged.connect(
             lambda v: self._width_val_lbl.setText(f"{v / 100:.2f}×")
         )
@@ -403,9 +385,7 @@ class ExportDialog(QDialog):
         progress_layout.addWidget(self._progress_bar)
 
         self._status_label = QLabel("Ready.")
-        self._status_label.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:11px; background:transparent;"
-        )
+        themed(self._status_label, lambda: f"color:{_C['text_dim']}; font-size:11px; background:transparent;")
         self._status_label.setWordWrap(True)
         progress_layout.addWidget(self._status_label)
 
@@ -419,8 +399,7 @@ class ExportDialog(QDialog):
         )
 
         self._export_btn = QPushButton("Export")
-        self._export_btn.setStyleSheet(
-            f"QPushButton {{"
+        themed(self._export_btn, lambda: f"QPushButton {{"
             f"  background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
             f"  stop:0 {_C['purple']}, stop:1 {_C['cyan']});"
             f"  border: none; border-radius: 5px;"
@@ -432,8 +411,7 @@ class ExportDialog(QDialog):
             f"}}"
             f"QPushButton:disabled {{"
             f"  background: {_C['deep']}; color: {_C['text_dim']};"
-            f"}}"
-        )
+            f"}}")
         self._export_btn.clicked.connect(self._start_export)
         btn_row.addWidget(self._export_btn)
 
@@ -505,13 +483,9 @@ class ExportDialog(QDialog):
         self._progress_bar.setValue(100 if success else self._progress_bar.value())
         self._status_label.setText(summary)
         if success:
-            self._status_label.setStyleSheet(
-                f"color:{_C['lime']}; font-size:11px; background:transparent;"
-            )
+            themed(self._status_label, lambda: f"color:{_C['lime']}; font-size:11px; background:transparent;")
         else:
-            self._status_label.setStyleSheet(
-                f"color:{_C['orange']}; font-size:11px; background:transparent;"
-            )
+            themed(self._status_label, lambda: f"color:{_C['orange']}; font-size:11px; background:transparent;")
 
     @Slot()
     def _on_close_clicked(self) -> None:

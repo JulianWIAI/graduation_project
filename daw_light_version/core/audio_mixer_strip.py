@@ -29,15 +29,8 @@ if TYPE_CHECKING:
     from .audio_fx_chain import AudioFxChain
 
 # Minimal colour palette — mirrors gui_windows.C to avoid a circular import.
-_C: dict[str, str] = {
-    "abyss":    "#0a0e14",
-    "deep":     "#111827",
-    "cyan":     "#00e5ff",
-    "pink":     "#ff2d9e",
-    "gold":     "#ffd700",
-    "orange":   "#ff6b2b",
-    "text_dim": "#7a8fa6",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 
 class AudioMixerStrip(QFrame):
@@ -90,11 +83,9 @@ class AudioMixerStrip(QFrame):
 
         rm = QPushButton("×")
         rm.setFixedSize(16, 16)
-        rm.setStyleSheet(
-            f"QPushButton {{ background:rgba(255,45,158,0.18); border:none;"
+        themed(rm, lambda: f"QPushButton {{ background:{rgba(_C['pink'], 0.18)}; border:none;"
             f" border-radius:8px; color:{_C['pink']}; font-size:11px; }}"
-            f"QPushButton:hover {{ background:{_C['pink']}; color:white; }}"
-        )
+            f"QPushButton:hover {{ background:{_C['pink']}; color:white; }}")
         rm.clicked.connect(lambda: self.remove_clicked.emit(track_id))
         top.addWidget(rm)
         lay.addLayout(top)
@@ -110,18 +101,14 @@ class AudioMixerStrip(QFrame):
         # ── "AUDIO" type badge — visual separator from MIDI strips ─────────
         badge = QLabel("AUDIO")
         badge.setAlignment(Qt.AlignCenter)
-        badge.setStyleSheet(
-            f"color:{_C['gold']}; font-size:8px; background:transparent;"
-            f" border:1px solid rgba(255,215,0,0.3); border-radius:3px;"
-        )
+        themed(badge, lambda: f"color:{_C['gold']}; font-size:8px; background:transparent;"
+            f" border:1px solid {rgba(_C['warning'], 0.3)}; border-radius:3px;")
         lay.addWidget(badge)
 
         # ── Volume fader (0-200 → 0.0-2.0, unity at slider value 100) ──────
         lbl_vol = QLabel("VOL")
         lbl_vol.setAlignment(Qt.AlignCenter)
-        lbl_vol.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(lbl_vol, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         lay.addWidget(lbl_vol)
 
         self.vol = QSlider(Qt.Vertical)
@@ -134,9 +121,7 @@ class AudioMixerStrip(QFrame):
         # ── Pan slider (-50 to +50 → -1.0 to +1.0) ────────────────────────
         lbl_pan = QLabel("PAN")
         lbl_pan.setAlignment(Qt.AlignCenter)
-        lbl_pan.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:8px; background:transparent;"
-        )
+        themed(lbl_pan, lambda: f"color:{_C['text_dim']}; font-size:8px; background:transparent;")
         lay.addWidget(lbl_pan)
 
         self.pan = QSlider(Qt.Horizontal)
@@ -152,26 +137,22 @@ class AudioMixerStrip(QFrame):
         self.mute_btn = QPushButton("M")
         self.mute_btn.setCheckable(True)
         self.mute_btn.setFixedSize(30, 22)
-        self.mute_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(255,107,43,0.3); border-radius:3px;"
+        themed(self.mute_btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['danger'], 0.3)}; border-radius:3px;"
             f" color:{_C['text_dim']}; font-size:10px; }}"
-            f"QPushButton:checked {{ background:rgba(255,107,43,0.4);"
-            f" border-color:{_C['orange']}; color:{_C['orange']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['danger'], 0.4)};"
+            f" border-color:{_C['orange']}; color:{_C['orange']}; }}")
         self.mute_btn.toggled.connect(lambda v: self.mute_toggled.emit(track_id, v))
         ms.addWidget(self.mute_btn)
 
         self.solo_btn = QPushButton("S")
         self.solo_btn.setCheckable(True)
         self.solo_btn.setFixedSize(30, 22)
-        self.solo_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(255,215,0,0.3); border-radius:3px;"
+        themed(self.solo_btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['warning'], 0.3)}; border-radius:3px;"
             f" color:{_C['text_dim']}; font-size:10px; }}"
-            f"QPushButton:checked {{ background:rgba(255,215,0,0.3);"
-            f" border-color:{_C['gold']}; color:{_C['gold']}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['warning'], 0.3)};"
+            f" border-color:{_C['gold']}; color:{_C['gold']}; }}")
         self.solo_btn.toggled.connect(lambda v: self.solo_toggled.emit(track_id, v))
         ms.addWidget(self.solo_btn)
         lay.addLayout(ms)
@@ -180,13 +161,11 @@ class AudioMixerStrip(QFrame):
         self.fx_btn = QPushButton("FX")
         self.fx_btn.setFixedHeight(22)
         self.fx_btn.setToolTip("Open EQ / effects panel for this audio track")
-        self.fx_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(0,229,255,0.2); border-radius:3px;"
+        themed(self.fx_btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['accent_hi'], 0.2)}; border-radius:3px;"
             f" color:{_C['text_dim']}; font-size:10px; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.12);"
-            f" border-color:{_C['cyan']}; color:{_C['cyan']}; }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.12)};"
+            f" border-color:{_C['cyan']}; color:{_C['cyan']}; }}")
         self.fx_btn.clicked.connect(lambda: self.fx_clicked.emit(track_id))
         lay.addWidget(self.fx_btn)
 
@@ -228,9 +207,9 @@ class AudioMixerStrip(QFrame):
     def _apply_border(self, *, selected: bool) -> None:
         """Swap border colour to indicate focus/selection."""
         border_col = (
-            "rgba(255,215,0,0.70)" if selected else "rgba(255,215,0,0.18)"
+            f"{rgba(_C['warning'], 0.70)}" if selected else f"{rgba(_C['warning'], 0.18)}"
         )
-        self.setStyleSheet(f"""
+        themed(self, lambda border_col=border_col: f"""
             AudioMixerStrip {{
                 background:{_C['abyss']};
                 border:1px solid {border_col};

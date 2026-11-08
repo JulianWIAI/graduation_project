@@ -17,16 +17,17 @@ from typing import Deque
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen, QColor
 from PySide6.QtWidgets import QWidget
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _W, _H    = 300, 130
 _HISTORY  = 80
-_BG       = QColor("#0a0a14")
-_HARM_COL = QColor("#44aaff")
+_BG       = QColor(_C["panel"])
+_HARM_COL = QColor(_C["info"])
 _PERC_COL = QColor("#ff6644")
 _GRID_COL = QColor("#1a1a2e")
 _TEXT_COL = QColor("#88aacc")
 _MID_COL  = QColor("#2a2a3e")
-_COL_IN   = QColor("#00FF88")
+_COL_IN   = QColor(_C["success"])
 _COL_OUT  = QColor("#FF3333")
 
 # Ballistic smoothing — same constants as TelemetryBandWidget.

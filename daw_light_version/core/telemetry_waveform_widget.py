@@ -15,10 +15,11 @@ import numpy as np
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QPainter, QPen, QColor, QLinearGradient
 from PySide6.QtWidgets import QWidget
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _W, _H     = 480, 130
 _RMS_H     = 14
-_BG        = QColor("#0a0a14")
+_BG        = QColor(_C["panel"])
 _WAVE_COL  = QColor("#00d4ff")
 _RMS_COL   = QColor("#ff6040")
 _GRID_COL  = QColor("#1a1a2e")

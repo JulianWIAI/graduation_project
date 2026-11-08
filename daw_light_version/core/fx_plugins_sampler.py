@@ -52,6 +52,7 @@ except ImportError:
     _CPP_OK = False
 
 from .fx_plugin_base import FxPluginBase
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -263,14 +264,15 @@ class _SamplerWidget(QWidget):
     """
 
     # Colour tokens
-    _C_BG     = "#14141C"
-    _C_LABEL  = "#8888AA"
-    _C_VALUE  = "#CCCCEE"
-    _C_ACCENT = "#00D2DC"
-    _C_BTN    = "#2A2A3C"
-    _C_BTN_ON = "#00AACC"
-    _C_KEY_WH = "#2A2A3C"
-    _C_KEY_BK = "#0A0A14"
+    # Colour tokens — read live from the shared palette (core/theme.py)
+    _C_BG     = property(lambda self: _C["field"])
+    _C_LABEL  = property(lambda self: _C["text_2"])
+    _C_VALUE  = property(lambda self: _C["text"])
+    _C_ACCENT = property(lambda self: _C["accent_hi"])
+    _C_BTN    = property(lambda self: _C["raised"])
+    _C_BTN_ON = property(lambda self: _C["accent"])
+    _C_KEY_WH = property(lambda self: _C["key_white_hi"])
+    _C_KEY_BK = property(lambda self: _C["key_black"])
 
     def __init__(self, plugin: "SamplerPlugin",
                  parent: Optional[QWidget] = None) -> None:
@@ -329,31 +331,29 @@ class _SamplerWidget(QWidget):
         midi_note = _PREVIEW_KEY_MAP[key][0]
         is_black  = _NOTE_NAMES[midi_note % 12].endswith("#")
         if pressed:
-            btn.setStyleSheet(
-                f"background:{self._C_ACCENT}; color:#000;"
-                " border:1px solid #00E5FF; border-radius:3px;")
+            themed(btn, lambda self=self: f"background:{self._C_ACCENT}; color:#000;"
+                f" border:1px solid {_C['accent_hi']}; border-radius:3px;")
         else:
             base = self._C_KEY_BK if is_black else self._C_KEY_WH
-            btn.setStyleSheet(
-                f"background:{base}; color:{self._C_VALUE};"
-                " border:1px solid #303050; border-radius:3px; font-size:8px;")
+            themed(btn, lambda base=base, self=self: f"background:{base}; color:{self._C_VALUE};"
+                f" border:1px solid {_C['border']}; border-radius:3px; font-size:8px;")
 
     # ── UI construction ───────────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
-        self.setStyleSheet(f"""
+        themed(self, lambda self=self: f"""
             QWidget     {{ background:{self._C_BG}; color:{self._C_VALUE};
                            font-family:Consolas; font-size:11px; }}
-            QGroupBox   {{ border:1px solid #303050; border-radius:4px;
+            QGroupBox   {{ border:1px solid {_C['border']}; border-radius:4px;
                            margin-top:8px; }}
             QGroupBox::title {{ subcontrol-origin:margin; left:8px;
                                 color:{self._C_LABEL}; }}
-            QPushButton {{ background:{self._C_BTN}; border:1px solid #404060;
+            QPushButton {{ background:{self._C_BTN}; border:1px solid {_C['border']};
                            border-radius:3px; padding:3px 8px;
                            color:{self._C_VALUE}; }}
-            QPushButton:hover   {{ background:#383858; }}
+            QPushButton:hover   {{ background:{_C['raised']}; }}
             QPushButton:pressed {{ background:{self._C_BTN_ON}; color:#000; }}
-            QSlider::groove:horizontal {{ height:4px; background:#282838;
+            QSlider::groove:horizontal {{ height:4px; background:{_C['line_2']};
                                          border-radius:2px; }}
             QSlider::handle:horizontal {{
                 width:12px; height:12px; margin:-4px 0;
@@ -481,9 +481,8 @@ class _SamplerWidget(QWidget):
             b = QPushButton(label)
             b.setFixedWidth(32)
             b.setFixedHeight(h)
-            b.setStyleSheet(
-                f"background:{base}; color:{self._C_VALUE};"
-                " border:1px solid #303050; border-radius:3px; font-size:8px;")
+            themed(b, lambda base=base, self=self: f"background:{base}; color:{self._C_VALUE};"
+                f" border:1px solid {_C['border']}; border-radius:3px; font-size:8px;")
             b.pressed.connect( lambda mn=midi_note: self._plugin.note_on(mn, 0.8))
             b.released.connect(lambda mn=midi_note: self._plugin.note_off(mn))
             pl.addWidget(b, alignment=Qt.AlignBottom)

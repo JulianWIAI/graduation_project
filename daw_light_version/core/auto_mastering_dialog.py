@@ -42,19 +42,8 @@ logger = logging.getLogger(__name__)
 # Colour palette (matches the rest of the DAW)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_C = {
-    "abyss":  "#060A18",
-    "deep":   "#0A0E22",
-    "panel":  "#0D1128",
-    "cyan":   "#00E5FF",
-    "purple": "#9945FF",
-    "gold":   "#FFD700",
-    "green":  "#00FF88",
-    "text":   "#C8E6FF",
-    "dim":    "#3D5A80",
-    "orange": "#FF6B2B",
-    "border": "rgba(0,229,255,0.18)",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _STYLESHEET = f"""
     QDialog {{
@@ -240,17 +229,13 @@ class AutoMasterDialog(QDialog):
         # Title
         title = QLabel(_tr("AUTO-MASTER", self._lang))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:14px; font-weight:bold;"
-            f" letter-spacing:4px; background:transparent;"
-        )
+        themed(title, lambda: f"color:{_C['cyan']}; font-size:14px; font-weight:bold;"
+            f" letter-spacing:4px; background:transparent;")
         root.addWidget(title)
 
         subtitle = QLabel(_tr("Offline post-mix mastering chain", self._lang))
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet(
-            f"color:{_C['dim']}; font-size:9px; background:transparent;"
-        )
+        themed(subtitle, lambda: f"color:{_C['dim']}; font-size:9px; background:transparent;")
         root.addWidget(subtitle)
 
         # ── I/O ───────────────────────────────────────────────────────────────
@@ -325,7 +310,7 @@ class AutoMasterDialog(QDialog):
         self._width_slider.setTickInterval(25)
         self._width_label = QLabel("1.00×")
         self._width_label.setFixedWidth(38)
-        self._width_label.setStyleSheet(f"color:{_C['gold']}; font-size:10px;")
+        themed(self._width_label, lambda: f"color:{_C['gold']}; font-size:10px;")
         self._width_slider.valueChanged.connect(self._on_width_changed)
         width_row.addWidget(self._width_slider, 1)
         width_row.addWidget(self._width_label)
@@ -343,20 +328,16 @@ class AutoMasterDialog(QDialog):
         self._status_lbl = QLabel("")
         self._status_lbl.setAlignment(Qt.AlignCenter)
         self._status_lbl.setWordWrap(True)
-        self._status_lbl.setStyleSheet(
-            f"color:{_C['dim']}; font-size:8px; background:transparent;"
-        )
+        themed(self._status_lbl, lambda: f"color:{_C['dim']}; font-size:8px; background:transparent;")
         root.addWidget(self._status_lbl)
 
         # ── Result readout ────────────────────────────────────────────────────
         self._result_lbl = QLabel("")
         self._result_lbl.setAlignment(Qt.AlignCenter)
         self._result_lbl.setWordWrap(True)
-        self._result_lbl.setStyleSheet(
-            f"color:{_C['green']}; font-size:9px; background:{_C['deep']};"
-            f" border:1px solid rgba(0,255,136,0.2); border-radius:4px;"
-            f" padding:4px;"
-        )
+        themed(self._result_lbl, lambda: f"color:{_C['green']}; font-size:9px; background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['success'], 0.2)}; border-radius:4px;"
+            f" padding:4px;")
         self._result_lbl.setVisible(False)
         root.addWidget(self._result_lbl)
 
@@ -365,22 +346,18 @@ class AutoMasterDialog(QDialog):
 
         self._start_btn = QPushButton(f"▶  {_tr('Master', self._lang)}")
         self._start_btn.setFixedHeight(34)
-        self._start_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']}; color:{_C['cyan']};"
+        themed(self._start_btn, lambda: f"QPushButton {{ background:{_C['deep']}; color:{_C['cyan']};"
             f" border:1px solid {_C['cyan']}; border-radius:5px;"
             f" font-size:11px; font-weight:bold; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.1); }}"
-            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.1)}; }}"
+            f"QPushButton:disabled {{ color:{_C['dim']}; border-color:{_C['dim']}; }}")
         self._start_btn.clicked.connect(self._start_mastering)
 
         self._cancel_btn = QPushButton(f"✕  {_tr('Close', self._lang)}")
         self._cancel_btn.setFixedHeight(34)
-        self._cancel_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']}; color:{_C['dim']};"
+        themed(self._cancel_btn, lambda: f"QPushButton {{ background:{_C['deep']}; color:{_C['dim']};"
             f" border:1px solid {_C['dim']}; border-radius:5px; font-size:11px; }}"
-            f"QPushButton:hover {{ color:{_C['orange']}; border-color:{_C['orange']}; }}"
-        )
+            f"QPushButton:hover {{ color:{_C['orange']}; border-color:{_C['orange']}; }}")
         self._cancel_btn.clicked.connect(self._on_cancel)
 
         btn_row.addWidget(self._start_btn)
@@ -523,9 +500,7 @@ class AutoMasterDialog(QDialog):
         btn = QPushButton(label)
         btn.setFixedWidth(56)
         btn.setFixedHeight(24)
-        btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['panel']}; color:{_C['cyan']};"
+        themed(btn, lambda: f"QPushButton {{ background:{_C['panel']}; color:{_C['cyan']};"
             f" border:1px solid {_C['border']}; border-radius:3px; font-size:9px; }}"
-            f"QPushButton:hover {{ background:rgba(0,229,255,0.07); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['accent_hi'], 0.07)}; }}")
         return btn

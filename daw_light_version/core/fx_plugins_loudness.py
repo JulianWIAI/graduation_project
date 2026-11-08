@@ -27,14 +27,8 @@ logger = logging.getLogger(__name__)
 # Colour palette (matches the project's dark UI theme)
 # ---------------------------------------------------------------------------
 
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "cyan":     "#00E5FF",
-    "gold":     "#FFD700",
-    "text_dim": "#3D5A80",
-    "text":     "#E0F0FF",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 
 # ---------------------------------------------------------------------------
@@ -53,29 +47,23 @@ def _param_row(parent, label: str, lo: int, hi: int, init: int):
 
     name_lbl = QLabel(label)
     name_lbl.setFixedWidth(96)
-    name_lbl.setStyleSheet(
-        f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-    )
+    themed(name_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
 
     slider = QSlider(Qt.Horizontal)
     slider.setRange(lo, hi)
     slider.setValue(init)
-    slider.setStyleSheet(
-        "QSlider::groove:horizontal { height:4px; background:rgba(0,229,255,0.15);"
+    themed(slider, lambda: f"QSlider::groove:horizontal {{ height:4px; background:{rgba(_C['accent_hi'], 0.15)};"
         " border-radius:2px; }"
         "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-        " background:#00E5FF; border-radius:6px; }"
-        "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.4);"
-        " border-radius:2px; }"
-    )
+        f" background:{_C['accent_hi']}; border-radius:6px; }}"
+        f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.4)};"
+        " border-radius:2px; }")
 
     val_lbl = QLabel(str(init))
     val_lbl.setFixedWidth(46)
     # NOTE: must use Qt.AlignRight (enum), NOT a raw int — PySide6 rejects ints here.
     val_lbl.setAlignment(Qt.AlignRight)
-    val_lbl.setStyleSheet(
-        f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-    )
+    themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
 
     row.addWidget(name_lbl)
     row.addWidget(slider)
@@ -86,13 +74,11 @@ def _param_row(parent, label: str, lo: int, hi: int, init: int):
 def _group_box(title: str):
     from PySide6.QtWidgets import QGroupBox
     g = QGroupBox(title)
-    g.setStyleSheet(
-        f"QGroupBox {{ border:1px solid rgba(255,215,0,0.3); border-radius:6px;"
+    themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['warning'], 0.3)}; border-radius:6px;"
         f" margin-top:10px; padding-top:6px; color:{_C['text_dim']};"
         f" font-size:9px; letter-spacing:1px; background:{_C['abyss']}; }}"
         f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-        f" color:rgba(255,215,0,0.9); }}"
-    )
+        f" color:{rgba(_C['warning'], 0.9)}; }}")
     return g
 
 
@@ -267,13 +253,9 @@ class LoudnessAutomationPlugin(FxPluginBase):
         meter_row = QHBoxLayout()
         meter_lbl = QLabel("Gain Correction")
         meter_lbl.setFixedWidth(96)
-        meter_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(meter_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         gain_val_lbl = QLabel("  0.0 dB")
-        gain_val_lbl.setStyleSheet(
-            f"color:{_C['gold']}; font-size:9px; background:transparent;"
-        )
+        themed(gain_val_lbl, lambda: f"color:{_C['gold']}; font-size:9px; background:transparent;")
         meter_row.addWidget(meter_lbl)
         meter_row.addWidget(gain_val_lbl)
         meter_row.addStretch()

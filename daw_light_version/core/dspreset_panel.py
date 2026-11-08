@@ -31,13 +31,8 @@ from .dspreset_parser import DsInstrumentInfo, DsUIElement, parse_dspreset
 logger = logging.getLogger(__name__)
 
 # ── Bioluminescent theme colours (matches the DAW palette) ───────────────────
-_BG      = "#060A18"
-_DEEP    = "#0A0E22"
-_SURFACE = "#0E1430"
-_LIME    = "#39FF14"
-_CYAN    = "#00E5FF"
-_TEXT    = "#C8E6FF"
-_DIM     = "#3D5A80"
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -171,14 +166,12 @@ class DsButtonWidget(QPushButton):
         self.setChecked(elem.default_value > 0.5)
         self.setFixedHeight(24)
         self.setToolTip(elem.parameter_name)
-        self.setStyleSheet(
-            f"QPushButton {{ background:{_DEEP}; color:{_DIM};"
-            f" border:1px solid rgba(57,255,20,0.25); border-radius:3px;"
+        themed(self, lambda: f"QPushButton {{ background:{_C['field']}; color:{_C['text_dim']};"
+            f" border:1px solid {rgba(_C['success'], 0.25)}; border-radius:3px;"
             f" font-size:10px; padding:0 8px; }}"
-            f"QPushButton:checked {{ background:rgba(57,255,20,0.18);"
-            f" color:{_LIME}; border-color:rgba(57,255,20,0.6); }}"
-            f"QPushButton:hover {{ background:{_SURFACE}; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['success'], 0.18)};"
+            f" color:{_C['success']}; border-color:{rgba(_C['success'], 0.6)}; }}"
+            f"QPushButton:hover {{ background:{_C['raised']}; }}")
         self.toggled.connect(self._on_toggled)
 
     @Slot(bool)
@@ -202,7 +195,7 @@ def _build_control_row(
     lbl = QLabel(elem.label)
     lbl.setFixedWidth(88)
     lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-    lbl.setStyleSheet(f"color:{_DIM}; font-size:9px; background:transparent;")
+    themed(lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
 
     if elem.element_type == "labeled-knob":
         ctrl: QWidget = DsKnobWidget(elem)
@@ -249,7 +242,7 @@ class DsPresetPanel(QDockWidget):
 
         # ── Outer layout ──────────────────────────────────────────────────
         root_w = QWidget()
-        root_w.setStyleSheet(f"background:{_BG};")
+        themed(root_w, lambda: f"background:{_C['panel']};")
         root   = QVBoxLayout(root_w)
         root.setContentsMargins(6, 6, 6, 6)
         root.setSpacing(4)
@@ -258,33 +251,30 @@ class DsPresetPanel(QDockWidget):
         hdr = QHBoxLayout()
         self._load_btn = QPushButton("Load .dspreset…")
         self._load_btn.setFixedHeight(24)
-        self._load_btn.setStyleSheet(
-            f"QPushButton {{ background:{_DEEP}; color:{_LIME};"
-            f" border:1px solid rgba(57,255,20,0.3); border-radius:3px;"
+        themed(self._load_btn, lambda: f"QPushButton {{ background:{_C['field']}; color:{_C['success']};"
+            f" border:1px solid {rgba(_C['success'], 0.3)}; border-radius:3px;"
             f" font-size:10px; padding:0 8px; }}"
-            f"QPushButton:hover {{ background:rgba(57,255,20,0.1); }}"
-        )
+            f"QPushButton:hover {{ background:{rgba(_C['success'], 0.1)}; }}")
         self._load_btn.clicked.connect(self._on_load_clicked)
         hdr.addWidget(self._load_btn)
 
         self._name_lbl = QLabel("(no preset)")
-        self._name_lbl.setStyleSheet(
-            f"color:{_DIM}; font-size:10px; background:transparent;")
+        themed(self._name_lbl, lambda: f"color:{_C['text_dim']}; font-size:10px; background:transparent;")
         hdr.addWidget(self._name_lbl, stretch=1)
         root.addLayout(hdr)
 
         # Separator.
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"color:rgba(57,255,20,0.15);")
+        themed(sep, lambda: f"color:{rgba(_C['success'], 0.15)};")
         root.addWidget(sep)
 
         # Scrollable area for dynamically created control rows.
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
-        self._scroll.setStyleSheet(f"background:{_BG}; border:none;")
+        themed(self._scroll, lambda: f"background:{_C['panel']}; border:none;")
         self._ctrl_widget = QWidget()
-        self._ctrl_widget.setStyleSheet(f"background:{_BG};")
+        themed(self._ctrl_widget, lambda: f"background:{_C['panel']};")
         self._ctrl_layout = QVBoxLayout(self._ctrl_widget)
         self._ctrl_layout.setContentsMargins(4, 4, 4, 4)
         self._ctrl_layout.setSpacing(6)
@@ -324,8 +314,7 @@ class DsPresetPanel(QDockWidget):
         zone_str = (f"{self._info.num_zones} zones, "
                     f"{self._info.num_groups} groups")
         self._name_lbl.setText(f"{self._info.name}  [{zone_str}]")
-        self._name_lbl.setStyleSheet(
-            f"color:{_TEXT}; font-size:10px; background:transparent;")
+        themed(self._name_lbl, lambda: f"color:{_C['text']}; font-size:10px; background:transparent;")
 
         self._rebuild_controls()
 

@@ -39,16 +39,8 @@ from PySide6.QtWidgets import (
 )
 
 # Palette constants — copied from the application colour scheme.
-_C = {
-    "abyss":    "#06080F",
-    "deep":     "#0C1220",
-    "cyan":     "#00E5FF",
-    "pink":     "#FF4DFF",
-    "gold":     "#FFD700",
-    "text":     "#E0F0FF",
-    "text_dim": "#5A7A9A",
-    "orange":   "#FF8C00",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402
 
 
 def _make_label(text: str, dim: bool = False) -> QLabel:
@@ -67,7 +59,7 @@ def _make_slider(lo: int, hi: int, val: int) -> QSlider:
     s.setRange(lo, hi)
     s.setValue(val)
     s.setFixedHeight(18)
-    s.setStyleSheet(f"""
+    themed(s, lambda: f"""
         QSlider::groove:horizontal {{
             height: 4px;
             background: {_C['deep']};
@@ -136,10 +128,8 @@ class HumanizerPanel(QWidget):
         # ── Title bar ─────────────────────────────────────────────────────────
         title_row = QHBoxLayout()
         title_lbl = QLabel("VELOCITY HUMANIZER")
-        title_lbl.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:11px; font-weight:bold;"
-            f" background:transparent; letter-spacing:1px;"
-        )
+        themed(title_lbl, lambda: f"color:{_C['cyan']}; font-size:11px; font-weight:bold;"
+            f" background:transparent; letter-spacing:1px;")
         # Track name shown in smaller dim text next to the title.
         self._track_lbl = _make_label("— no track —", dim=True)
 
@@ -150,21 +140,19 @@ class HumanizerPanel(QWidget):
 
         # Separator
         sep = QFrame(); sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet(f"color:{_C['cyan']}; opacity:0.2;")
+        themed(sep, lambda: f"color:{_C['cyan']}; opacity:0.2;")
         outer.addWidget(sep)
 
         # ── Enable toggle ─────────────────────────────────────────────────────
         enable_row = QHBoxLayout()
         self._enable_cb = QCheckBox("Enable humanization")
-        self._enable_cb.setStyleSheet(
-            f"QCheckBox {{ color:{_C['text']}; font-size:10px;"
+        themed(self._enable_cb, lambda: f"QCheckBox {{ color:{_C['text']}; font-size:10px;"
             f" background:transparent; }}"
             f"QCheckBox::indicator {{ width:14px; height:14px; }}"
             f"QCheckBox::indicator:checked {{ background:{_C['cyan']};"
             f" border-radius:2px; }}"
             f"QCheckBox::indicator:unchecked {{ background:{_C['deep']};"
-            f" border:1px solid {_C['text_dim']}; border-radius:2px; }}"
-        )
+            f" border:1px solid {_C['text_dim']}; border-radius:2px; }}")
         self._enable_cb.stateChanged.connect(self._on_any_change)
         enable_row.addWidget(self._enable_cb)
         enable_row.addStretch()
@@ -219,11 +207,9 @@ class HumanizerPanel(QWidget):
         self._ts_num.setRange(1, 16)
         self._ts_num.setValue(4)
         self._ts_num.setFixedWidth(48)
-        self._ts_num.setStyleSheet(
-            f"QSpinBox {{ background:{_C['deep']}; color:{_C['text']};"
+        themed(self._ts_num, lambda: f"QSpinBox {{ background:{_C['deep']}; color:{_C['text']};"
             f" border:1px solid {_C['text_dim']}; border-radius:3px;"
-            f" font-size:11px; }}"
-        )
+            f" font-size:11px; }}")
         ts_sep = _make_label(" / ")
 
         # Denominator: only standard note values allowed.
@@ -232,11 +218,9 @@ class HumanizerPanel(QWidget):
             self._ts_denom.addItem(v)
         self._ts_denom.setCurrentText("4")
         self._ts_denom.setFixedWidth(52)
-        self._ts_denom.setStyleSheet(
-            f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
+        themed(self._ts_denom, lambda: f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
             f" border:1px solid {_C['text_dim']}; border-radius:3px;"
-            f" font-size:11px; }}"
-        )
+            f" font-size:11px; }}")
 
         self._ts_num  .valueChanged     .connect(self._on_any_change)
         self._ts_denom.currentIndexChanged.connect(self._on_any_change)
@@ -250,13 +234,11 @@ class HumanizerPanel(QWidget):
         # ── Reset button ──────────────────────────────────────────────────────
         reset_btn = QPushButton("Reset defaults")
         reset_btn.setFixedHeight(26)
-        reset_btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']}; color:{_C['text_dim']};"
+        themed(reset_btn, lambda: f"QPushButton {{ background:{_C['deep']}; color:{_C['text_dim']};"
             f" border:1px solid {_C['text_dim']}; border-radius:4px;"
             f" font-size:10px; }}"
             f"QPushButton:hover {{ color:{_C['cyan']};"
-            f" border-color:{_C['cyan']}; }}"
-        )
+            f" border-color:{_C['cyan']}; }}")
         reset_btn.clicked.connect(self._on_reset)
         outer.addWidget(reset_btn)
 

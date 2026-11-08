@@ -77,26 +77,15 @@ def _ensure_cpp() -> bool:
 # Shared UI helpers  (palette + widget factories matching existing DAW style)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_C = {
-    "abyss":    "#060A18",
-    "deep":     "#0A0E22",
-    "surface":  "#0E1430",
-    "cyan":     "#00E5FF",
-    "pink":     "#FF2D9E",
-    "purple":   "#9945FF",
-    "gold":     "#FFD700",
-    "orange":   "#FF6B2B",
-    "green":    "#00FF88",
-    "text":     "#C8E6FF",
-    "text_dim": "#3D5A80",
-}
+# Shared live palette (core/theme.py) — Catalogue-Manager colours, follows the theme.
+from .theme import C as _C, rgba, qcolor, themed  # noqa: E402  (shared live palette)
 
 _SLIDER_STYLE = (
-    "QSlider::groove:horizontal { height:4px;"
-    " background:rgba(0,229,255,0.12); border-radius:2px; }"
+    lambda: "QSlider::groove:horizontal { height:4px;"
+    f" background:{rgba(_C['accent_hi'], 0.12)}; border-radius:2px; }}"
     "QSlider::handle:horizontal { width:12px; height:12px; margin:-4px 0;"
-    " background:#00E5FF; border-radius:6px; }"
-    "QSlider::sub-page:horizontal { background:rgba(0,229,255,0.35);"
+    f" background:{_C['accent_hi']}; border-radius:6px; }}"
+    f"QSlider::sub-page:horizontal {{ background:{rgba(_C['accent_hi'], 0.35)};"
     " border-radius:2px; }"
 )
 
@@ -104,13 +93,11 @@ _SLIDER_STYLE = (
 def _group_box(title: str):
     from PySide6.QtWidgets import QGroupBox
     g = QGroupBox(title)
-    g.setStyleSheet(
-        f"QGroupBox {{ border:1px solid rgba(153,69,255,0.3); border-radius:6px;"
+    themed(g, lambda: f"QGroupBox {{ border:1px solid {rgba(_C['accent'], 0.3)}; border-radius:6px;"
         f" margin-top:10px; padding-top:6px; color:{_C['text_dim']};"
         f" font-size:9px; letter-spacing:1px; background:{_C['abyss']}; }}"
         f"QGroupBox::title {{ subcontrol-origin:margin; left:10px; padding:0 5px;"
-        f" color:rgba(153,69,255,0.9); }}"
-    )
+        f" color:{rgba(_C['accent'], 0.9)}; }}")
     return g
 
 
@@ -133,19 +120,15 @@ def _param_row(parent, label: str, lo: int, hi: int, init: int):
     row.setSpacing(6)
     name_lbl = QLabel(label)
     name_lbl.setFixedWidth(100)
-    name_lbl.setStyleSheet(
-        f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-    )
+    themed(name_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
     slider = QSlider(Qt.Horizontal)
     slider.setRange(lo, hi)
     slider.setValue(init)
-    slider.setStyleSheet(_SLIDER_STYLE)
+    themed(slider, _SLIDER_STYLE)
     val_lbl = QLabel(str(init))
     val_lbl.setFixedWidth(44)
     val_lbl.setAlignment(Qt.AlignRight)
-    val_lbl.setStyleSheet(
-        f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-    )
+    themed(val_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
     row.addWidget(name_lbl)
     row.addWidget(slider)
     row.addWidget(val_lbl)
@@ -165,13 +148,11 @@ def _btn_group(parent, labels: list, default: int = 0):
         btn.setCheckable(True)
         btn.setChecked(i == default)
         btn.setFixedHeight(22)
-        btn.setStyleSheet(
-            f"QPushButton {{ background:{_C['deep']};"
-            f" border:1px solid rgba(153,69,255,0.3); border-radius:4px;"
+        themed(btn, lambda: f"QPushButton {{ background:{_C['deep']};"
+            f" border:1px solid {rgba(_C['accent'], 0.3)}; border-radius:4px;"
             f" color:{_C['text_dim']}; font-size:9px; }}"
-            f"QPushButton:checked {{ background:rgba(153,69,255,0.25);"
-            f" border-color:rgba(153,69,255,0.8); color:#C8E6FF; }}"
-        )
+            f"QPushButton:checked {{ background:{rgba(_C['accent'], 0.25)};"
+            f" border-color:{rgba(_C['accent'], 0.8)}; color:{_C['text']}; }}")
         row.addWidget(btn)
         buttons.append(btn)
 
@@ -316,9 +297,7 @@ class PitchCorrectorPlugin(_CppPitchPlugin):
 
         # Scale type selector (Major / Minor / Chromatic)
         scale_lbl = QLabel("Scale:")
-        scale_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(scale_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         scale_ctr, scale_btns = _btn_group(scale_grp, self._SCALE_NAMES,
                                             default=self.scale)
         for i, btn in enumerate(scale_btns):
@@ -333,9 +312,7 @@ class PitchCorrectorPlugin(_CppPitchPlugin):
 
         # Root note selector (C .. B, split across two rows for compactness)
         root_lbl = QLabel("Root:")
-        root_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(root_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         root_row1_ctr, root_row1_btns = _btn_group(
             scale_grp, _ROOT_NAMES[:6], default=self.root if self.root < 6 else -1
         )
@@ -396,14 +373,10 @@ class PitchCorrectorPlugin(_CppPitchPlugin):
 
         detected_lbl = QLabel("Detected:  —")
         detected_lbl.setAlignment(Qt.AlignCenter)
-        detected_lbl.setStyleSheet(
-            f"color:{_C['cyan']}; font-size:9px; background:transparent;"
-        )
+        themed(detected_lbl, lambda: f"color:{_C['cyan']}; font-size:9px; background:transparent;")
         target_lbl = QLabel("Target:      —")
         target_lbl.setAlignment(Qt.AlignCenter)
-        target_lbl.setStyleSheet(
-            f"color:{_C['gold']}; font-size:9px; background:transparent;"
-        )
+        themed(target_lbl, lambda: f"color:{_C['gold']}; font-size:9px; background:transparent;")
         info_lay.addWidget(detected_lbl)
         info_lay.addWidget(target_lbl)
         lay.addWidget(info_grp)
@@ -553,7 +526,7 @@ class PitchShifterPlugin(_CppPitchPlugin):
         # Enable toggle
         harm_cb = QCheckBox("Enable Harmonizer")
         harm_cb.setChecked(self.harmonizer)
-        harm_cb.setStyleSheet(f"color:{_C['text']}; font-size:9px;")
+        themed(harm_cb, lambda: f"color:{_C['text']}; font-size:9px;")
 
         # Harmony content (shown/hidden with the checkbox)
         harm_content = QWidget(harm_grp)
@@ -566,9 +539,7 @@ class PitchShifterPlugin(_CppPitchPlugin):
         preset_row_lay = QHBoxLayout(preset_row_w)
         preset_row_lay.setContentsMargins(0, 0, 0, 0)
         preset_lbl = QLabel("Interval:")
-        preset_lbl.setStyleSheet(
-            f"color:{_C['text_dim']}; font-size:9px; background:transparent;"
-        )
+        themed(preset_lbl, lambda: f"color:{_C['text_dim']}; font-size:9px; background:transparent;")
         preset_combo = QComboBox()
         preset_combo.addItems([p[0] for p in _HARMONY_PRESETS])
         # Set default selection to the perfect fifth (+7)
@@ -576,13 +547,11 @@ class PitchShifterPlugin(_CppPitchPlugin):
             (i for i, p in enumerate(_HARMONY_PRESETS) if p[1] == self.harmony_semi), 3
         )
         preset_combo.setCurrentIndex(default_preset_idx)
-        preset_combo.setStyleSheet(
-            f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
+        themed(preset_combo, lambda: f"QComboBox {{ background:{_C['deep']}; color:{_C['text']};"
             f" border:1px solid {_C['purple']}; border-radius:3px;"
             f" font-size:9px; padding:2px 6px; }}"
             f"QComboBox QAbstractItemView {{ background:{_C['deep']};"
-            f" color:{_C['text']}; selection-background-color:{_C['purple']}; }}"
-        )
+            f" color:{_C['text']}; selection-background-color:{_C['purple']}; }}")
 
         def _on_preset(idx):
             self.harmony_semi = _HARMONY_PRESETS[idx][1]
