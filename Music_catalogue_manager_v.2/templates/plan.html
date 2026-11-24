@@ -71,6 +71,29 @@
 </div>
 {% endif %}
 
+{% if user_licenses %}
+<div class="panel" style="margin-top:20px;">
+  <h2>{{ _('Meine Lizenzen') }}</h2>
+  <p class="muted small">{{ _('Mit dem Download eines generierten Beats erhältst du die exklusiven Nutzungsrechte daran.') }}</p>
+  <table>
+    <thead>
+      <tr><th>{{ _('Datum') }}</th><th>{{ _('Track') }}</th><th>{{ _('Typ') }}</th><th class="num">{{ _('Preis') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for l in user_licenses %}
+      <tr>
+        <td>{{ l.sold_at[:10] }}</td>
+        <td>{{ l.track_title }}</td>
+        <td>{{ _('Exklusiv') if l.license_type == 'exclusive' else 'Lease' }}</td>
+        <td class="num">{{ l.price | euro }}</td>
+        <td><a class="tracklink" href="{{ url_for('invoice', license_id=l.id) }}">{{ _('Lizenznachweis') }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 {% if user_subs %}
 <div class="panel" style="margin-top:20px;">
   <h2>{{ _('Abo-Verlauf') }}</h2>

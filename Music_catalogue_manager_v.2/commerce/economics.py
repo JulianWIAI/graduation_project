@@ -14,6 +14,7 @@ Kostenannahmen die zentralen betriebswirtschaftlichen Kennzahlen:
 Bewusst als reine, testbare Funktionen gehalten -- ideal fuer das Testprotokoll.
 """
 
+import config
 from db import database as db
 
 
@@ -49,7 +50,8 @@ def compute():
     track_count = conn.execute("SELECT COUNT(*) c FROM tracks").fetchone()["c"]
     # Nur BEZAHLTE Lizenzen zaehlen als Umsatz.
     license_count = conn.execute(
-        "SELECT COUNT(*) c FROM licenses WHERE payment_status = 'paid'"
+        "SELECT COUNT(*) c FROM licenses WHERE payment_status = 'paid' AND tier != ?",
+        (config.GENERATOR_TIER,)
     ).fetchone()["c"]
     license_revenue = conn.execute(
         "SELECT COALESCE(SUM(price), 0) s FROM licenses WHERE payment_status = 'paid'"
@@ -89,13 +91,14 @@ def compute():
 
     revenue_by_tier = conn.execute(
         "SELECT tier, COUNT(*) n, COALESCE(SUM(price),0) s "
-        "FROM licenses WHERE payment_status = 'paid' GROUP BY tier ORDER BY s DESC"
+        "FROM licenses WHERE payment_status = 'paid' AND tier != ? "
+        "GROUP BY tier ORDER BY s DESC", (config.GENERATOR_TIER,)
     ).fetchall()
     revenue_by_genre = conn.execute(
         "SELECT t.genre AS genre, COUNT(*) n, COALESCE(SUM(l.price),0) s "
         "FROM licenses l JOIN tracks t ON t.id = l.track_id "
-        "WHERE l.payment_status = 'paid' "
-        "GROUP BY t.genre ORDER BY s DESC"
+        "WHERE l.payment_status = 'paid' AND l.tier != ? "
+        "GROUP BY t.genre ORDER BY s DESC", (config.GENERATOR_TIER,)
     ).fetchall()
 
     status_counts = {"available": 0, "leased": 0, "exclusive_sold": 0}

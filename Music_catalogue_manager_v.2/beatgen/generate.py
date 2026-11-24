@@ -426,6 +426,7 @@ def _persist_track(audio_uuid: str, user_id: int) -> int | None:
             "VALUES (?, 'wav', ?, 'wav', ?)",
             (track_id, rel_path, now),
         )
+        db.grant_generator_licenses(conn, track_id)   # Lizenznachweis fuer den Kunden
         conn.commit()
     except Exception:
         conn.rollback()

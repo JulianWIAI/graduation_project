@@ -106,7 +106,7 @@
       {% for l in licenses %}
       <tr>
         <td class="mono small">{{ l.sold_at }}</td>
-        <td>{{ _(tiers[l.tier].label) if l.tier in tiers else l.tier }}</td>
+        <td>{{ _(tiers[l.tier].label) if l.tier in tiers else (_('Exklusiv (Generator-Download)') if l.tier == 'generator' else l.tier) }}</td>
         <td>{{ _('Exklusiv') if l.license_type == 'exclusive' else 'Lease' }}</td>
         <td>{{ l.buyer_name or '–' }}</td>
         <td class="num">{{ (('−' ~ ('%.0f'|format(l.discount_pct)) ~ ' %') if l.discount_pct else '–') }}</td>

@@ -608,6 +608,31 @@ def test_admin_sets_payment_type_customer_enters_data():
     assert "SEPA" in page and "3000" not in page and "COBADEFF" not in page
 
 
+def test_download_creates_exclusive_license_for_customer():
+    from commerce import economics, licensing
+    client = main.app.test_client()
+    uid, _ = _register(client)
+    sold_before = economics.compute()["license_count"]
+    _fake_beat(client, "lic")
+    assert client.get("/export_audio/lic?format=wav_cd").status_code == 200
+    try:
+        lics = licensing.list_licenses(uid)
+        assert len(lics) == 1
+        lic = lics[0]
+        assert (lic["tier"], lic["license_type"], lic["price"], lic["payment_status"]) == \
+            (config.GENERATOR_TIER, "exclusive", 0, "paid")
+        # Kunde sieht Liste und Nachweis, ein anderer Kunde nicht.
+        assert "Lizenznachweis" in client.get("/plan").get_data(as_text=True)
+        assert client.get(f"/invoice/{lic['id']}").status_code == 200
+        other = main.app.test_client()
+        _register(other)
+        assert other.get(f"/invoice/{lic['id']}").status_code == 404
+        # 0-EUR-Lizenz zaehlt nicht als Verkauf in der Wirtschaftlichkeit.
+        assert economics.compute()["license_count"] == sold_before
+    finally:
+        _remove_exports(uid)
+
+
 def test_translations_keep_placeholders():
     def placeholders(text):
         return sorted(re.findall(r"%\(\w+\)s|\{\w+\}|&#10;", text))

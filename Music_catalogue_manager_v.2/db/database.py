@@ -182,6 +182,22 @@ def close_request_conns(_exc=None):
         conn.close()
 
 
+def grant_generator_licenses(conn, track_id=None):
+    """Legt fuer generierte Beats (tracks.user_id gesetzt) ohne Lizenz die exklusive
+    Generator-Lizenz an: 0 EUR, bezahlt, Kaeufer = der Kunde. Ohne track_id fuer alle."""
+    sql = ("INSERT INTO licenses (track_id, tier, license_type, buyer_name, buyer_email, "
+           "buyer_user_id, price, list_price, discount_pct, currency, payment_status, "
+           "paid_at, sold_at, notes) "
+           "SELECT t.id, ?, 'exclusive', u.name, u.email, t.user_id, 0, 0, 0, 'EUR', 'paid', "
+           "t.created_at, t.created_at, 'Generator-Download (Kontingent/Token)' "
+           "FROM tracks t JOIN users u ON u.id = t.user_id "
+           "WHERE NOT EXISTS (SELECT 1 FROM licenses l WHERE l.track_id = t.id)")
+    if track_id is None:
+        conn.execute(sql, (config.GENERATOR_TIER,))
+    else:
+        conn.execute(sql + " AND t.id = ?", (config.GENERATOR_TIER, track_id))
+
+
 def init_db():
     """Legt Tabellen an und befuellt Standard-Einstellungen (idempotent)."""
     conn = get_conn()
@@ -289,6 +305,9 @@ def init_db():
     if "payment_method_id" not in tp_cols:
         conn.execute("ALTER TABLE token_purchases ADD COLUMN payment_method_id INTEGER "
                      "REFERENCES payment_methods(id)")
+
+    # Generierte Beats ohne Lizenz (Downloads vor Einfuehrung der Generator-Lizenz).
+    grant_generator_licenses(conn)
 
     # --- Zwei Demo-Nutzer anlegen, damit Rabatt & Limit sofort erlebbar sind -
     user_count = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]

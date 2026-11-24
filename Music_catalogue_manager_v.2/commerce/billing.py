@@ -231,7 +231,8 @@ def invoice_context(kind, obj):
     if kind == "license":
         tier = config.DEFAULT_TIERS.get(obj["tier"], {})
         desc = _("Lizenz: %(title)s — %(tier)s", title=obj["track_title"],
-                 tier=_(tier.get("label", obj["tier"])))
+                 tier=_(tier.get("label", config.GENERATOR_TIER_LABEL
+                                if obj["tier"] == config.GENERATOR_TIER else obj["tier"])))
         buyer = obj["buyer_name"] or _("Gast")
         net = obj["price"]
         list_price = obj["list_price"] if obj["list_price"] is not None else obj["price"]

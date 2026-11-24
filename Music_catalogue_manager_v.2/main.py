@@ -295,12 +295,10 @@ def license_cancel(license_id):
 
 @app.route("/invoice/<int:license_id>")
 @login_required
-@require_admin
 def invoice(license_id):
     lic = billing.get_license(license_id)
-    if not lic:
-        flash(_("Rechnung nicht gefunden."), "error")
-        return redirect(url_for("licenses"))
+    if not lic or (lic["buyer_user_id"] != current_user.id and not current_user.is_admin):
+        abort(404)   # fremde Lizenzen nicht preisgeben
     ctx = billing.invoice_context("license", lic)
     return render_template("invoice.html", ctx=ctx)
 
@@ -496,6 +494,7 @@ def plan():
                            status=quota.quota_status(user),
                            token_prices=tokens.get_prices(),
                            user_subs=billing.get_user_subscriptions(current_user.id),
+                           user_licenses=licensing.list_licenses(current_user.id),
                            default_pm_label=payment.label(default_pm) if default_pm else None)
 
 

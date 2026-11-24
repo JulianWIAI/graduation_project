@@ -481,6 +481,12 @@ _T = {
     "bis": ("until", "jusqu'au"),
     "seit": ("since", "depuis le"),
     "Zahlungsart": ("Payment method", "Mode de paiement"),
+    "Meine Lizenzen": ("My licenses", "Mes licences"),
+    "Lizenznachweis": ("License certificate", "Certificat de licence"),
+    "Exklusiv (Generator-Download)": ("Exclusive (generator download)", "Exclusif (téléchargement du générateur)"),
+    "Mit dem Download eines generierten Beats erhältst du die exklusiven Nutzungsrechte daran.": (
+        "Downloading a generated beat grants you the exclusive rights to use it.",
+        "En téléchargeant un beat généré, tu obtiens les droits d'utilisation exclusifs."),
     "keine Vorgabe": ("not specified", "non défini"),
     "Ungültige Zahlungsart.": ("Invalid payment method.", "Mode de paiement invalide."),
     "Der Kunde trägt seine Daten beim ersten Login selbst ein.": (

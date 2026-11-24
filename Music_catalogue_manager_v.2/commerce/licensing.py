@@ -151,12 +151,14 @@ def sell_license(track_id, tier, buyer_name="", buyer_email="", notes="",
     return license_id, warning
 
 
-def list_licenses():
+def list_licenses(user_id=None):
+    """Alle Lizenzen (Admin) oder nur die eines Kunden."""
     conn = db.get_conn()
     rows = conn.execute(
         "SELECT l.*, t.title AS track_title, t.genre AS genre "
         "FROM licenses l JOIN tracks t ON t.id = l.track_id "
-        "ORDER BY l.id DESC"
+        "WHERE ? IS NULL OR l.buyer_user_id = ? "
+        "ORDER BY l.id DESC", (user_id, user_id)
     ).fetchall()
     conn.close()
     return rows

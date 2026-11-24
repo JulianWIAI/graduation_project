@@ -44,6 +44,11 @@ DEFAULT_EXPORT_DIR = os.path.join(BASE_DIR, "sample_exports")
 # Preis-Stufen (Tiers) — 1:1 an die Export-Ziele der DAW angelehnt.
 # Beträge in Euro. Über die Weboberfläche editierbar (Tabelle "settings").
 # ---------------------------------------------------------------------------
+# Lizenz, die beim Download eines generierten Beats automatisch entsteht:
+# exklusiv, 0 EUR (ueber Kontingent/Token abgegolten), kein Verkaufs-Tier.
+GENERATOR_TIER = "generator"
+GENERATOR_TIER_LABEL = "Exklusiv (Generator-Download)"
+
 DEFAULT_TIERS = {
     # key             Anzeigename          DAW-Export-Ziel          Standardpreis
     "preview_mp3":   {"label": "Promo (MP3)",        "export": "Preview MP3",    "price": 0.0,   "kind": "lease"},
