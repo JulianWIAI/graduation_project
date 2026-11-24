@@ -112,6 +112,23 @@ def load_user(user_id):
     return User.load(int(user_id))
 
 
+# Hat der Admin eine Zahlungsart vorgegeben, fuehrt jede Seite zur Eingabe der
+# Zahlungsdaten, bis der Kunde sie hinterlegt hat (Passwort/Sicherheitsfrage gehen vor).
+_PAYMENT_SETUP_OPEN = {"static", "payment_view", "payment_add_card", "payment_add_sepa",
+                       "set_language"}
+
+
+@app.before_request
+def _require_payment_setup():
+    if (not current_user.is_authenticated or not current_user.payment_type
+            or request.endpoint in _PAYMENT_SETUP_OPEN
+            or (request.endpoint or "").startswith("auth.")):
+        return None
+    if payment.missing_required(current_user.id, current_user.payment_type):
+        return redirect(url_for("payment_view"))
+    return None
+
+
 # --- Blueprints -------------------------------------------------------------
 
 app.register_blueprint(auth_bp)
@@ -413,7 +430,8 @@ def users_view():
     rows = []
     for u in users:
         st = quota.quota_status(u)
-        rows.append({"u": u, "st": st, "locked_until": lockout.user_lock_end(u["id"])})
+        rows.append({"u": u, "st": st, "locked_until": lockout.user_lock_end(u["id"]),
+                     "pay_pending": payment.missing_required(u["id"], u["payment_type"])})
     limits = {"free": db.get_setting("limit_free"),
               "sub": db.get_setting("limit_subscriber"),
               "discount": db.get_setting("discount_pct")}
@@ -529,7 +547,8 @@ def subscription_invoice(sub_id):
 @login_required
 def payment_view():
     methods = payment.get_methods(current_user.id)
-    return render_template("payment.html", methods=methods)
+    required = payment.missing_required(current_user.id, current_user.payment_type)
+    return render_template("payment.html", methods=methods, required=required)
 
 
 @app.route("/payment/add-card", methods=["POST"])
@@ -591,6 +610,7 @@ def users_add():
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
     is_sub = request.form.get("is_subscriber") == "on"
+    pay_type = request.form.get("payment_type") or None
     problems = password_policy.validate(password, email) if password else []
     if not name:
         flash(_("Bitte einen Namen angeben."), "error")
@@ -600,11 +620,15 @@ def users_add():
         flash(_("Passwörter stimmen nicht überein."), "error")
     elif problems:
         flash(password_policy.message(problems), "error")
+    elif pay_type and pay_type not in payment.PAYMENT_TYPES:
+        flash(_("Ungültige Zahlungsart."), "error")
+    elif pay_type and not password:
+        flash(_("Für eine Zahlungsart muss der Kunde sich anmelden können (E-Mail und Passwort)."), "error")
     elif email and db.get_user_by_email(email):
         flash(_("Ein Konto mit dieser E-Mail-Adresse existiert bereits."), "error")
     else:
         quota.add_user(name, email, is_sub,
-                       generate_password_hash(password) if password else None)
+                       generate_password_hash(password) if password else None, pay_type)
         flash(_("Nutzer '%(name)s' angelegt (Abo).", name=name) if is_sub
               else _("Nutzer '%(name)s' angelegt.", name=name), "success")
     return redirect(url_for("users_view"))

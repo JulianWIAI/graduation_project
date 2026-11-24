@@ -586,6 +586,28 @@ def test_all_pages_render_in_every_language():
             assert client.get(page).status_code == 200, (code, page)
 
 
+def test_admin_sets_payment_type_customer_enters_data():
+    admin = main.app.test_client()
+    admin.post("/login", data={"email": "admin@admin.com", "password": ADMIN_PASSWORD})
+    admin.post("/users/add", data={"name": "Lastschrift", "email": "sepa@example.com",
+                                   "password": PW, "confirm": PW, "payment_type": "sepa"})
+    conn = db.get_conn()   # Passwortwechsel/Sicherheitsfrage beim ersten Login hier ueberspringen
+    conn.execute("UPDATE users SET must_change_pw = 0, security_question = ? "
+                 "WHERE email = 'sepa@example.com'", (Q1,))
+    conn.commit()
+    conn.close()
+    client = main.app.test_client()
+    client.post("/login", data={"email": "sepa@example.com", "password": PW})
+    # Bis die SEPA-Daten hinterlegt sind, fuehrt jede Seite zur Zahlungsseite.
+    assert client.get("/generate").headers["Location"].endswith("/payment")
+    client.post("/payment/add-sepa", data={"iban": "DE89370400440532013000",
+                                           "bic": "COBADEFFXXX", "holder": "Kunde"})
+    assert client.get("/generate").status_code == 200
+    # Der Admin sieht nur die Zahlungsart, keine Kontodaten.
+    page = admin.get("/users").get_data(as_text=True)
+    assert "SEPA" in page and "3000" not in page and "COBADEFF" not in page
+
+
 def test_translations_keep_placeholders():
     def placeholders(text):
         return sorted(re.findall(r"%\(\w+\)s|\{\w+\}|&#10;", text))

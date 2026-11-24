@@ -250,6 +250,9 @@ def init_db():
     # Erzwungene Passwortaenderung (z. B. nach Admin-Reset).
     if "must_change_pw" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN must_change_pw INTEGER NOT NULL DEFAULT 0")
+    # Vom Admin vorgegebene Zahlungsart ('card' | 'sepa'); die Daten traegt der Kunde selbst ein.
+    if "payment_type" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN payment_type TEXT")
 
     track_cols = {row["name"] for row in
                   conn.execute("PRAGMA table_info(tracks)").fetchall()}

@@ -41,6 +41,7 @@ class User(UserMixin):
         self.email         = row["email"]
         self.password_hash = row["password_hash"]
         self.must_change_pw = bool(row["must_change_pw"]) if "must_change_pw" in row.keys() else False
+        self.payment_type  = row["payment_type"] if "payment_type" in row.keys() else None
         # Effektiver Tarif: 'pro' bei aktivem (nicht abgelaufenem) Abo, sonst 'free'.
         self.tier          = "pro" if quota.is_active_subscriber(row) else "free"
         # is_admin: 1 = voller Admin-Zugang, 0 = nur /generate und /stats.

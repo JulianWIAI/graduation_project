@@ -12,6 +12,13 @@
 </div>
 {% endif %}
 
+{% if required %}
+<div class="flash flash-warning">
+  {{ _('Bitte hinterlege deine Zahlungsdaten (%(type)s), um fortzufahren.',
+       type=_('Kreditkarte') if required == 'card' else _('SEPA-Lastschrift')) }}
+</div>
+{% endif %}
+
 <div class="hint-box" style="margin-bottom:20px;">
   {{ _('Hinweis: Kartendaten werden nicht vollständig gespeichert. Es werden nur die letzten vier Stellen sowie Ablaufdatum und Kartentyp hinterlegt — identisch zur Tokenisierung bei echten Zahlungsdienstleistern (z. B. Stripe). Vollständige Kartennummern verlassen niemals diesen Server.') }}
 </div>
@@ -84,7 +91,7 @@
   <h2>{{ _('Neue Zahlungsmethode hinzufügen') }}</h2>
 
   <!-- Typ-Auswahl -->
-  <div class="row-actions" style="margin-bottom:16px;">
+  <div class="row-actions" style="margin-bottom:16px;"{% if required %} hidden{% endif %}>
     <button type="button" id="btnCard" class="btn btn-primary"
             onclick="showTab('card')">{{ _('Kreditkarte') }}</button>
     <button type="button" id="btnSepa" class="btn btn-ghost"
@@ -159,5 +166,6 @@ function showTab(tab) {
   document.getElementById('btnCard').className = 'btn ' + (tab === 'card' ? 'btn-primary' : 'btn-ghost');
   document.getElementById('btnSepa').className = 'btn ' + (tab === 'sepa' ? 'btn-primary' : 'btn-ghost');
 }
+{% if required %}showTab('{{ required }}');{% endif %}
 </script>
 {% endblock %}

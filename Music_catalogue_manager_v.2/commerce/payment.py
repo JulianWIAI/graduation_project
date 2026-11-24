@@ -64,11 +64,25 @@ def get_methods(user_id: int):
     return rows
 
 
+PAYMENT_TYPES = ("card", "sepa")
+
+
+def missing_required(user_id: int, payment_type):
+    """Vom Admin vorgegebene Zahlungsart, solange der Kunde sie noch nicht hinterlegt hat."""
+    if payment_type not in PAYMENT_TYPES:
+        return None
+    conn = db.get_conn()
+    has = conn.execute("SELECT 1 FROM payment_methods WHERE user_id = ? AND method_type = ?",
+                       (user_id, payment_type)).fetchone()
+    conn.close()
+    return None if has else payment_type
+
+
 def get_all_methods_for_admin():
-    """Gibt alle Zahlungsmethoden mit Nutzerdaten zurück (Admin-Ansicht)."""
+    """Admin-Ansicht: nur Art, Standard und Datum -- keine Karten- oder Kontodaten."""
     conn = db.get_conn()
     rows = conn.execute(
-        "SELECT pm.*, u.email, u.name AS user_name "
+        "SELECT pm.method_type, pm.is_default, pm.created_at, u.email, u.name AS user_name "
         "FROM payment_methods pm "
         "JOIN users u ON u.id = pm.user_id "
         "ORDER BY pm.user_id, pm.is_default DESC, pm.id DESC"

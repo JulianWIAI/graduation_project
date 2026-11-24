@@ -38,21 +38,22 @@ def get_user_by_name(name):
     return row
 
 
-def add_user(name, email=None, is_subscriber=False, password_hash=None):
+def add_user(name, email=None, is_subscriber=False, password_hash=None, payment_type=None):
     """Admin legt einen Nutzer an. Mit Passwort muss es beim ersten Login geaendert werden."""
     now = datetime.now().isoformat(timespec="seconds")
     conn = db.get_conn()
     cur = conn.execute(
         "INSERT INTO users (name, email, is_subscriber, sub_booked_at, password_hash, "
-        "must_change_pw, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "must_change_pw, payment_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (name, email or None, 1 if is_subscriber else 0, now if is_subscriber else None,
-         password_hash, 1 if password_hash else 0, now),
+         password_hash, 1 if password_hash else 0, payment_type, now),
     )
     uid = cur.lastrowid
     conn.commit()
     conn.close()
     db.log_event("USER_ADDED", "user", uid,
-                 {"name": name, "is_subscriber": bool(is_subscriber)})
+                 {"name": name, "is_subscriber": bool(is_subscriber),
+                  "payment_type": payment_type})
     return uid
 
 

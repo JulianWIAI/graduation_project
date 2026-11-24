@@ -480,6 +480,22 @@ _T = {
     "Abo buchen": ("Book subscription", "Souscrire un abonnement"),
     "bis": ("until", "jusqu'au"),
     "seit": ("since", "depuis le"),
+    "Zahlungsart": ("Payment method", "Mode de paiement"),
+    "keine Vorgabe": ("not specified", "non défini"),
+    "Ungültige Zahlungsart.": ("Invalid payment method.", "Mode de paiement invalide."),
+    "Der Kunde trägt seine Daten beim ersten Login selbst ein.": (
+        "The customer enters their details at first login.",
+        "Le client saisit ses données lors de sa première connexion."),
+    "Für eine Zahlungsart muss der Kunde sich anmelden können (E-Mail und Passwort).": (
+        "To set a payment method the customer must be able to log in (email and password).",
+        "Pour définir un mode de paiement, le client doit pouvoir se connecter (e-mail et mot de passe)."),
+    "Zahlungsdaten ausstehend": ("Payment details pending", "Données de paiement en attente"),
+    "Bitte hinterlege deine Zahlungsdaten (%(type)s), um fortzufahren.": (
+        "Please enter your payment details (%(type)s) to continue.",
+        "Veuillez saisir vos données de paiement (%(type)s) pour continuer."),
+    "Aus Sicherheitsgründen siehst du nur die Zahlungsart. Karten- und Kontodaten trägt jeder Kunde selbst ein und nur er kann sie sehen.": (
+        "For security reasons you only see the payment method. Customers enter their card and bank details themselves and only they can see them.",
+        "Pour des raisons de sécurité, vous ne voyez que le mode de paiement. Chaque client saisit lui-même ses données et lui seul peut les voir."),
     "Passwort wiederholen": ("Repeat password", "Répéter le mot de passe"),
     "für Login nötig": ("required for login", "nécessaire pour la connexion"),
     "Für ein Passwort wird eine E-Mail-Adresse benötigt.": (
