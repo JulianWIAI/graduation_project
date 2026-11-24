@@ -18,7 +18,8 @@
 </head>
 <body>
   <header class="topbar">
-    <a href="{{ url_for('generate.generate_page') }}" class="brand" style="text-decoration:none;">
+    {# Logo: angemeldet zum Generator, sonst zum Login (ohne "Bitte anmelden"-Hinweis) #}
+    <a href="{{ url_for('generate.generate_page') if current_user.is_authenticated else url_for('auth.login') }}" class="brand" style="text-decoration:none;">
       <img class="brand-logo" src="{{ url_for('static', filename=brand.logo_mark) }}" alt="" width="30" height="30">
       <div>
         <div class="brand-name">{{ brand.name }}</div>
@@ -33,7 +34,8 @@
     {% set admin_endpoints = ['dashboard_view','catalog','track_detail','licenses','users_view','economics_view','audit'] %}
 
     <nav class="nav" id="mainNav">
-      <!-- Nutzer-Routen: immer sichtbar nach Login -->
+      <!-- Nutzer-Routen: nur nach Login -->
+      {% if current_user.is_authenticated %}
       <a href="{{ url_for('generate.generate_page') }}"
          class="{{ 'active' if request.endpoint == 'generate.generate_page' }}">{{ _('Generate') }}</a>
       <a href="{{ url_for('stats.stats_page') }}"
@@ -44,6 +46,10 @@
          class="{{ 'active' if request.endpoint == 'plan' }}">{{ _('Abo') }}</a>
       <a href="{{ url_for('download_page') }}"
          class="{{ 'active' if request.endpoint == 'download_page' }}">{{ _('Download') }}</a>
+      {% endif %}
+      <!-- Bildstrecke: öffentlich, auch ohne Login -->
+      <a href="{{ url_for('showcase_page') }}"
+         class="{{ 'active' if request.endpoint == 'showcase_page' }}">{{ _('Bildstrecke') }}</a>
 
       <!-- Admin-Routen: gebuendelt im Dropdown "Verwaltung", nur fuer Administratoren -->
       {% if current_user.is_authenticated and current_user.is_admin %}
@@ -106,6 +112,8 @@
           </div>
         </details>
       {% else %}
+        <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">{{ _('Anmelden') }}</a>
+        <a class="btn btn-primary" href="{{ url_for('auth.register') }}">{{ _('Registrieren') }}</a>
         <span class="lang-switch">{% for code in languages %}<a href="{{ url_for('set_language', code=code) }}" title="{{ languages[code] }}" class="lang-link{{ ' active' if code == lang }}">{{ code|upper }}</a>{% endfor %}</span>
       {% endif %}
     </div>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Bildstrecke') }} · {{ brand.name }}{% endblock %}
+{% block content %}
+<style>
+  .sc-hero{text-align:center;padding:2.6rem 1.5rem 2.2rem;margin-bottom:1.8rem;border:1px solid var(--line);border-radius:16px;
+           background:radial-gradient(circle at 50% 30%,#1b1640 0,var(--s1) 65%)}
+  .sc-hero img{width:84px;height:84px}
+  .sc-hero h1{font-size:2.1rem;letter-spacing:.32em;margin:.9rem 0 .3rem}
+  .sc-hero h1 span{color:var(--cyan)}
+  .sc-hero .sub{color:var(--vl);font-size:1.05rem;letter-spacing:.04em;margin-bottom:1rem}
+  .sc-hero .lead{color:var(--tx2);max-width:680px;margin:0 auto 1.4rem;line-height:1.6}
+  .sc-flow{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.6rem}
+  .sc-flow a{border:1px solid var(--line-2);border-radius:10px;padding:.6rem .9rem;background:var(--bg);color:var(--tx);text-decoration:none;font-size:.9rem;min-width:180px}
+  .sc-flow a:hover{border-color:var(--v)}
+  .sc-flow b{display:block;color:var(--vl);font-size:.8rem;margin-bottom:.15rem}
+  .sc-slide{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.4rem 1.6rem;margin-bottom:1.6rem;scroll-margin-top:calc(var(--topbar-h) + 12px)}
+  .sc-meta{display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem}
+  .sc-num{font-family:var(--display);font-size:1.6rem;font-weight:700;color:var(--v);line-height:1}
+  .sc-chip{font-size:.75rem;letter-spacing:.04em;color:var(--vl);border:1px solid var(--line-2);border-radius:99px;padding:.15rem .6rem}
+  .sc-slide h2,.sc-sum h2{margin:0 0 .35rem;font-size:1.3rem;font-family:var(--display);color:var(--tx);text-transform:none;letter-spacing:0}
+  .sc-slide p{margin:0 0 1rem;color:var(--tx2);line-height:1.55}
+  .sc-slide img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line-2)}
+  .sc-sum{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:1.6rem}
+  .sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem;margin:1rem 0}
+  .sc-card{border:1px solid var(--line-2);border-radius:12px;padding:1rem 1.1rem;background:var(--bg)}
+  .sc-card .k{color:var(--v);font-family:var(--display);font-weight:700;font-size:1.5rem}
+  .sc-card h3{margin:.3rem 0 .4rem;font-size:1rem}
+  .sc-card p{margin:0;color:var(--tx2);font-size:.9rem;line-height:1.5}
+  .sc-note{color:var(--tx2);margin:0}
+</style>
+
+{# --- Titelbild (wie Seite 1 der PDF) --- #}
+<section class="sc-hero">
+  <img src="{{ url_for('static', filename=brand.logo_mark) }}" alt="">
+  <h1>{{ brand.name.split(' ')[0]|upper }} <span>{{ brand.name.split(' ', 1)[1]|upper if ' ' in brand.name }}</span></h1>
+  <div class="sub">{{ _('Bildstrecke für Stakeholder') }}</div>
+  <p class="lead">{{ _('Musikproduktions-Suite – von der Idee bis zum verkaufsfähigen Track: Song erzeugen, prüfen und exportieren, in der DAW weiterbearbeiten und als Betreiber verwalten und auswerten.') }}</p>
+  <div class="sc-flow">
+    {% for g in groups %}
+      <a href="#step-{{ g.first }}"><b>{{ g.first }}–{{ g.last }}</b>{{ _(g.label) }}</a>
+    {% endfor %}
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('static', filename=showcase_dir ~ '/' ~ showcase_pdf) }}" download>&#8659; {{ _('PDF herunterladen') }}</a>
+</section>
+
+{# --- Die einzelnen Schritte --- #}
+{% for s in slides %}
+<section class="sc-slide" id="step-{{ loop.index }}">
+  <div class="sc-meta">
+    <span class="sc-num">{{ '%02d' % loop.index }}</span>
+    <span class="sc-chip">{{ _(s.section) }}</span>
+  </div>
+  <h2>{{ _(s.title) }}</h2>
+  <p>{{ _(s.text) }}</p>
+  <img src="{{ url_for('static', filename=showcase_dir ~ '/' ~ s.image) }}" alt="{{ _(s.title) }}" loading="lazy">
+</section>
+{% endfor %}
+
+{# --- Zusammenfassung (wie letzte Seite der PDF) --- #}
+<section class="sc-sum">
+  <h2>{{ _('%(brand)s auf einen Blick', brand=brand.name) }}</h2>
+  <div class="sc-grid">
+    {% for c in summary %}
+    <div class="sc-card"><div class="k">{{ loop.index }}</div><h3>{{ _(c.title) }}</h3><p>{{ _(c.text) }}</p></div>
+    {% endfor %}
+  </div>
+  <p class="sc-note">{{ _('Einheitliches Design, drei Sprachen (DE/EN/FR), Dark- und Light-Modus.') }}</p>
+</section>
+{% endblock %}

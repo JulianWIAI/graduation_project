@@ -990,6 +990,80 @@ _T = {
         "Download",
         "Télécharger"),
 
+    # --- Bildstrecke (öffentliche Produkt-Tour, Inhalte in showcase.py) -------
+    "Bildstrecke": ("Product tour", "Visite guidée"),
+    "Bildstrecke ansehen": ("View product tour", "Voir la visite guidée"),
+    "Bildstrecke für Stakeholder": ("Product tour for stakeholders", "Visite guidée pour les parties prenantes"),
+    "Musikproduktions-Suite – von der Idee bis zum verkaufsfähigen Track: Song erzeugen, prüfen und exportieren, in der DAW weiterbearbeiten und als Betreiber verwalten und auswerten.": (
+        "Music production suite – from idea to sellable track: generate, check and export songs, keep working in the DAW, and manage and evaluate as the operator.",
+        "Suite de production musicale – de l'idée au morceau prêt à vendre : générer, vérifier et exporter, retravailler dans la DAW, puis gérer et analyser en tant qu'exploitant."),
+    "Song erzeugen & exportieren": ("Generate & export songs", "Générer & exporter"),
+    "Katalog & Wirtschaftlichkeit": ("Catalogue & profitability", "Catalogue & rentabilité"),
+    "Bearbeiten in der DAW": ("Editing in the DAW", "Édition dans la DAW"),
+    "%(brand)s auf einen Blick": ("%(brand)s at a glance", "%(brand)s en un coup d'œil"),
+    "Erzeugen": ("Generate", "Générer"),
+    "Komplette Songs in 11 Genres per Klick – mit Tonart, Tempo und Instrumenten frei einstellbar.": (
+        "Complete songs in 11 genres with one click – key, tempo and instruments freely adjustable.",
+        "Des morceaux complets dans 11 genres en un clic – tonalité, tempo et instruments réglables."),
+    "Audio in gängigen Formaten oder MIDI zur Weiterbearbeitung, dazu ein Produktionsberater als PDF.": (
+        "Audio in common formats or MIDI for further editing, plus a production advisor as a PDF.",
+        "Audio dans les formats courants ou MIDI pour la suite, avec un conseiller de production en PDF."),
+    "Bearbeiten": ("Edit", "Modifier"),
+    "Eigene DAW mit Piano Roll, Mixer, Effekten, KI-Mix und Hilfe-Modus für Einsteiger.": (
+        "Own DAW with piano roll, mixer, effects, AI mix and a help mode for beginners.",
+        "DAW intégrée avec piano roll, console, effets, mix IA et mode d'aide pour débutants."),
+    "Verwalten & verkaufen": ("Manage & sell", "Gérer & vendre"),
+    "Katalog, Lizenzen, Abo und Tokens sowie automatische Wirtschaftlichkeitsrechnung.": (
+        "Catalogue, licences, subscription and tokens plus automatic profitability analysis.",
+        "Catalogue, licences, abonnement et jetons, avec calcul de rentabilité automatique."),
+    "Einheitliches Design, drei Sprachen (DE/EN/FR), Dark- und Light-Modus.": (
+        "Consistent design, three languages (DE/EN/FR), dark and light mode.",
+        "Design cohérent, trois langues (DE/EN/FR), mode sombre et clair."),
+    "PDF herunterladen": ("Download PDF", "Télécharger le PDF"),
+    "Von der Idee bis zum verkaufsfähigen Track: so funktioniert %(brand)s in %(n)s Schritten.": (
+        "From idea to sellable track: how %(brand)s works in %(n)s steps.",
+        "De l'idée au morceau prêt à vendre : %(brand)s en %(n)s étapes."),
+    "Catalogue Manager · Creator": ("Catalogue Manager · Creator", "Catalogue Manager · Créateur"),
+    "Catalogue Manager · Betreiber": ("Catalogue Manager · Operator", "Catalogue Manager · Exploitant"),
+    "DAW": ("DAW", "DAW"),
+    "Der Einstieg in Beat Collage: Anmeldung mit E-Mail und Passwort. Die Oberfläche lässt sich direkt auf Deutsch, Englisch oder Französisch umstellen.": (
+        "Getting started with Beat Collage: sign in with email and password. The interface can be switched to German, English or French right away.",
+        "Premiers pas avec Beat Collage : connexion par e-mail et mot de passe. L'interface passe directement en allemand, anglais ou français."),
+    "Beat einstellen": ("Set up a beat", "Configurer un beat"),
+    "Genre, Tempo und Komplexität wählen – optional auch Tonart, Klangfarbe und Instrumente. Ein Klick auf „Beat generieren“ erzeugt einen kompletten Song.": (
+        "Choose genre, tempo and complexity – optionally key, tone colour and instruments too. One click on “Generate beat” creates a complete song.",
+        "Choisir le genre, le tempo et la complexité – en option aussi la tonalité, le timbre et les instruments. Un clic sur « Générer » crée un morceau complet."),
+    "Ergebnis prüfen": ("Check the result", "Vérifier le résultat"),
+    "Die Piano Roll zeigt alle erzeugten Spuren farbig getrennt – Kick, Percussion, Bass, Lead, Akkorde, Pad und Arpeggio. Hier: Pop-Song mit 112 BPM und 56 Takten.": (
+        "The piano roll shows all generated tracks in separate colours – kick, percussion, bass, lead, chords, pad and arpeggio. Here: a pop song at 112 BPM with 56 bars.",
+        "Le piano roll affiche toutes les pistes en couleurs – kick, percussion, basse, lead, accords, pad et arpège. Ici : un morceau pop à 112 BPM sur 56 mesures."),
+    "Exportieren": ("Export", "Exporter"),
+    "Den Song als Audiodatei herunterladen (WAV, MP3, FLAC, OGG) – oder als MIDI zur Weiterbearbeitung in der DAW. Dazu gibt es einen Produktionsberater als PDF.": (
+        "Download the song as an audio file (WAV, MP3, FLAC, OGG) – or as MIDI for further editing in the DAW. A production advisor is included as a PDF.",
+        "Télécharger le morceau en audio (WAV, MP3, FLAC, OGG) – ou en MIDI pour le retravailler dans la DAW. Un conseiller de production est fourni en PDF."),
+    "Katalog verwalten": ("Manage the catalogue", "Gérer le catalogue"),
+    "Für den Betreiber: alle erzeugten Tracks mit Genre, Wasserzeichen und Status (z. B. an Kunden vergeben). Grundlage für den Lizenzverkauf.": (
+        "For the operator: all generated tracks with genre, watermark and status (e.g. assigned to a customer). The basis for selling licences.",
+        "Pour l'exploitant : tous les morceaux générés avec genre, filigrane et statut (p. ex. attribué à un client). Base de la vente de licences."),
+    "Umsatz, Fixkosten, Deckungsbeitrag, Break-even und ROI werden automatisch aus den Verkäufen berechnet. Stand: vor den ersten Verkäufen.": (
+        "Revenue, fixed costs, contribution margin, break-even and ROI are calculated automatically from sales. Status: before the first sales.",
+        "Chiffre d'affaires, coûts fixes, marge sur coûts variables, seuil de rentabilité et ROI sont calculés automatiquement. État : avant les premières ventes."),
+    "In der DAW weiterbearbeiten": ("Continue in the DAW", "Continuer dans la DAW"),
+    "Die MIDI-Datei ist in der DAW geladen: jede Spur hat ein eigenes Instrument, darunter der Mixer mit Lautstärke und Panorama, rechts die Effekte.": (
+        "The MIDI file is loaded in the DAW: every track has its own instrument, below is the mixer with volume and pan, effects on the right.",
+        "Le fichier MIDI est chargé dans la DAW : chaque piste a son instrument, en bas la console avec volume et panoramique, à droite les effets."),
+    "Noten bearbeiten": ("Edit notes", "Modifier les notes"),
+    "In der Piano Roll lassen sich die Noten einer Spur einzeln zeichnen, verschieben und löschen – mit Raster, Zoom und Anschlagstärke.": (
+        "In the piano roll, the notes of a track can be drawn, moved and deleted individually – with grid, zoom and velocity.",
+        "Dans le piano roll, on dessine, déplace et supprime les notes une à une – avec grille, zoom et vélocité."),
+    "Hilfe für Einsteiger": ("Help for beginners", "Aide pour débutants"),
+    "Mit „Hilfe AN“ erklärt die DAW jedes Element, sobald man mit der Maus darüber fährt – in einfacher Sprache und in drei Sprachen.": (
+        "With “Help ON”, the DAW explains every element as soon as you hover over it – in plain language and in three languages.",
+        "Avec « Aide activée », la DAW explique chaque élément au survol de la souris – en langage simple et en trois langues."),
+    "Zusatzfunktionen im Menü: Instrumente automatisch zuweisen, KI-Mix per Genre-Vorlage, WAV mastern und Echtzeit-Audioanalyse.": (
+        "Extra functions in the menu: assign instruments automatically, AI mix from genre templates, master a WAV and real-time audio analysis.",
+        "Fonctions supplémentaires : attribution automatique des instruments, mix IA par modèle de genre, mastering WAV et analyse audio en temps réel."),
+
     # --- Passwort-Wiederherstellung / Sicherheitsfrage -----------------------
     "Passwort vergessen?": ("Forgot password?", "Mot de passe oublié ?"),
     "Passwort vergessen? — %(brand)s": (

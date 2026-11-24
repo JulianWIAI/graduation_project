@@ -39,6 +39,7 @@ from catalog import watermark_reader
 from db.demo_data import generate as generate_demo
 from auth.auth import auth_bp, User
 from auth import lockout
+import showcase
 from auth import password_policy
 from werkzeug.security import generate_password_hash
 from beatgen.generate import generate_bp
@@ -115,7 +116,7 @@ def load_user(user_id):
 # Hat der Admin eine Zahlungsart vorgegeben, fuehrt jede Seite zur Eingabe der
 # Zahlungsdaten, bis der Kunde sie hinterlegt hat (Passwort/Sicherheitsfrage gehen vor).
 _PAYMENT_SETUP_OPEN = {"static", "payment_view", "payment_add_card", "payment_add_sepa",
-                       "set_language"}
+                       "set_language", "showcase_page"}
 
 
 @app.before_request
@@ -686,6 +687,17 @@ def audit_csv():
 
 
 # --- DAW-Light Download -----------------------------------------------------
+
+@app.route("/bildstrecke")
+def showcase_page():
+    """Öffentliche Produkt-Tour (Bildstrecke) – auch ohne Login sichtbar."""
+    return render_template("showcase.html",
+                           slides=showcase.SLIDES,
+                           groups=showcase.GROUPS,
+                           summary=showcase.SUMMARY,
+                           showcase_dir=showcase.SHOWCASE_DIR,
+                           showcase_pdf=showcase.SHOWCASE_PDF)
+
 
 @app.route("/download")
 @login_required

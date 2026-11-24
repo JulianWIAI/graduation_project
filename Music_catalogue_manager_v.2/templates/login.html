@@ -94,7 +94,8 @@
       <a href="{{ url_for('auth.forgot_password') }}" data-keep-carry>{{ _('Passwort vergessen?') }}</a>
     </p>
     <p class="link-row">
-      {{ _('Kein Konto?') }} <a href="{{ url_for('auth.register') }}" data-keep-carry>{{ _('Registrieren') }}</a>
+      {{ _('Kein Konto?') }} <a href="{{ url_for('auth.register') }}" data-keep-carry>{{ _('Registrieren') }}</a><br>
+      <a href="{{ url_for('showcase_page') }}">{{ _('Bildstrecke ansehen') }}</a>
     </p>
   </div>
   <script src="{{ url_for('static', filename='keep-form.js') }}"></script>

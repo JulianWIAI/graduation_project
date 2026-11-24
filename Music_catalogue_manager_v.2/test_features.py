@@ -648,3 +648,30 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             func()
             print("ok ", name)
+
+
+def test_showcase_page_is_public_and_complete():
+    """Bildstrecke ist ohne Login erreichbar, zeigt alle Folien und den PDF-Download."""
+    import pathlib
+    import showcase
+    client = main.app.test_client()
+    resp = client.get("/bildstrecke")
+    assert resp.status_code == 200
+    page = resp.get_data(as_text=True)
+    for slide in showcase.SLIDES:
+        assert slide["image"] in page
+        assert (pathlib.Path(main.app.static_folder) / showcase.SHOWCASE_DIR / slide["image"]).is_file()
+    assert showcase.SHOWCASE_PDF in page
+    assert (pathlib.Path(main.app.static_folder) / showcase.SHOWCASE_DIR / showcase.SHOWCASE_PDF).is_file()
+    # Ohne Login keine internen Menüpunkte (nur die Bildstrecke selbst)
+    nav = page.split('id="mainNav"')[1].split("</nav>")[0]
+    assert "/bildstrecke" in nav and "/download" not in nav and "/generate" not in nav
+    # Gäste kommen von hier zu Login und Registrierung; das Logo führt zum Login
+    header = page.split("<main")[0]
+    assert 'href="/login"' in header and 'href="/register"' in header
+    assert 'href="/generate"' not in header
+    # Titelbild und Zusammenfassung wie im PDF
+    for item in showcase.SUMMARY:
+        assert item["title"] in page
+    for g in showcase.GROUPS:
+        assert f'href="#step-{g["first"]}"' in page
